@@ -1,0 +1,7 @@
+export enum UserRole {
+  ADMIN = "ADMIN",
+  CELL_LEADER = "CELL_LEADER",
+  VILLAGE_LEADER = "VILLAGE_LEADER",
+  CITIZEN = "CITIZEN",
+  GUEST = "GUEST",
+}
