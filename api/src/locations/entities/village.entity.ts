@@ -8,7 +8,7 @@ export class Village extends AbstractEntity {
   @Column({ name: 'village_name', nullable: false })
   villageName: string;
 
-  @Column({ name: 'village_leader_id', nullable: false })
+  @OneToOne(() => Profile, (profile) => profile.id, { nullable: false })
   villageLeader: Profile;
 
   @ManyToOne(() => Cell, (cell) => cell.villages, { nullable: false })

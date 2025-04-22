@@ -1,11 +1,13 @@
-import { IAppConfig } from '../__shared__/interfaces/app-config.interface';
-import { PasswordEncryption } from './utils/password-encrytion.util';
-import { ConfigModule, ConfigService } from '@nestjs/config';
-import { JwtStrategy } from './strategies/jwt.strategy';
-import { UsersModule } from 'src/users/users.module';
-import { PassportModule } from '@nestjs/passport';
-import { Global, Module } from '@nestjs/common';
-import { JwtModule } from '@nestjs/jwt';
+import { IAppConfig } from "../__shared__/interfaces/app-config.interface";
+import { PasswordEncryption } from "./utils/password-encrytion.util";
+import { ConfigModule, ConfigService } from "@nestjs/config";
+import { JwtStrategy } from "./strategies/jwt.strategy";
+import { UsersModule } from "src/users/users.module";
+import { PassportModule } from "@nestjs/passport";
+import { Global, Module } from "@nestjs/common";
+import { JwtModule } from "@nestjs/jwt";
+import { AuthController } from "./auth.controller";
+import { AuthService } from "./auth.service";
 
 @Global()
 @Module({
@@ -14,17 +16,18 @@ import { JwtModule } from '@nestjs/jwt';
     JwtModule.registerAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService<IAppConfig>) => ({
-        secret: configService.get<IAppConfig['jwt']>('jwt')?.secret,
+        secret: configService.get<IAppConfig["jwt"]>("jwt")?.secret,
         signOptions: {
-          expiresIn: configService.get<IAppConfig['jwt']>('jwt')?.expiresIn,
-          issuer: 'crew-api',
+          expiresIn: configService.get<IAppConfig["jwt"]>("jwt")?.expiresIn,
+          issuer: "communiserve-api",
         },
       }),
       inject: [ConfigService],
     }),
     UsersModule,
   ],
-  providers: [JwtStrategy, ConfigService, PasswordEncryption],
-  exports: [JwtModule],
+  controllers: [AuthController],
+  providers: [JwtStrategy, ConfigService, PasswordEncryption, AuthService],
+  exports: [JwtModule, AuthService],
 })
 export class AuthModule {}

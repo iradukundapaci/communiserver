@@ -1,6 +1,5 @@
 import { IsEmail, IsNotEmpty, IsString } from "class-validator";
 
-/** Sign in DTO */
 export namespace SignInDto {
   export class Input {
     @IsEmail()

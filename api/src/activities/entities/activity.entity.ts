@@ -1,29 +1,73 @@
-import { AbstractEntity } from "src/__shared__/entities/abstract.entity";
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+} from "typeorm";
+import { ApiProperty } from "@nestjs/swagger";
 import { Profile } from "src/users/entities/profile.entity";
-import { Column, Entity, ManyToMany, OneToMany, OneToOne } from "typeorm";
+import { OneToMany, OneToOne, ManyToMany } from "typeorm";
 import { Task } from "./task.entity";
 
 @Entity("activities")
-export class Activity extends AbstractEntity{
-    @Column({name: "name", nullable: false})
-    name: String;
+export class Activity {
+  @ApiProperty({ description: "The unique identifier of the activity" })
+  @PrimaryGeneratedColumn("uuid")
+  id: string;
 
-    @Column({name: "description", nullable: false})
-    description: String;
+  @ApiProperty({ description: "The title of the activity" })
+  @Column({ length: 255 })
+  title: string;
 
-    @Column({name: "date", nullable: false})
-    date: Date;
+  @ApiProperty({ description: "The description of the activity" })
+  @Column("text")
+  description: string;
 
-    @Column({name: "location", nullable: false})
-    location: String;
+  @ApiProperty({ description: "The date and time when the activity starts" })
+  @Column({ type: "timestamp" })
+  startDate: Date;
 
-    @OneToOne(() => Profile, (profile) => profile.id)
-    @Column({name: "organizer_id", nullable: false})
-    organizer: Profile;
+  @ApiProperty({ description: "The date and time when the activity ends" })
+  @Column({ type: "timestamp" })
+  endDate: Date;
 
-    @OneToMany(() => Task, (task) => task.activity)
-    tasks: Task[];
+  @ApiProperty({ description: "The location where the activity takes place" })
+  @Column({ length: 255 })
+  location: string;
 
-    @ManyToMany(() => Profile, (profile) => profile.activities)
-    participants: Profile[];
+  @ApiProperty({ description: "The maximum number of participants allowed" })
+  @Column({ type: "int" })
+  maxParticipants: number;
+
+  @ApiProperty({ description: "The current number of participants" })
+  @Column({ type: "int", default: 0 })
+  currentParticipants: number;
+
+  @ApiProperty({
+    description: "The status of the activity (active, cancelled, completed)",
+  })
+  @Column({ length: 50, default: "active" })
+  status: string;
+
+  @ApiProperty({
+    description: "The date and time when the activity was created",
+  })
+  @CreateDateColumn()
+  createdAt: Date;
+
+  @ApiProperty({
+    description: "The date and time when the activity was last updated",
+  })
+  @UpdateDateColumn()
+  updatedAt: Date;
+
+  @OneToOne(() => Profile, (profile) => profile.id)
+  organizer: Profile;
+
+  @OneToMany(() => Task, (task) => task.activity)
+  tasks: Task[];
+
+  @ManyToMany(() => Profile, (profile) => profile.activities)
+  participants: Profile[];
 }

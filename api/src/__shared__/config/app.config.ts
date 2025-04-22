@@ -68,8 +68,8 @@ export function configureSwagger(app: INestApplication): void {
   const configService = app.get(ConfigService<IAppConfig>);
   if (configService.get("swaggerEnabled")) {
     {
-      const API_TITLE = "Conserve Guard API";
-      const API_DESCRIPTION = "API Doc. for Conserve Guard API";
+      const API_TITLE = "Communiserve API";
+      const API_DESCRIPTION = "API Doc. for Communiserve API";
       const API_VERSION = "1.0";
       const SWAGGER_URL = "";
       const options = new DocumentBuilder()
@@ -80,7 +80,7 @@ export function configureSwagger(app: INestApplication): void {
         .build();
       const document = SwaggerModule.createDocument(app, options);
       SwaggerModule.setup(SWAGGER_URL, app, document, {
-        customSiteTitle: "Conserver Guard API",
+        customSiteTitle: "Communiserve API",
         swaggerOptions: {
           docExpansion: "none",
           persistAuthorization: true,
