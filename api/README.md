@@ -72,8 +72,6 @@ Before you begin, make sure you have the following installed:
 
 ### Step 2: Clone the Repository 🌀
 
-    git@gitlab.awesomity.rw:awesomity/alight/wekraft/api.git
-
 ### Step 3: Open the Project in Your IDE 🖥️
 
 - Open your preferred IDE (e.g., Visual Studio Code).
