@@ -6,6 +6,7 @@ import {
   Delete,
   ExecutionContext,
   Get,
+  HttpCode,
   HttpStatus,
   Patch,
   Post,
@@ -103,6 +104,7 @@ export function Response(status: number, model?: any) {
         status,
         ...getGenericResponseSchema(randomModel),
       }),
+      HttpCode(status),
     );
   else throw new TypeError("Status passed to decorator not a success status");
 }

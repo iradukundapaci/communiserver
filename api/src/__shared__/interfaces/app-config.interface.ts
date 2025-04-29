@@ -3,8 +3,19 @@ export interface IAppConfig {
   database: IDatabaseConfig;
   env?: string;
   jwt?: JwtConfig;
+  jwtRefresh?: JwtConfig;
+  gatewayJwt?: JwtConfig;
+  allowedOrigins?: string[];
   swaggerEnabled?: boolean;
   backdoor?: IBackdoorConfig;
+  emails?: IEmailConfig;
+  url?: UrlConfig;
+}
+
+interface IEmailConfig {
+  from: string;
+  sendGridApiKey: string;
+  to: string;
 }
 
 interface JwtConfig {
@@ -24,4 +35,9 @@ interface IBackdoorConfig {
   enabled: boolean;
   username: string;
   password: string;
+}
+
+interface UrlConfig {
+  api?: string;
+  client?: string;
 }

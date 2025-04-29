@@ -1,30 +1,29 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Put,
-  Delete,
-  Body,
-  Param,
-  UseGuards,
-} from "@nestjs/common";
+import { Controller, Body, Param, UseGuards, Query } from "@nestjs/common";
 import { ActivitiesService } from "./activities.service";
-import { ActivityDto } from "./dto/activity.dto";
 import { JwtGuard } from "../auth/guards/jwt.guard";
 import { RolesGuard } from "../auth/guards/roles.guard";
-import { AllowRoles } from "../auth/decorators/roles.decorator";
-import { UserRole } from "../__shared__/enums/user-role.enum";
-import {
-  ApiTags,
-  ApiBearerAuth,
-  ApiOperation,
-  ApiResponse,
-} from "@nestjs/swagger";
-import { Activity } from "./entities/activity.entity";
+import { ApiTags, ApiBearerAuth } from "@nestjs/swagger";
 import { GenericResponse } from "../__shared__/dto/generic-response.dto";
-import { GetUser } from "../auth/decorators/get-user.decorator";
-import { User } from "../users/entities/user.entity";
-import { CreateActivityDto } from "./dto/create-activity.dto";
+import {
+  ApiRequestBody,
+  BadRequestResponse,
+  ConflictResponse,
+  DeleteOperation,
+  ErrorResponses,
+  ForbiddenResponse,
+  GetOperation,
+  NotFoundResponse,
+  PatchOperation,
+  PostOperation,
+  UnauthorizedResponse,
+} from "src/__shared__/decorators";
+import { IsAuthorized } from "src/auth/decorators/authorize.decorator";
+import { FetchActivityDTO } from "./dto/fetch-activity.dto";
+import { UpdateActivityDTO } from "./dto/update-activity.dto";
+import { CreateActivityDTO } from "./dto/create-activity.dto";
+import { Activity } from "./entities/activity.entity";
+import { GetUser } from "src/auth/decorators/get-user.decorator";
+import { User } from "src/users/entities/user.entity";
 
 @ApiTags("Activities")
 @ApiBearerAuth()
@@ -33,83 +32,63 @@ import { CreateActivityDto } from "./dto/create-activity.dto";
 export class ActivitiesController {
   constructor(private readonly activitiesService: ActivitiesService) {}
 
-  @Post()
-  @AllowRoles(UserRole.VILLAGE_LEADER, UserRole.CELL_LEADER)
-  @ApiOperation({ summary: "Create a new activity" })
-  @ApiResponse({
-    status: 201,
-    description: "Activity created successfully",
-    type: Activity,
-  })
+  @PostOperation("", "Create a new activity")
+  @IsAuthorized()
+  @ApiRequestBody(CreateActivityDTO.Input)
+  @ErrorResponses(
+    UnauthorizedResponse,
+    ConflictResponse,
+    ForbiddenResponse,
+    NotFoundResponse,
+    BadRequestResponse,
+  )
   async create(
-    @Body() createActivityDto: CreateActivityDto,
-  ): Promise<GenericResponse<Activity>> {
-    const activity = await this.activitiesService.create(createActivityDto);
+    @Body() createActivityDTO: CreateActivityDTO.Input,
+  ): Promise<GenericResponse<CreateActivityDTO.Output>> {
+    const activity = await this.activitiesService.create(createActivityDTO);
     return new GenericResponse("Activity created successfully", activity);
   }
 
-  @Get()
-  @AllowRoles(
-    UserRole.CITIZEN,
-    UserRole.VILLAGE_LEADER,
-    UserRole.CELL_LEADER,
-    UserRole.ADMIN,
-  )
-  @ApiOperation({ summary: "Get all activities" })
-  @ApiResponse({
-    status: 200,
-    description: "Returns all activities",
-    type: [Activity],
-  })
-  async findAll(): Promise<GenericResponse<Activity[]>> {
-    const activities = await this.activitiesService.findAll();
+  @GetOperation("", "Get all activities")
+  @IsAuthorized()
+  @ErrorResponses(UnauthorizedResponse, ForbiddenResponse)
+  async findAll(
+    @Query() DTO: FetchActivityDTO.Input,
+  ): Promise<GenericResponse<{ items: FetchActivityDTO.Output[]; meta: any }>> {
+    const activities = await this.activitiesService.findAll(DTO);
     return new GenericResponse("Activities retrieved successfully", activities);
   }
 
-  @Get(":id")
-  @AllowRoles(
-    UserRole.CITIZEN,
-    UserRole.VILLAGE_LEADER,
-    UserRole.CELL_LEADER,
-    UserRole.ADMIN,
-  )
-  @ApiOperation({ summary: "Get an activity by id" })
-  @ApiResponse({
-    status: 200,
-    description: "Returns the activity",
-    type: Activity,
-  })
+  @GetOperation(":id", "Get an activity by id")
+  @IsAuthorized()
+  @ErrorResponses(UnauthorizedResponse, ForbiddenResponse, NotFoundResponse)
   async findOne(@Param("id") id: string): Promise<GenericResponse<Activity>> {
     const activity = await this.activitiesService.findOne(id);
     return new GenericResponse("Activity retrieved successfully", activity);
   }
 
-  @Put(":id")
-  @AllowRoles(UserRole.VILLAGE_LEADER, UserRole.CELL_LEADER)
-  @ApiOperation({ summary: "Update an activity" })
-  @ApiResponse({
-    status: 200,
-    description: "Activity updated successfully",
-    type: Activity,
-  })
+  @PatchOperation(":id", "Update an activity")
+  @IsAuthorized()
+  @ApiRequestBody(UpdateActivityDTO.Input)
+  @ErrorResponses(
+    UnauthorizedResponse,
+    ConflictResponse,
+    ForbiddenResponse,
+    NotFoundResponse,
+    BadRequestResponse,
+  )
   async update(
     @Param("id") id: string,
-    @Body() updateActivityDto: ActivityDto.Update,
-    @GetUser() user: User,
+    @Body() updateActivityDTO: UpdateActivityDTO.Input,
   ): Promise<GenericResponse<Activity>> {
-    const activity = await this.activitiesService.update(
-      id,
-      updateActivityDto,
-      user,
-    );
+    const activity = await this.activitiesService.update(id, updateActivityDTO);
     return new GenericResponse("Activity updated successfully", activity);
   }
 
-  @Delete(":id")
-  @AllowRoles(UserRole.VILLAGE_LEADER, UserRole.CELL_LEADER)
-  @ApiOperation({ summary: "Delete an activity" })
-  @ApiResponse({ status: 200, description: "Activity deleted successfully" })
-  async delete(
+  @DeleteOperation(":id", "Delete an activity")
+  @IsAuthorized()
+  @ErrorResponses(UnauthorizedResponse, ForbiddenResponse, NotFoundResponse)
+  async remove(
     @Param("id") id: string,
     @GetUser() user: User,
   ): Promise<GenericResponse> {

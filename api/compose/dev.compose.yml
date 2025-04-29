@@ -1,0 +1,15 @@
+services:
+  api-dev:
+    image: ${BASE_TAG_NAME}
+    container_name: communiserver-api-dev
+    env_file:
+      - ./.env
+    ports:
+      - ${PORT}:${PORT}
+    restart: unless-stopped
+    networks:
+      - db_network
+
+networks:
+  db_network:
+    external: true

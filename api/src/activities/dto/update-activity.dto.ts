@@ -1,82 +1,64 @@
-import { ApiProperty } from "@nestjs/swagger";
-import {
-  IsString,
-  IsDate,
-  IsNumber,
-  IsOptional,
-  IsEnum,
-  IsUUID,
-  IsArray,
-} from "class-validator";
-import { Type } from "class-transformer";
+import { IsString, IsDate, IsOptional, IsEnum, IsUUID } from "class-validator";
+import { EActivityStatus } from "../enum/EActivityStatus";
 
-export class UpdateActivityDto {
-  @ApiProperty({ description: "The title of the activity", required: false })
-  @IsString()
-  @IsOptional()
-  title?: string;
+export namespace UpdateActivityDTO {
+  export class Input {
+    @IsString()
+    @IsOptional()
+    title?: string;
 
-  @ApiProperty({
-    description: "The description of the activity",
-    required: false,
-  })
-  @IsString()
-  @IsOptional()
-  description?: string;
+    @IsString()
+    @IsOptional()
+    description?: string;
 
-  @ApiProperty({
-    description: "The start date of the activity",
-    required: false,
-  })
-  @Type(() => Date)
-  @IsDate()
-  @IsOptional()
-  startDate?: Date;
+    @IsDate()
+    @IsOptional()
+    startDate?: Date;
 
-  @ApiProperty({ description: "The end date of the activity", required: false })
-  @Type(() => Date)
-  @IsDate()
-  @IsOptional()
-  endDate?: Date;
+    @IsDate()
+    @IsOptional()
+    endDate?: Date;
 
-  @ApiProperty({ description: "The location of the activity", required: false })
-  @IsString()
-  @IsOptional()
-  location?: string;
+    @IsString()
+    @IsOptional()
+    location?: string;
 
-  @ApiProperty({
-    description: "The maximum number of participants allowed",
-    required: false,
-  })
-  @IsNumber()
-  @IsOptional()
-  maxParticipants?: number;
+    @IsEnum(EActivityStatus)
+    @IsOptional()
+    status?: EActivityStatus;
 
-  @ApiProperty({
-    description: "The current number of participants",
-    required: false,
-  })
-  @IsNumber()
-  @IsOptional()
-  currentParticipants?: number;
+    @IsUUID()
+    @IsOptional()
+    organizerId?: string;
 
-  @ApiProperty({
-    description: "The status of the activity",
-    enum: ["active", "completed", "cancelled"],
-    required: false,
-  })
-  @IsEnum(["active", "completed", "cancelled"])
-  @IsOptional()
-  status?: string;
+    @IsUUID()
+    @IsOptional()
+    cellId?: string;
 
-  @ApiProperty({ description: "The ID of the organizer", required: false })
-  @IsUUID()
-  @IsOptional()
-  organizerId?: string;
+    @IsUUID()
+    @IsOptional()
+    villageId?: string;
+  }
 
-  @ApiProperty({ description: "Array of participant IDs", required: false })
-  @IsArray()
-  @IsUUID("4", { each: true })
-  @IsOptional()
-  participantIds?: string[];
+  export class Output {
+    id: string;
+    title: string;
+    description: string;
+    startDate: Date;
+    endDate: Date;
+    location: string;
+    status: EActivityStatus;
+    organizer: {
+      id: string;
+      names: string;
+    };
+    cell?: {
+      id: string;
+      name: string;
+    };
+    village?: {
+      id: string;
+      name: string;
+    };
+  }
 }

@@ -1,93 +1,127 @@
-import {
-  Controller,
-  Get,
-  Put,
-  Delete,
-  UseGuards,
-  Req,
-  Body,
-} from "@nestjs/common";
+import { PasswordDto } from "./dto/update-password.dto";
 import { UsersService } from "./users.service";
-import { JwtGuard } from "../auth/guards/jwt.guard";
-import { RolesGuard } from "../auth/guards/roles.guard";
-import { UpdateUserDto } from "./dto/update-user.dto";
-import { Request } from "express";
-import {
-  ApiTags,
-  ApiBearerAuth,
-  ApiOperation,
-  ApiResponse,
-} from "@nestjs/swagger";
-import { User } from "./entities/user.entity";
-import { GenericResponse } from "../__shared__/dto/generic-response.dto";
-import { AllowRoles } from "../auth/decorators/roles.decorator";
-import { UserRole } from "../__shared__/enums/user-role.enum";
+import { Body, Controller, Param, Query } from "@nestjs/common";
+import { GenericResponse } from "src/__shared__/dto/generic-response.dto";
+import { IsAuthorized } from "src/auth/decorators/authorize.decorator";
 import { GetUser } from "src/auth/decorators/get-user.decorator";
-
-interface RequestWithUser extends Request {
-  user: { sub: string; role: UserRole };
-}
+import { User } from "./entities/user.entity";
+import { UpdateProfileDto } from "./dto/update-profile.dto";
+import { FetchProfileDto } from "./dto/fetch-profile.dto";
+import { ApiTags } from "@nestjs/swagger";
+import {
+  ApiRequestBody,
+  BadRequestResponse,
+  ConflictResponse,
+  ErrorResponses,
+  ForbiddenResponse,
+  GetOperation,
+  NotFoundResponse,
+  PaginatedOkResponse,
+  OkResponse,
+  PatchOperation,
+  PostOperation,
+  UnauthorizedResponse,
+} from "src/__shared__/decorators";
+import { CreateCellLeaderDTO } from "./dto/create-cell-leader.dto";
+import { CreateVillageLeaderDTO } from "./dto/create-village-leader.dto";
 
 @ApiTags("Users")
-@ApiBearerAuth()
-@UseGuards(JwtGuard, RolesGuard)
 @Controller("users")
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
-  @Get("me")
-  @AllowRoles(
-    UserRole.CITIZEN,
-    UserRole.ADMIN,
-    UserRole.CELL_LEADER,
-    UserRole.VILLAGE_LEADER,
-  )
-  @ApiOperation({ summary: "Get current user profile" })
-  @ApiResponse({
-    status: 200,
-    description: "Returns the current user's profile",
-    type: User,
-  })
-  async getCurrentUser(@GetUser() user: User): Promise<GenericResponse<User>> {
-    const payload = await this.usersService.findById(user.id);
-    return new GenericResponse("User profile retrieved successfully", payload);
-  }
-
-  @Put("me")
-  @AllowRoles(
-    UserRole.CITIZEN,
-    UserRole.ADMIN,
-    UserRole.CELL_LEADER,
-    UserRole.VILLAGE_LEADER,
-  )
-  @ApiOperation({ summary: "Update current user profile" })
-  @ApiResponse({
-    status: 200,
-    description: "User profile updated successfully",
-    type: User,
-  })
-  async updateCurrentUser(
+  @OkResponse(FetchProfileDto.Output)
+  @IsAuthorized()
+  @GetOperation("me", "Get my profile")
+  @ErrorResponses(UnauthorizedResponse, ForbiddenResponse, NotFoundResponse)
+  async getProfile(
     @GetUser() user: User,
-    @Body() updateUserDto: UpdateUserDto.Input,
-  ): Promise<GenericResponse<User>> {
-    const payload = await this.usersService.update(user.id, updateUserDto);
-    return new GenericResponse("User profile updated successfully", payload);
+  ): Promise<GenericResponse<FetchProfileDto.Output>> {
+    const loggedinUser = await this.usersService.getProfile(user.id);
+
+    return new GenericResponse("Profile retrieved successfully", loggedinUser);
   }
 
-  @Delete("me")
-  @AllowRoles(
-    UserRole.CITIZEN,
-    UserRole.ADMIN,
-    UserRole.CELL_LEADER,
-    UserRole.VILLAGE_LEADER,
+  @OkResponse(UpdateProfileDto.Output)
+  @ApiRequestBody(UpdateProfileDto.Input)
+  @ErrorResponses(
+    UnauthorizedResponse,
+    ConflictResponse,
+    ForbiddenResponse,
+    NotFoundResponse,
+    BadRequestResponse,
   )
-  @ApiOperation({ summary: "Delete current user account" })
-  @ApiResponse({
-    status: 200,
-    description: "User account deleted successfully",
-  })
-  async deleteCurrentUser(@GetUser() user: User): Promise<GenericResponse> {
-    await this.usersService.delete(user.id);
-    return new GenericResponse("User account deleted successfully");
+  @PatchOperation("", "Update my profile")
+  @IsAuthorized()
+  async updateProfile(
+    @GetUser() user: User,
+    @Body() updateProfileDto: UpdateProfileDto.Input,
+  ): Promise<GenericResponse<UpdateProfileDto.Output>> {
+    const updatedUser = await this.usersService.updateProfile(
+      user.id,
+      updateProfileDto,
+    );
+    return new GenericResponse("Profile updated successfully", updatedUser);
+  }
+
+  @OkResponse()
+  @ApiRequestBody(PasswordDto.Input)
+  @IsAuthorized()
+  @PatchOperation(":id/change-password", "Change password")
+  @ErrorResponses(UnauthorizedResponse, BadRequestResponse)
+  async updatePassword(
+    @GetUser() user: User,
+    @Body() updatePasswordDto: PasswordDto.Input,
+  ): Promise<GenericResponse> {
+    await this.usersService.updatePassword(
+      user.id,
+      updatePasswordDto.newPassword,
+    );
+    return new GenericResponse("Password updated successfully");
+  }
+
+  @OkResponse(FetchProfileDto.Output)
+  @IsAuthorized()
+  @GetOperation(":id", "Get a user by id")
+  @ErrorResponses(UnauthorizedResponse, ForbiddenResponse, NotFoundResponse)
+  async getUser(
+    @Param("id") id: string,
+  ): Promise<GenericResponse<FetchProfileDto.Output>> {
+    const user = await this.usersService.getProfile(id);
+    return new GenericResponse("User retrieved successfully", user);
+  }
+
+  @PostOperation("cell-leaders", "Create a new cell leader")
+  @IsAuthorized()
+  @ApiRequestBody(CreateCellLeaderDTO.Input)
+  @ErrorResponses(
+    UnauthorizedResponse,
+    ConflictResponse,
+    ForbiddenResponse,
+    NotFoundResponse,
+    BadRequestResponse,
+  )
+  async createCellLeader(
+    @Body() createCellLeaderDto: CreateCellLeaderDTO.Input,
+  ): Promise<GenericResponse> {
+    await this.usersService.createCellLeader(createCellLeaderDto);
+    return new GenericResponse("Cell leader created successfully");
+  }
+
+  @PostOperation("village-leaders", "Create a new village leader")
+  @IsAuthorized()
+  @ApiRequestBody(CreateVillageLeaderDTO.Input)
+  @ErrorResponses(
+    UnauthorizedResponse,
+    ConflictResponse,
+    ForbiddenResponse,
+    NotFoundResponse,
+    BadRequestResponse,
+  )
+  async createVillageLeader(
+    @Body() createVillageLeaderDto: CreateVillageLeaderDTO.Input,
+  ): Promise<GenericResponse> {
+    await this.usersService.createVillageLeader(createVillageLeaderDto);
+    return new GenericResponse("Village leader created successfully");
   }
 }

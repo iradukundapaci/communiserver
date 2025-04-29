@@ -1,54 +1,59 @@
-import { ApiProperty } from "@nestjs/swagger";
-import {
-  IsString,
-  IsDate,
-  IsNumber,
-  IsOptional,
-  IsEnum,
-} from "class-validator";
-import { Type } from "class-transformer";
+import { IsString, IsDate, IsOptional, IsEnum, IsUUID } from "class-validator";
+import { EActivityStatus } from "../enum/EActivityStatus";
 
-export class CreateActivityDto {
-  @ApiProperty({ description: "The title of the activity" })
-  @IsString()
-  title: string;
+export namespace CreateActivityDTO {
+  export class Input {
+    @IsString()
+    title: string;
 
-  @ApiProperty({ description: "The description of the activity" })
-  @IsString()
-  description: string;
+    @IsString()
+    description: string;
 
-  @ApiProperty({ description: "The start date of the activity" })
-  @Type(() => Date)
-  @IsDate()
-  startDate: Date;
+    @IsDate()
+    startDate: Date;
 
-  @ApiProperty({ description: "The end date of the activity" })
-  @Type(() => Date)
-  @IsDate()
-  endDate: Date;
+    @IsDate()
+    endDate: Date;
 
-  @ApiProperty({ description: "The location of the activity" })
-  @IsString()
-  location: string;
+    @IsString()
+    @IsOptional()
+    location?: string;
 
-  @ApiProperty({ description: "The maximum number of participants allowed" })
-  @IsNumber()
-  maxParticipants: number;
+    @IsEnum(EActivityStatus)
+    @IsOptional()
+    status?: EActivityStatus;
 
-  @ApiProperty({
-    description: "The current number of participants",
-    default: 0,
-  })
-  @IsNumber()
-  @IsOptional()
-  currentParticipants?: number = 0;
+    @IsUUID()
+    organizerId: string;
 
-  @ApiProperty({
-    description: "The status of the activity",
-    enum: ["active", "completed", "cancelled"],
-    default: "active",
-  })
-  @IsEnum(["active", "completed", "cancelled"])
-  @IsOptional()
-  status?: string = "active";
+    @IsUUID()
+    @IsOptional()
+    cellId?: string;
+
+    @IsUUID()
+    @IsOptional()
+    villageId?: string;
+  }
+
+  export class Output {
+    id: string;
+    title: string;
+    description: string;
+    startDate: Date;
+    endDate: Date;
+    location: string;
+    status: EActivityStatus;
+    organizer: {
+      id: string;
+      names: string;
+    };
+    cell?: {
+      id: string;
+      name: string;
+    };
+    village?: {
+      id: string;
+      name: string;
+    };
+  }
 }

@@ -1,98 +1,165 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+<div align="center">
+<a href="">
+    <img src="communiserver-logo.png" alt="Communiserver Logo" />
+</a>
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+<br/>
+<br/>
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+<div align="center">
+    <a href="">Home Page</a> |
+    <a href="">Documentation</a>
+</div>
+</div>
 
-## Description
+<br/>
+<br/>
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+# What is Communiserver MVP 📚
 
-## Project setup
+Communiserver MVP is a platform designed to bridge the educational gap in refugee camps and host communities by facilitating the donation of educational materials. It connects donors with local businesses to distribute and fulfill these donations, creating a sustainable and mutually beneficial ecosystem.
+
+## Table of Contents
+
+- [Set-up ⚙️](#set-up)
+  - [Prerequisites ](#prerequisites)
+  - [Installation ](#installation)
+    - [Step 1: Set Up Your Development Environment ](#step-1-set-up-your-development-environment)
+    - [Step 2: Clone the Repository ](#step-2-clone-the-repository)
+    - [Step 3: Open the Project in Your IDE](#step-3-open-the-project-in-your-ide)
+    - [Step 4: Set Up Environment Variables ](#step-4-set-up-environment-variables)
+    - [Step 5: Launch the Application ](#step-5-launch-the-application)
+- [Architecture 🚀](#architecture-)
+  - [Overview ](#overview-)
+  - [Key Principles ](#key-principles)
+  - [Project Structure ](#project-structure)
+  - [Module Structure ](#module-structure)
+  - [Example Folder Structure ](#example-folder-structure)
+  - [Overview of Modules ](#overview-of-modules)
+    - [Core Module [Common] ](#core-module-common)
+    - [Gateway Module ](#gateway-module)
+    - [Domain Modules ](#domain-modules)
+      - [Events ](#events)
+    - [CommuniserverApplication.kt ](#communiserverapplicationkt)
+  - [Summary 📜](#summary)
+- [Technologies Used](#technologies-used)
+- [Configuration](#configuration)
+- [Contributors](#contributors)
+- [Developed by](#developed-by)
+
+# Set-up
+
+This project is built using NestJS. Follow the guide below to set up and run the application on your local machine.
+
+## Prerequisites
+
+Before you begin, make sure you have the following installed:
+
+- **Node.js** (version 18 or later recommended)
+- **npm**
+- **Your preferred IDE** (e.g., Visual Studio Code)
+
+## Installation 💾
+
+### Step 1: Set Up Your Development Environment 🛠️
+
+1. **Install Node.js:**
+
+   - Download and install Node.js from [nodejs.org](https://nodejs.org/).
+
+2. **Install npm**
+   - npm is included with Node.js.
+
+### Step 2: Clone the Repository 🌀
+
+    git@gitlab.awesomity.rw:awesomity/alight/wekraft/api.git
+
+### Step 3: Open the Project in Your IDE 🖥️
+
+- Open your preferred IDE (e.g., Visual Studio Code).
+- Navigate to the project directory and open it.
+
+### Step 4: Set Up Environment Variables 📂
+
+- Create a `.env` file in the root directory of the project using **.env.example**.
+- Edit the environment variables.
+
+### Step 5: Launch the Application 🚀
+
+- Install dependencies:
+
+  ```shell
+  npm install
+  ```
+
+- Start the application:
+
+  ```shell
+  npm run start:dev
+  ```
+
+- The application will run on port `8000` by default. You can access the API at `http://localhost:8000`.
+
+### [IMPORTANT] Generating migrations
+
+To generate a migration you need to run
 
 ```bash
-$ npm install
+npm run typeorm:generate-migration --name=MigrationName
 ```
 
-## Compile and run the project
+# Architecture 🚀
 
-```bash
-# development
-$ npm run start
+## Overview 📒
 
-# watch mode
-$ npm run start:dev
+The Communiserver MVP project is structured into distinct modules to manage different aspects of the platform effectively. Each domain is encapsulated in its own module to promote separation of concerns and reduce inter-module dependencies.
 
-# production mode
-$ npm run start:prod
-```
+### Key Principles
 
-## Run tests
+- **Modularity:** Each domain is isolated in its own module.
+- **Loose Coupling:** Minimize dependencies between modules.
+- **Encapsulation:** Hide internal details of modules, exposing only necessary interfaces.
 
-```bash
-# unit tests
-$ npm run test
+### Project Structure
 
-# e2e tests
-$ npm run test:e2e
+The project is organized into several modules, each representing a distinct domain. Below are the main components of the project structure.
 
-# test coverage
-$ npm run test:cov
-```
+### Module Structure
 
-## Deployment
+- **Core Module:** Contains core functionalities and shared utilities.
+- **Domain Modules:** Separate modules for each domain (e.g., Users, Products, Donations).
+- **Gateway Module:** Contains controllers for handling API requests.
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+### Example Folder Structure
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+    src
+    ├── __shared__
+    │   ├── enums
+    │   ├── exception
+    │   ├── decorators
+    │   ├── model
+    │   ├── response
+    │   └── utils
+    ├── gateway
+    │   ├── controllers
+    │   ├── config
+    │   └── filters
+    ├── auth
+    └── main.ts
 
-```bash
-$ npm install -g mau
-$ mau deploy
-```
+## Technologies Used
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+- **TypeScript:** The primary programming language.
+- **NestJS:** The framework used to build the application.
+- **TypeORM:** The ORM used for database interactions.
+- **PostgreSQL:** The database used to store data.
+- **Jest:** The testing framework.
+- **Docker:** Containerization tool.
 
-## Resources
+## Contributors
 
-Check out a few resources that may come in handy when working with NestJS:
+- **[Twist](https://gitlab.awesomity.rw/twist)**
+- **[Pacifique](https://gitlab.awesomity.rw/pacifiqueL)**
+- **[Brian](https://gitlab.awesomity.rw/brian)**
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
-
-## Support
-
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
-
-## Stay in touch
-
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
-
-## License
-
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+## Developed by [Awesomity Lab](https://awesomity.rw)

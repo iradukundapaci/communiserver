@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
+import { Injectable, UnauthorizedException } from "@nestjs/common";
 import { IJwtPayload } from "../interfaces/jwt.payload.interface";
 import { UsersService } from "src/users/users.service";
 import { ExtractJwt, Strategy } from "passport-jwt";
@@ -6,13 +6,8 @@ import { PassportStrategy } from "@nestjs/passport";
 import { ConfigService } from "@nestjs/config";
 import { IAppConfig } from "src/__shared__/interfaces/app-config.interface";
 
-/** JWT strategy */
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy, "jwt") {
-  /**
-   * Constructor
-   * @param configService The config service
-   */
   constructor(
     private readonly configService: ConfigService<IAppConfig>,
     private usersService: UsersService,
@@ -25,15 +20,10 @@ export class JwtStrategy extends PassportStrategy(Strategy, "jwt") {
     });
   }
 
-  /**
-   * Validate user
-   * @param payload Jwt payload
-   * @returns user
-   */
   async validate(payload: IJwtPayload) {
-    const user = await this.usersService.findByEmail(payload.sub);
-    if (!user) {
-      throw new NotFoundException("User not found");
+    const user = await this.usersService.findUserById(payload.id);
+    if (!user || !user.refreshToken) {
+      throw new UnauthorizedException();
     }
     return { id: user.id, email: user.email, role: user.role };
   }

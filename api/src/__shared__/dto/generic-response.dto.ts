@@ -7,6 +7,6 @@ export class GenericResponse<T = any> {
 
   constructor(message?: string, payload?: T) {
     this.message = message || "Success";
-    this.payload = payload || undefined;
+    this.payload = payload || null;
   }
 }

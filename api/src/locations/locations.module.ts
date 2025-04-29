@@ -4,9 +4,9 @@ import { Cell } from "./entities/cell.entity";
 import { Village } from "./entities/village.entity";
 import { LocationsService } from "./locations.service";
 import { LocationsController } from "./locations.controller";
-
+import { UsersModule } from "../users/users.module";
 @Module({
-  imports: [TypeOrmModule.forFeature([Cell, Village])],
+  imports: [TypeOrmModule.forFeature([Cell, Village]), UsersModule],
   controllers: [LocationsController],
   providers: [LocationsService],
   exports: [LocationsService],

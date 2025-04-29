@@ -2,93 +2,103 @@ import {
   Injectable,
   NotFoundException,
   ForbiddenException,
+  BadRequestException,
+  ConflictException,
 } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
-import { Repository } from "typeorm";
-import { Activity } from "./entities/activity.entity";
+import { Repository, Brackets } from "typeorm";
 import { User } from "../users/entities/user.entity";
 import { UserRole } from "../__shared__/enums/user-role.enum";
-import { UpdateActivityDto } from "./dto/update-activity.dto";
-import { CreateActivityDto } from "./dto/create-activity.dto";
+import { plainToInstance } from "class-transformer";
+import { UsersService } from "../users/users.service";
+import { paginate } from "nestjs-typeorm-paginate";
+import { Activity } from "./entities/activity.entity";
+import { CreateActivityDTO } from "./dto/create-activity.dto";
+import { UpdateActivityDTO } from "./dto/update-activity.dto";
+import { FetchActivityDTO } from "./dto/fetch-activity.dto";
+import { LocationsService } from "../locations/locations.service";
 
 @Injectable()
 export class ActivitiesService {
   constructor(
     @InjectRepository(Activity)
     private readonly activityRepository: Repository<Activity>,
+    private readonly usersService: UsersService,
+    private readonly locationsService: LocationsService,
   ) {}
 
-  async create(createActivityDto: CreateActivityDto): Promise<Activity> {
-    const activity = this.activityRepository.create(createActivityDto);
-    return await this.activityRepository.save(activity);
-  }
-
-  async update(
-    id: string,
-    updateActivityDto: UpdateActivityDto,
-    user: User,
-  ): Promise<Activity> {
-    const activity = await this.activityRepository.findOne({
-      where: { id },
-      relations: ["organizer"],
-    });
-
-    if (!activity) {
-      throw new NotFoundException("Activity not found");
+  async create(
+    createActivityDTO: CreateActivityDTO.Input,
+  ): Promise<CreateActivityDTO.Output> {
+    const organizer = await this.usersService.findUserById(
+      createActivityDTO.organizerId,
+    );
+    if (!organizer) {
+      throw new NotFoundException("Organizer not found");
     }
 
-    if (
-      user.role !== UserRole.VILLAGE_LEADER &&
-      user.role !== UserRole.CELL_LEADER
-    ) {
-      throw new ForbiddenException(
-        "Only village and cell leaders can update activities",
+    let cell;
+    let village;
+
+    if (createActivityDTO.cellId) {
+      cell = await this.locationsService.findCellById(createActivityDTO.cellId);
+    }
+
+    if (createActivityDTO.villageId) {
+      village = await this.locationsService.findVillageById(
+        createActivityDTO.villageId,
       );
     }
 
-    if (activity.organizer.id !== user.profile.id) {
-      throw new ForbiddenException(
-        "You can only update activities you organize",
-      );
-    }
-
-    Object.assign(activity, {
-      ...updateActivityDto,
-      organizer: updateActivityDto.organizerId
-        ? { id: updateActivityDto.organizerId }
-        : undefined,
-      participants: updateActivityDto.participantIds?.map((id) => ({ id })),
+    const activity = this.activityRepository.create({
+      ...createActivityDTO,
+      organizer: organizer.profile,
+      cell,
+      village,
     });
 
-    return this.activityRepository.save(activity);
+    const savedActivity = await this.activityRepository.save(activity);
+    return plainToInstance(CreateActivityDTO.Output, savedActivity);
   }
 
   async delete(id: string, user: User): Promise<void> {
-    const activity = await this.activityRepository.findOne({
-      where: { id },
-      relations: ["organizer"],
-    });
+    try {
+      const activity = await this.activityRepository.findOne({
+        where: { id },
+        relations: ["organizer"],
+      });
 
-    if (!activity) {
-      throw new NotFoundException("Activity not found");
-    }
+      if (!activity) {
+        throw new NotFoundException("Activity not found");
+      }
 
-    if (
-      user.role !== UserRole.VILLAGE_LEADER &&
-      user.role !== UserRole.CELL_LEADER
-    ) {
-      throw new ForbiddenException(
-        "Only village and cell leaders can delete activities",
+      if (
+        user.role !== UserRole.VILLAGE_LEADER &&
+        user.role !== UserRole.CELL_LEADER
+      ) {
+        throw new ForbiddenException(
+          "Only village and cell leaders can delete activities",
+        );
+      }
+
+      if (activity.organizer.id !== user.profile.id) {
+        throw new ForbiddenException(
+          "You can only delete activities you organize",
+        );
+      }
+
+      await this.activityRepository.softDelete(id);
+    } catch (error) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof ForbiddenException
+      ) {
+        throw error;
+      }
+      throw new BadRequestException(
+        `Activity deletion failed: ${error.message}`,
       );
     }
-
-    if (activity.organizer.id !== user.profile.id) {
-      throw new ForbiddenException(
-        "You can only delete activities you organize",
-      );
-    }
-
-    await this.activityRepository.softDelete(id);
   }
 
   async findOne(id: string): Promise<Activity> {
@@ -104,46 +114,109 @@ export class ActivitiesService {
     return activity;
   }
 
-  async findAll(): Promise<Activity[]> {
-    return this.activityRepository.find({
-      relations: ["organizer", "participants", "tasks"],
+  async findAll(DTO: FetchActivityDTO.Input) {
+    const queryBuilder = this.activityRepository
+      .createQueryBuilder("activity")
+      .leftJoinAndSelect("activity.organizer", "organizer")
+      .leftJoinAndSelect("activity.cell", "cell")
+      .leftJoinAndSelect("activity.village", "village")
+      .orderBy("activity.createdAt", "DESC");
+
+    if (DTO.q) {
+      queryBuilder.andWhere(
+        new Brackets((qb) => {
+          qb.where("activity.title ILIKE :searchKey", {
+            searchKey: `%${DTO.q}%`,
+          }).orWhere("activity.description ILIKE :searchKey", {
+            searchKey: `%${DTO.q}%`,
+          });
+        }),
+      );
+    }
+
+    if (DTO.status) {
+      queryBuilder.andWhere("activity.status = :status", {
+        status: DTO.status,
+      });
+    }
+
+    if (DTO.cellId) {
+      queryBuilder.andWhere("cell.id = :cellId", { cellId: DTO.cellId });
+    }
+
+    if (DTO.villageId) {
+      queryBuilder.andWhere("village.id = :villageId", {
+        villageId: DTO.villageId,
+      });
+    }
+
+    if (DTO.organizerId) {
+      queryBuilder.andWhere("organizer.id = :organizerId", {
+        organizerId: DTO.organizerId,
+      });
+    }
+
+    const paginatedResult = await paginate<Activity>(queryBuilder, {
+      page: DTO.page,
+      limit: DTO.size,
+    });
+
+    return {
+      ...paginatedResult,
+      items: paginatedResult.items.map((activity) =>
+        plainToInstance(FetchActivityDTO.Output, activity),
+      ),
+    };
+  }
+
+  async getActivityDetails(id: string) {
+    const activity = await this.findOne(id);
+    return plainToInstance(FetchActivityDTO.Output, {
+      id: activity.id,
+      title: activity.title,
+      description: activity.description,
+      startDate: activity.startDate,
+      endDate: activity.endDate,
+      location: activity.location,
+      status: activity.status,
+      organizer: activity.organizer,
+      participants: activity.participants,
+      tasks: activity.tasks,
     });
   }
 
-  async remove(id: string): Promise<void> {
-    const activity = await this.findOne(id);
-    await this.activityRepository.remove(activity);
-  }
+  async update(
+    id: string,
+    updateActivityDTO: UpdateActivityDTO.Input,
+  ): Promise<Activity> {
+    const activity = await this.activityRepository.findOne({
+      where: { id },
+      relations: ["organizer", "cell", "village"],
+    });
 
-  async addParticipant(id: string): Promise<Activity> {
-    const activity = await this.findOne(id);
-
-    if (activity.currentParticipants >= activity.maxParticipants) {
-      throw new Error("Activity is already full");
+    if (!activity) {
+      throw new NotFoundException("Activity not found");
     }
 
-    if (activity.status !== "active") {
-      throw new Error("Cannot join an inactive activity");
+    let cell;
+    let village;
+
+    if (updateActivityDTO.cellId) {
+      cell = await this.locationsService.findCellById(updateActivityDTO.cellId);
     }
 
-    activity.currentParticipants += 1;
-    return await this.activityRepository.save(activity);
-  }
-
-  async removeParticipant(id: string): Promise<Activity> {
-    const activity = await this.findOne(id);
-
-    if (activity.currentParticipants <= 0) {
-      throw new Error("No participants to remove");
+    if (updateActivityDTO.villageId) {
+      village = await this.locationsService.findVillageById(
+        updateActivityDTO.villageId,
+      );
     }
 
-    activity.currentParticipants -= 1;
-    return await this.activityRepository.save(activity);
-  }
+    Object.assign(activity, {
+      ...updateActivityDTO,
+      cell,
+      village,
+    });
 
-  async updateStatus(id: string, status: string): Promise<Activity> {
-    const activity = await this.findOne(id);
-    activity.status = status;
     return await this.activityRepository.save(activity);
   }
 }

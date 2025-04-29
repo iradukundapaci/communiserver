@@ -1,73 +1,67 @@
 import {
   Entity,
-  PrimaryGeneratedColumn,
   Column,
-  CreateDateColumn,
-  UpdateDateColumn,
+  OneToMany,
+  OneToOne,
+  ManyToMany,
+  JoinColumn,
+  JoinTable,
+  Index,
 } from "typeorm";
-import { ApiProperty } from "@nestjs/swagger";
 import { Profile } from "src/users/entities/profile.entity";
-import { OneToMany, OneToOne, ManyToMany } from "typeorm";
 import { Task } from "./task.entity";
+import { AbstractEntity } from "src/__shared__/entities/abstract.entity";
+import { Cell } from "src/locations/entities/cell.entity";
+import { Village } from "src/locations/entities/village.entity";
+import { EActivityStatus } from "../enum/EActivityStatus";
 
 @Entity("activities")
-export class Activity {
-  @ApiProperty({ description: "The unique identifier of the activity" })
-  @PrimaryGeneratedColumn("uuid")
-  id: string;
-
-  @ApiProperty({ description: "The title of the activity" })
+export class Activity extends AbstractEntity {
   @Column({ length: 255 })
+  @Index()
   title: string;
 
-  @ApiProperty({ description: "The description of the activity" })
   @Column("text")
   description: string;
 
-  @ApiProperty({ description: "The date and time when the activity starts" })
   @Column({ type: "timestamp" })
   startDate: Date;
 
-  @ApiProperty({ description: "The date and time when the activity ends" })
   @Column({ type: "timestamp" })
   endDate: Date;
 
-  @ApiProperty({ description: "The location where the activity takes place" })
-  @Column({ length: 255 })
+  @Column({ length: 255, nullable: true })
   location: string;
 
-  @ApiProperty({ description: "The maximum number of participants allowed" })
-  @Column({ type: "int" })
-  maxParticipants: number;
+  @Column({ length: 50 })
+  status: EActivityStatus = EActivityStatus.PENDING;
 
-  @ApiProperty({ description: "The current number of participants" })
-  @Column({ type: "int", default: 0 })
-  currentParticipants: number;
-
-  @ApiProperty({
-    description: "The status of the activity (active, cancelled, completed)",
-  })
-  @Column({ length: 50, default: "active" })
-  status: string;
-
-  @ApiProperty({
-    description: "The date and time when the activity was created",
-  })
-  @CreateDateColumn()
-  createdAt: Date;
-
-  @ApiProperty({
-    description: "The date and time when the activity was last updated",
-  })
-  @UpdateDateColumn()
-  updatedAt: Date;
-
-  @OneToOne(() => Profile, (profile) => profile.id)
+  @OneToOne(() => Profile)
+  @JoinColumn({ name: "organizer_id" })
   organizer: Profile;
 
-  @OneToMany(() => Task, (task) => task.activity)
+  @OneToMany(() => Task, (task) => task.activity, {
+    cascade: true,
+    eager: true,
+  })
   tasks: Task[];
 
   @ManyToMany(() => Profile, (profile) => profile.activities)
+  @JoinTable({
+    name: "activity_participants",
+    joinColumn: { name: "activity_id", referencedColumnName: "id" },
+    inverseJoinColumn: { name: "profile_id", referencedColumnName: "id" },
+  })
   participants: Profile[];
+
+  @OneToOne(() => Cell, (cell) => cell.id, { nullable: true, eager: true })
+  @JoinColumn({ name: "cell_id" })
+  cell: Cell;
+
+  @OneToOne(() => Village, (village) => village.id, {
+    nullable: true,
+    eager: true,
+  })
+  @JoinColumn({ name: "village_id" })
+  village: Village;
 }

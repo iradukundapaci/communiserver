@@ -4,7 +4,6 @@ export namespace SignInDto {
   export class Input {
     @IsEmail()
     email: string;
-
     @IsString()
     @IsNotEmpty()
     password: string;
@@ -12,9 +11,11 @@ export namespace SignInDto {
 
   export class Output {
     accessToken: string;
+    refreshToken: string;
 
-    constructor(accessToken: string) {
+    constructor(accessToken: string, refreshToken: string) {
       this.accessToken = accessToken;
+      this.refreshToken = refreshToken;
     }
   }
 }
