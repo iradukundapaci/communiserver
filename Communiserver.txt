@@ -1,0 +1,51 @@
+Communiserver:
+
+Type of users:
+	- Admin
+	- cell leader
+	- village leader
+	- isibo leader
+	- house representatives
+	- citizen
+
+uses cases:
+	-Global:
+		- Login into account(done)
+		- Logout (done)
+		- Get notifications for activities
+	- Admin:
+		- Admin can assign cell leaders to cells.(done)
+		- Admin can de-assign cell leaders.(done)
+		- Create cell leader.(done)
+	-Cell leader:
+		- Cell leaders can see the cell they lead and every sub division.(done)
+		- Cell leaders can assign village leaders to villages in their cell.(done)
+		- Cell leaders can de-assign villages leaders in their cell.(done)
+		- Check analytics for the cell.
+		- Create Village leader assign to village.(done)
+		- view activity in cell
+	-Village leader:
+		- Village leaders can see the village they lead and every sub division.(done)
+		- Village leaders can assign isibo leaders to isibo in their village.(done)
+		- Village leaders can de-assign isibo leaders in their village.(done)
+		- Check analytics for the village.
+		- Create isibo.(done)
+		- Update isibo.(done)
+		- Delete isibo.(done)
+		- Create isibo leader.(done)
+		- Create activity with tasks/ assign task to isibo
+		- Update activity 
+		- Can add report for activity mark tasks as complete or un-complete.
+	-Isibo leader:
+		- Isibo leaders can see the isibo they lead and every sub division.(done)
+		- Isibo leaders can assign house representatives to houses in their isibo.(done)
+		- Isibo leaders can de-assing house representatives.(done)
+		- Check analytics for the cell.
+		- Create House.(done)
+		- Update House.(done)
+		- Delete House.(done)
+		- Can add citizens and assign citizen to house.(done)
+		- Can see village activity and assigned task
+		- Can add report for task, take attendance.
+		
+		

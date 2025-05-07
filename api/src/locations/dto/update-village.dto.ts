@@ -1,10 +1,10 @@
-import { IsString, IsUUID, IsOptional } from "class-validator";
+import { IsOptional, IsString, IsUUID } from "class-validator";
 
 export namespace UpdateVillageDto {
   export class Input {
     @IsString()
     @IsOptional()
-    villageName: string;
+    name: string;
 
     @IsUUID()
     @IsOptional()

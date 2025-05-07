@@ -4,11 +4,7 @@ export namespace CreateCellDto {
   export class Input {
     @IsString()
     @IsNotEmpty()
-    cellName: string;
-
-    @IsString()
-    @IsOptional()
-    cellLeaderId?: string;
+    name: string;
 
     @IsOptional()
     villages?: string[];

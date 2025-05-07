@@ -9,11 +9,11 @@ import {
   ManyToOne,
   OneToMany,
 } from "typeorm";
-import { Sector } from "./sector.entity";
+import { House } from "./house.entity";
 import { Village } from "./village.entity";
 
-@Entity("cells")
-export class Cell extends AbstractEntity {
+@Entity("isibos")
+export class Isibo extends AbstractEntity {
   @Column({ name: "name", nullable: false })
   name: string;
 
@@ -25,16 +25,20 @@ export class Cell extends AbstractEntity {
     }
   }
 
-  @ManyToOne(() => Sector, (sector) => sector.cells, { nullable: false })
-  @JoinColumn({ name: "sector_id" })
-  sector: Sector;
+  @OneToMany(() => Profile, (profile) => profile.isibo)
+  members: Profile[];
 
-  @OneToMany(() => Profile, (profile) => profile.cell)
-  profiles: Profile[];
+  @ManyToOne(() => Profile, { nullable: true })
+  @JoinColumn({ name: "leader_id" })
+  leader: Profile;
 
-  @OneToMany(() => Village, (village) => village.cell, {
+  @OneToMany(() => House, (house) => house.isibo, {
     nullable: true,
     cascade: true,
   })
-  villages: Village[];
+  houses: House[];
+
+  @ManyToOne(() => Village, (village) => village.isibos, { nullable: false })
+  @JoinColumn({ name: "village_id" })
+  village: Village;
 }

@@ -1,12 +1,4 @@
-import { PasswordDto } from "./dto/update-password.dto";
-import { UsersService } from "./users.service";
-import { Body, Controller, Param, Query } from "@nestjs/common";
-import { GenericResponse } from "src/__shared__/dto/generic-response.dto";
-import { IsAuthorized } from "src/auth/decorators/authorize.decorator";
-import { GetUser } from "src/auth/decorators/get-user.decorator";
-import { User } from "./entities/user.entity";
-import { UpdateProfileDto } from "./dto/update-profile.dto";
-import { FetchProfileDto } from "./dto/fetch-profile.dto";
+import { Body, Controller, Param } from "@nestjs/common";
 import { ApiTags } from "@nestjs/swagger";
 import {
   ApiRequestBody,
@@ -16,14 +8,28 @@ import {
   ForbiddenResponse,
   GetOperation,
   NotFoundResponse,
-  PaginatedOkResponse,
   OkResponse,
   PatchOperation,
   PostOperation,
   UnauthorizedResponse,
 } from "src/__shared__/decorators";
+import { GenericResponse } from "src/__shared__/dto/generic-response.dto";
+import {
+  IsAdmin,
+  IsAdminOrVillageLeader,
+  IsAuthorized,
+  IsCellLeader,
+} from "src/auth/decorators/authorize.decorator";
+import { GetUser } from "src/auth/decorators/get-user.decorator";
 import { CreateCellLeaderDTO } from "./dto/create-cell-leader.dto";
+import { CreateCitizenDTO } from "./dto/create-citizen.dto";
+import { CreateIsiboLeaderDTO } from "./dto/create-isibo-leader.dto";
 import { CreateVillageLeaderDTO } from "./dto/create-village-leader.dto";
+import { FetchProfileDto } from "./dto/fetch-profile.dto";
+import { PasswordDto } from "./dto/update-password.dto";
+import { UpdateProfileDto } from "./dto/update-profile.dto";
+import { User } from "./entities/user.entity";
+import { UsersService } from "./users.service";
 
 @ApiTags("Users")
 @Controller("users")
@@ -92,7 +98,7 @@ export class UsersController {
   }
 
   @PostOperation("cell-leaders", "Create a new cell leader")
-  @IsAuthorized()
+  @IsAdmin()
   @ApiRequestBody(CreateCellLeaderDTO.Input)
   @ErrorResponses(
     UnauthorizedResponse,
@@ -109,7 +115,7 @@ export class UsersController {
   }
 
   @PostOperation("village-leaders", "Create a new village leader")
-  @IsAuthorized()
+  @IsCellLeader()
   @ApiRequestBody(CreateVillageLeaderDTO.Input)
   @ErrorResponses(
     UnauthorizedResponse,
@@ -123,5 +129,39 @@ export class UsersController {
   ): Promise<GenericResponse> {
     await this.usersService.createVillageLeader(createVillageLeaderDto);
     return new GenericResponse("Village leader created successfully");
+  }
+
+  @PostOperation("isibo-leaders", "Create a new isibo leader")
+  @IsAdminOrVillageLeader()
+  @ApiRequestBody(CreateIsiboLeaderDTO.Input)
+  @ErrorResponses(
+    UnauthorizedResponse,
+    ConflictResponse,
+    ForbiddenResponse,
+    NotFoundResponse,
+    BadRequestResponse,
+  )
+  async createIsiboLeader(
+    @Body() createIsiboLeaderDto: CreateIsiboLeaderDTO.Input,
+  ): Promise<GenericResponse> {
+    await this.usersService.createIsiboLeader(createIsiboLeaderDto);
+    return new GenericResponse("Isibo leader created successfully");
+  }
+
+  @PostOperation("citizens", "Create a new citizen")
+  @IsAdminOrVillageLeader()
+  @ApiRequestBody(CreateCitizenDTO.Input)
+  @ErrorResponses(
+    UnauthorizedResponse,
+    ConflictResponse,
+    ForbiddenResponse,
+    NotFoundResponse,
+    BadRequestResponse,
+  )
+  async createCitizen(
+    @Body() createCitizenDto: CreateCitizenDTO.Input,
+  ): Promise<GenericResponse> {
+    await this.usersService.createCitizen(createCitizenDto);
+    return new GenericResponse("Citizen created successfully");
   }
 }

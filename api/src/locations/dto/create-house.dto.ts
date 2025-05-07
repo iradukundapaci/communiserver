@@ -1,17 +1,21 @@
 import { IsNotEmpty, IsOptional, IsString, IsUUID } from "class-validator";
 
-export namespace CreateVillageDto {
+export namespace CreateHouseDto {
   export class Input {
     @IsString()
     @IsNotEmpty()
-    name: string;
+    code: string;
+
+    @IsString()
+    @IsOptional()
+    street?: string;
 
     @IsUUID()
     @IsOptional()
-    villageLeaderId?: string;
+    representativeId?: string;
 
     @IsUUID()
     @IsNotEmpty()
-    cellId: string;
+    isiboId: string;
   }
 }

@@ -51,7 +51,15 @@ export class AdminSeedService {
       user.activated = true;
       const savedUser = await this.userRepository.save(user);
 
-      const profile = new Profile("BACKDOOR ADMIN", true, true, null, null);
+      const profile = new Profile(
+        "BACKDOOR ADMIN",
+        true,
+        true,
+        true,
+        null,
+        null,
+        null,
+      );
       profile.user = savedUser;
       await this.profileRepository.save(profile);
 

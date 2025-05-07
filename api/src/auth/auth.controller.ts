@@ -1,19 +1,10 @@
-import { GenericResponse } from "src/__shared__/dto/generic-response.dto";
 import { Body, Controller } from "@nestjs/common";
-import { ForgotPasswordDto } from "./dto/forgot-password.dto";
-import { IsAuthorized, RefreshToken } from "./decorators/authorize.decorator";
-import { ResetPasswordDto } from "./dto/reset-password.dto";
-import { GetUser } from "./decorators/get-user.decorator";
-import { User } from "src/users/entities/user.entity";
-import { SignInDto } from "./dto/sign-in.dto";
-import { SignupDto } from "./dto/sign-up.dto";
-import { AuthService } from "./auth.service";
 import { ApiTags } from "@nestjs/swagger";
+import { GenericResponse } from "src/__shared__/dto/generic-response.dto";
+import { User } from "src/users/entities/user.entity";
 import {
   ApiRequestBody,
   BadRequestResponse,
-  ConflictResponse,
-  CreatedResponse,
   ErrorResponses,
   NotFoundResponse,
   OkResponse,
@@ -21,8 +12,14 @@ import {
   PostOperation,
   UnauthorizedResponse,
 } from "../__shared__/decorators";
-import { VerifyEmailDto } from "./dto/verify-email.dto";
+import { AuthService } from "./auth.service";
+import { IsAuthorized, RefreshToken } from "./decorators/authorize.decorator";
+import { GetUser } from "./decorators/get-user.decorator";
 import { EmailDto } from "./dto/email-dto";
+import { ForgotPasswordDto } from "./dto/forgot-password.dto";
+import { ResetPasswordDto } from "./dto/reset-password.dto";
+import { SignInDto } from "./dto/sign-in.dto";
+import { VerifyEmailDto } from "./dto/verify-email.dto";
 
 @ApiTags("Authentication")
 @Controller("auth")
@@ -38,15 +35,6 @@ export class AuthController {
   ): Promise<GenericResponse<SignInDto.Output>> {
     const payload = await this.authService.signIn(signInDTO);
     return new GenericResponse("Logged in successfully", payload);
-  }
-
-  @PostOperation("/signup", "Sign up a new user")
-  @CreatedResponse()
-  @ApiRequestBody(SignupDto.Input)
-  @ErrorResponses(ConflictResponse, BadRequestResponse)
-  async SignUp(@Body() signUpDTO: SignupDto.Input): Promise<GenericResponse> {
-    await this.authService.signup(signUpDTO);
-    return new GenericResponse("User successfully registered");
   }
 
   @PatchOperation("/refresh-token", "Refresh token")

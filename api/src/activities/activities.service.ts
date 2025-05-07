@@ -16,7 +16,8 @@ import { Activity } from "./entities/activity.entity";
 import { CreateActivityDTO } from "./dto/create-activity.dto";
 import { UpdateActivityDTO } from "./dto/update-activity.dto";
 import { FetchActivityDTO } from "./dto/fetch-activity.dto";
-import { LocationsService } from "../locations/locations.service";
+import { CellsService } from "../locations/cells.service";
+import { VillagesService } from "../locations/villages.service";
 
 @Injectable()
 export class ActivitiesService {
@@ -24,7 +25,8 @@ export class ActivitiesService {
     @InjectRepository(Activity)
     private readonly activityRepository: Repository<Activity>,
     private readonly usersService: UsersService,
-    private readonly locationsService: LocationsService,
+    private readonly cellsService: CellsService,
+    private readonly villagesService: VillagesService,
   ) {}
 
   async create(
@@ -41,11 +43,11 @@ export class ActivitiesService {
     let village;
 
     if (createActivityDTO.cellId) {
-      cell = await this.locationsService.findCellById(createActivityDTO.cellId);
+      cell = await this.cellsService.findCellById(createActivityDTO.cellId);
     }
 
     if (createActivityDTO.villageId) {
-      village = await this.locationsService.findVillageById(
+      village = await this.villagesService.findVillageById(
         createActivityDTO.villageId,
       );
     }
@@ -202,11 +204,11 @@ export class ActivitiesService {
     let village;
 
     if (updateActivityDTO.cellId) {
-      cell = await this.locationsService.findCellById(updateActivityDTO.cellId);
+      cell = await this.cellsService.findCellById(updateActivityDTO.cellId);
     }
 
     if (updateActivityDTO.villageId) {
-      village = await this.locationsService.findVillageById(
+      village = await this.villagesService.findVillageById(
         updateActivityDTO.villageId,
       );
     }

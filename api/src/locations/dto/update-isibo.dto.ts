@@ -1,21 +1,17 @@
 import { IsOptional, IsString, IsUUID } from "class-validator";
 
-export namespace UpdateCellDto {
+export namespace UpdateIsiboDto {
   export class Input {
-    @IsString()
-    @IsOptional()
-    cellName?: string;
-
     @IsString()
     @IsOptional()
     name?: string;
 
     @IsUUID()
     @IsOptional()
-    cellLeaderId?: string;
+    leaderId?: string;
 
+    @IsUUID()
     @IsOptional()
-    @IsString({ each: true })
-    villageIds?: string[];
+    villageId?: string;
   }
 }

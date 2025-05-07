@@ -1,27 +1,26 @@
-import { UserRole } from "src/__shared__/enums/user-role.enum";
-import { UpdateProfileDto } from "./dto/update-profile.dto";
-import { FetchProfileDto } from "./dto/fetch-profile.dto";
-import { plainToInstance } from "class-transformer";
-import { Profile } from "./entities/profile.entity";
-import { paginate } from "nestjs-typeorm-paginate";
-import { InjectEntityManager, InjectRepository } from "@nestjs/typeorm";
-import { User } from "./entities/user.entity";
-import { Brackets, EntityManager, Not, Repository } from "typeorm";
 import {
   BadRequestException,
   ConflictException,
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
-import { FetchUserDto } from "./dto/fetch-user.dto";
 import { ConfigService } from "@nestjs/config";
+import { InjectEntityManager, InjectRepository } from "@nestjs/typeorm";
+import { plainToInstance } from "class-transformer";
+import { UserRole } from "src/__shared__/enums/user-role.enum";
 import { IAppConfig } from "src/__shared__/interfaces/app-config.interface";
-import { SesService } from "src/notifications/ses.service";
-import { managerRegistrationTemplate } from "src/__shared__/templates/manager-registration.template copy";
-import { CreateCellLeaderDTO } from "./dto/create-cell-leader.dto";
 import { PasswordEncryption } from "src/__shared__/utils/password-encrytion.util";
+import { SesService } from "src/notifications/ses.service";
 import { VerificationService } from "src/verification/verification.service";
+import { EntityManager, Not, Repository } from "typeorm";
+import { CreateCellLeaderDTO } from "./dto/create-cell-leader.dto";
+import { CreateCitizenDTO } from "./dto/create-citizen.dto";
+import { CreateIsiboLeaderDTO } from "./dto/create-isibo-leader.dto";
 import { CreateVillageLeaderDTO } from "./dto/create-village-leader.dto";
+import { FetchProfileDto } from "./dto/fetch-profile.dto";
+import { UpdateProfileDto } from "./dto/update-profile.dto";
+import { Profile } from "./entities/profile.entity";
+import { User } from "./entities/user.entity";
 
 @Injectable()
 export class UsersService {
@@ -111,6 +110,43 @@ export class UsersService {
     return { cell, village };
   }
 
+  private async validateAndGetLocationsForIsiboLeader(
+    manager: EntityManager,
+    cellId: string,
+    villageId: string,
+    isiboId: string,
+  ): Promise<{ cell: any; village: any; isibo: any }> {
+    const cell = await manager.getRepository("Cell").findOneBy({ id: cellId });
+
+    if (!cell) {
+      throw new NotFoundException("Cell not found");
+    }
+
+    const village = await manager
+      .getRepository("Village")
+      .findOneBy({ id: villageId });
+
+    if (!village) {
+      throw new NotFoundException("Village not found");
+    }
+
+    const isibo = await manager.getRepository("Isibo").findOne({
+      where: { id: isiboId },
+      relations: ["leader"],
+    });
+
+    if (!isibo) {
+      throw new NotFoundException("Isibo not found");
+    }
+
+    // Check if isibo already has a leader
+    if (isibo.leader) {
+      throw new ConflictException("Isibo already has a leader");
+    }
+
+    return { cell, village, isibo };
+  }
+
   private async createLeaderUser(
     manager: EntityManager,
     dto: { email: string; phone: string; names: string },
@@ -119,6 +155,7 @@ export class UsersService {
     village: any,
     isVillageLeader: boolean,
     isCellLeader: boolean,
+    isIsiboLeader: boolean,
   ): Promise<User> {
     const password = this.generateRandomPassword();
     const hashedPassword = await PasswordEncryption.hashPassword(password);
@@ -137,6 +174,7 @@ export class UsersService {
       village,
       isVillageLeader,
       isCellLeader,
+      isIsiboLeader,
       phone: dto.phone,
     });
     user.profile = profile;
@@ -174,6 +212,7 @@ export class UsersService {
           village,
           false,
           true,
+          false,
         );
       });
     } catch (error) {
@@ -215,6 +254,7 @@ export class UsersService {
           village,
           true,
           false,
+          false,
         );
       });
     } catch (error) {
@@ -226,6 +266,55 @@ export class UsersService {
       }
       throw new BadRequestException(
         `Village leader registration failed: ${error.message}`,
+      );
+    }
+  }
+
+  async createIsiboLeader(
+    createIsiboLeaderDTO: CreateIsiboLeaderDTO.Input,
+  ): Promise<void> {
+    const { email, names, phone, cellId, villageId, isiboId } =
+      createIsiboLeaderDTO;
+
+    const userExists = await this.findUserByEmail(email);
+    if (userExists) {
+      throw new ConflictException("User already exists");
+    }
+
+    try {
+      await this.entityManager.transaction(async (manager: EntityManager) => {
+        const { cell, village, isibo } =
+          await this.validateAndGetLocationsForIsiboLeader(
+            manager,
+            cellId,
+            villageId,
+            isiboId,
+          );
+
+        const user = await this.createLeaderUser(
+          manager,
+          { email, phone, names },
+          UserRole.ISIBO_LEADER,
+          cell,
+          village,
+          false,
+          false,
+          true,
+        );
+
+        // Set the user's profile as the isibo leader
+        isibo.leader = user.profile;
+        await manager.save(isibo);
+      });
+    } catch (error) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof ConflictException
+      ) {
+        throw error;
+      }
+      throw new BadRequestException(
+        `Isibo leader registration failed: ${error.message}`,
       );
     }
   }
@@ -263,6 +352,74 @@ export class UsersService {
 
     if (!user) throw new NotFoundException("User not found");
     return user;
+  }
+
+  async findCellLeader(cellId: string): Promise<User> {
+    const cellLeader = await this.usersRepository.findOne({
+      where: {
+        role: UserRole.CELL_LEADER,
+        profile: {
+          cell: { id: cellId },
+          isCellLeader: true,
+        },
+      },
+      relations: ["profile"],
+    });
+    if (!cellLeader) throw new NotFoundException("Cell leader not found");
+    return cellLeader;
+  }
+
+  async findVillageLeader(villageId: string): Promise<User> {
+    const villageLeader = await this.usersRepository.findOne({
+      where: {
+        role: UserRole.VILLAGE_LEADER,
+        profile: {
+          village: { id: villageId },
+          isVillageLeader: true,
+        },
+      },
+      relations: ["profile"],
+    });
+    if (!villageLeader) throw new NotFoundException("Village leader not found");
+    return villageLeader;
+  }
+
+  async findIsiboLeader(isiboId: string): Promise<User> {
+    const isiboLeader = await this.usersRepository.findOne({
+      where: {
+        role: UserRole.ISIBO_LEADER,
+        profile: {
+          isibo: { id: isiboId },
+          isIsiboLeader: true,
+        },
+      },
+      relations: ["profile"],
+    });
+    if (!isiboLeader) throw new NotFoundException("Isibo leader not found");
+    return isiboLeader;
+  }
+
+  async findHouseRepresentative(houseId: string): Promise<User> {
+    const houseRepresentative = await this.usersRepository.findOne({
+      where: {
+        role: UserRole.HOUSE_REPRESENTATIVE,
+        profile: {
+          house: { id: houseId },
+        },
+      },
+      relations: ["profile"],
+    });
+    if (!houseRepresentative)
+      throw new NotFoundException("House representative not found");
+    return houseRepresentative;
+  }
+
+  async saveProfile(profile: Profile): Promise<Profile> {
+    return this.profilesRepository.save(profile);
+  }
+
+  async saveUser(user: User): Promise<User> {
+    return this.usersRepository.save(user);
   }
 
   async getProfile(userId: string) {
@@ -357,47 +514,100 @@ export class UsersService {
     await this.usersRepository.update(userId, { refreshToken });
   }
 
-  private async buildUserQueryBuilder(dto: any): Promise<any> {
-    const queryBuilder = this.usersRepository
-      .createQueryBuilder("user")
-      .leftJoinAndSelect("user.profile", "profile")
-      .orderBy("user.id", "DESC")
-      .select([
-        "user.id",
-        "user.names",
-        "user.email",
-        "user.role",
-        "user.activated",
-        "profile.phone",
-        "profile.address",
-      ]);
+  private async validateAndGetLocationsForCitizen(
+    manager: EntityManager,
+    cellId: string,
+    villageId: string,
+    isiboId?: string,
+    houseId?: string,
+  ): Promise<{ cell: any; village: any; isibo?: any; house?: any }> {
+    const cell = await manager.getRepository("Cell").findOneBy({ id: cellId });
 
-    if (dto.role) {
-      queryBuilder.andWhere("user.role = :role", { role: dto.role });
+    if (!cell) {
+      throw new NotFoundException("Cell not found");
     }
 
-    if (dto.q) {
-      queryBuilder.andWhere(
-        new Brackets((qb) => {
-          qb.where("user.names ILIKE :searchKey", {
-            searchKey: `%${dto.q}%`,
-          }).orWhere("user.email ILIKE :searchKey", {
-            searchKey: `%${dto.q}%`,
-          });
-        }),
+    const village = await manager
+      .getRepository("Village")
+      .findOneBy({ id: villageId });
+
+    if (!village) {
+      throw new NotFoundException("Village not found");
+    }
+
+    let isibo = undefined;
+    if (isiboId) {
+      isibo = await manager.getRepository("Isibo").findOneBy({ id: isiboId });
+      if (!isibo) {
+        throw new NotFoundException("Isibo not found");
+      }
+    }
+
+    let house = undefined;
+    if (houseId) {
+      house = await manager.getRepository("House").findOneBy({ id: houseId });
+      if (!house) {
+        throw new NotFoundException("House not found");
+      }
+    }
+
+    return { cell, village, isibo, house };
+  }
+
+  async createCitizen(createCitizenDTO: CreateCitizenDTO.Input): Promise<void> {
+    const { email, names, phone, cellId, villageId, isiboId, houseId } =
+      createCitizenDTO;
+
+    const userExists = await this.findUserByEmail(email);
+    if (userExists) {
+      throw new ConflictException("User already exists");
+    }
+
+    try {
+      await this.entityManager.transaction(async (manager: EntityManager) => {
+        const { cell, village, isibo, house } =
+          await this.validateAndGetLocationsForCitizen(
+            manager,
+            cellId,
+            villageId,
+            isiboId,
+            houseId,
+          );
+
+        const user = plainToInstance(User, {
+          email,
+          phone,
+          password: await PasswordEncryption.hashPassword(
+            this.generateRandomPassword(),
+          ),
+          role: UserRole.CITIZEN,
+        });
+
+        user.verifiedAt = new Date();
+        const profile = plainToInstance(Profile, {
+          names,
+          cell,
+          village,
+          isibo,
+          house,
+          isVillageLeader: false,
+          isCellLeader: false,
+          isIsiboLeader: false,
+        });
+        user.profile = profile;
+
+        await manager.save(user);
+      });
+    } catch (error) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof ConflictException
+      ) {
+        throw error;
+      }
+      throw new BadRequestException(
+        `Citizen registration failed: ${error.message}`,
       );
     }
-
-    const paginatedResult = await paginate<User>(queryBuilder, {
-      page: dto.page,
-      limit: dto.size,
-    });
-
-    return {
-      ...paginatedResult,
-      items: paginatedResult.items.map((user) =>
-        plainToInstance(FetchUserDto.Output, user),
-      ),
-    };
   }
 }

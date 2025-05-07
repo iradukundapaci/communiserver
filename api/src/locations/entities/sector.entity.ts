@@ -1,5 +1,4 @@
 import { AbstractEntity } from "src/__shared__/entities/abstract.entity";
-import { Profile } from "src/users/entities/profile.entity";
 import {
   BeforeInsert,
   BeforeUpdate,
@@ -10,10 +9,10 @@ import {
   OneToMany,
 } from "typeorm";
 import { Cell } from "./cell.entity";
-import { Isibo } from "./isibo.entity";
+import { District } from "./district.entity";
 
-@Entity("villages")
-export class Village extends AbstractEntity {
+@Entity("sectors")
+export class Sector extends AbstractEntity {
   @Column({ name: "name", nullable: false })
   name: string;
 
@@ -25,16 +24,15 @@ export class Village extends AbstractEntity {
     }
   }
 
-  @OneToMany(() => Profile, (profile) => profile.village)
-  profiles: Profile[];
+  @ManyToOne(() => District, (district) => district.sectors, {
+    nullable: false,
+  })
+  @JoinColumn({ name: "district_id" })
+  district: District;
 
-  @ManyToOne(() => Cell, (cell) => cell.villages, { nullable: false })
-  @JoinColumn({ name: "cell_id" })
-  cell: Cell;
-
-  @OneToMany(() => Isibo, (isibo) => isibo.village, {
+  @OneToMany(() => Cell, (cell) => cell.sector, {
     nullable: true,
     cascade: true,
   })
-  isibos: Isibo[];
+  cells: Cell[];
 }

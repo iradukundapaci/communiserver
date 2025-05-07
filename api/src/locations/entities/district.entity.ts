@@ -1,5 +1,4 @@
 import { AbstractEntity } from "src/__shared__/entities/abstract.entity";
-import { Profile } from "src/users/entities/profile.entity";
 import {
   BeforeInsert,
   BeforeUpdate,
@@ -9,11 +8,11 @@ import {
   ManyToOne,
   OneToMany,
 } from "typeorm";
+import { Province } from "./province.entity";
 import { Sector } from "./sector.entity";
-import { Village } from "./village.entity";
 
-@Entity("cells")
-export class Cell extends AbstractEntity {
+@Entity("districts")
+export class District extends AbstractEntity {
   @Column({ name: "name", nullable: false })
   name: string;
 
@@ -25,16 +24,15 @@ export class Cell extends AbstractEntity {
     }
   }
 
-  @ManyToOne(() => Sector, (sector) => sector.cells, { nullable: false })
-  @JoinColumn({ name: "sector_id" })
-  sector: Sector;
+  @ManyToOne(() => Province, (province) => province.districts, {
+    nullable: false,
+  })
+  @JoinColumn({ name: "province_id" })
+  province: Province;
 
-  @OneToMany(() => Profile, (profile) => profile.cell)
-  profiles: Profile[];
-
-  @OneToMany(() => Village, (village) => village.cell, {
+  @OneToMany(() => Sector, (sector) => sector.district, {
     nullable: true,
     cascade: true,
   })
-  villages: Village[];
+  sectors: Sector[];
 }

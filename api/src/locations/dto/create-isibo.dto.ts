@@ -1,6 +1,6 @@
 import { IsNotEmpty, IsOptional, IsString, IsUUID } from "class-validator";
 
-export namespace CreateVillageDto {
+export namespace CreateIsiboDto {
   export class Input {
     @IsString()
     @IsNotEmpty()
@@ -8,10 +8,10 @@ export namespace CreateVillageDto {
 
     @IsUUID()
     @IsOptional()
-    villageLeaderId?: string;
+    leaderId?: string;
 
     @IsUUID()
     @IsNotEmpty()
-    cellId: string;
+    villageId: string;
   }
 }

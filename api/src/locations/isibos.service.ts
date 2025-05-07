@@ -1,0 +1,398 @@
+import {
+  ConflictException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from "@nestjs/common";
+import { InjectRepository } from "@nestjs/typeorm";
+import { paginate } from "nestjs-typeorm-paginate";
+import { UserRole } from "src/__shared__/enums/user-role.enum";
+import { Repository } from "typeorm";
+import { User } from "../users/entities/user.entity";
+import { UsersService } from "../users/users.service";
+import { CreateIsiboDto } from "./dto/create-isibo.dto";
+import { FetchIsiboDto } from "./dto/fetch-isibo.dto";
+import { UpdateIsiboDto } from "./dto/update-isibo.dto";
+import { Isibo } from "./entities/isibo.entity";
+import { Village } from "./entities/village.entity";
+
+@Injectable()
+export class IsibosService {
+  constructor(
+    @InjectRepository(Village)
+    private readonly villageRepository: Repository<Village>,
+    @InjectRepository(Isibo)
+    private readonly isiboRepository: Repository<Isibo>,
+    private readonly usersService: UsersService,
+  ) {}
+
+  private async validateIsiboNames(
+    villageId: string,
+    isiboNames: string[],
+  ): Promise<void> {
+    const existingIsibos = await this.isiboRepository.find({
+      where: { village: { id: villageId } },
+    });
+
+    const existingIsiboNames = existingIsibos.map((i) => i.name);
+    const duplicateNames = isiboNames.filter((name) =>
+      existingIsiboNames.includes(name.toUpperCase()),
+    );
+
+    if (duplicateNames.length > 0) {
+      throw new ConflictException(
+        `Isibos with names ${duplicateNames.join(", ")} already exist in this village`,
+      );
+    }
+  }
+
+  async createIsibo(
+    createIsiboDto: CreateIsiboDto.Input,
+    user: User,
+  ): Promise<Isibo> {
+    // Validate villageId
+    const village = await this.villageRepository.findOne({
+      where: { id: createIsiboDto.villageId },
+      relations: ["profiles", "cell", "cell.profiles"],
+    });
+
+    if (!village) {
+      throw new NotFoundException("Village not found");
+    }
+
+    // Check if user is the village leader, cell leader, or admin
+    const isVillageLeader = village.profiles.some(
+      (profile) => profile.isVillageLeader && profile.user.id === user.id,
+    );
+    const isCellLeader = village.cell.profiles.some(
+      (profile) => profile.isCellLeader && profile.user.id === user.id,
+    );
+
+    if (!isVillageLeader && !isCellLeader && user.role !== UserRole.ADMIN) {
+      throw new ForbiddenException(
+        "You can only create isibos in your own village",
+      );
+    }
+
+    // Validate leaderId if provided
+    let leader = null;
+    if (createIsiboDto.leaderId) {
+      leader = await this.usersService.findUserById(createIsiboDto.leaderId);
+      if (!leader) {
+        throw new NotFoundException("Isibo leader not found");
+      }
+
+      // Update the profile to mark as isibo leader
+      if (leader.profile) {
+        leader.profile.isIsiboLeader = true;
+        await this.usersService.saveProfile(leader.profile);
+      }
+    }
+
+    // Ensure name is uppercase
+    const isiboName = createIsiboDto.name.toUpperCase();
+
+    // Validate isibo name uniqueness within the village
+    await this.validateIsiboNames(createIsiboDto.villageId, [isiboName]);
+
+    const isibo = this.isiboRepository.create({
+      name: isiboName,
+      village: { id: createIsiboDto.villageId },
+      leader: leader?.profile,
+    });
+
+    return this.isiboRepository.save(isibo);
+  }
+
+  async updateIsibo(
+    id: string,
+    updateIsiboDto: UpdateIsiboDto.Input,
+    user: User,
+  ): Promise<Isibo> {
+    const isibo = await this.isiboRepository.findOne({
+      where: { id },
+      relations: [
+        "leader",
+        "village",
+        "village.profiles",
+        "village.cell",
+        "village.cell.profiles",
+      ],
+    });
+
+    if (!isibo) {
+      throw new NotFoundException("Isibo not found");
+    }
+
+    // Check if user is the isibo leader, village leader, cell leader, or admin
+    const isIsiboLeader = isibo.leader && isibo.leader.user.id === user.id;
+    const isVillageLeader = isibo.village.profiles.some(
+      (profile) => profile.isVillageLeader && profile.user.id === user.id,
+    );
+    const isCellLeader = isibo.village.cell.profiles.some(
+      (profile) => profile.isCellLeader && profile.user.id === user.id,
+    );
+
+    if (
+      !isIsiboLeader &&
+      !isVillageLeader &&
+      !isCellLeader &&
+      user.role !== UserRole.ADMIN
+    ) {
+      throw new ForbiddenException(
+        "You can only update isibos you lead or are in your village",
+      );
+    }
+
+    // If updating isibo name, validate uniqueness within the village
+    if (updateIsiboDto.name) {
+      const uppercaseName = updateIsiboDto.name.toUpperCase();
+      if (uppercaseName !== isibo.name) {
+        await this.validateIsiboNames(isibo.village.id, [uppercaseName]);
+        updateIsiboDto.name = uppercaseName;
+      }
+    }
+
+    // If updating villageId, validate it
+    if (
+      updateIsiboDto.villageId &&
+      updateIsiboDto.villageId !== isibo.village.id
+    ) {
+      const newVillage = await this.villageRepository.findOne({
+        where: { id: updateIsiboDto.villageId },
+      });
+      if (!newVillage) {
+        throw new NotFoundException("New village not found");
+      }
+      // Validate isibo name uniqueness in the new village
+      await this.validateIsiboNames(updateIsiboDto.villageId, [
+        updateIsiboDto.name || isibo.name,
+      ]);
+    }
+
+    // If updating leaderId, validate it
+    if (updateIsiboDto.leaderId) {
+      // If there's a current leader, remove the isibo leader flag
+      if (isibo.leader) {
+        isibo.leader.isIsiboLeader = false;
+        await this.usersService.saveProfile(isibo.leader);
+      }
+
+      const leader = await this.usersService.findUserById(
+        updateIsiboDto.leaderId,
+      );
+      if (!leader) {
+        throw new NotFoundException("Isibo leader not found");
+      }
+
+      // Update the profile to mark as isibo leader
+      if (leader.profile) {
+        leader.profile.isIsiboLeader = true;
+        await this.usersService.saveProfile(leader.profile);
+      }
+
+      isibo.leader = leader.profile;
+    }
+
+    // Update the isibo
+    if (updateIsiboDto.name) {
+      isibo.name = updateIsiboDto.name;
+    }
+    if (updateIsiboDto.villageId) {
+      isibo.village = { id: updateIsiboDto.villageId } as Village;
+    }
+
+    return this.isiboRepository.save(isibo);
+  }
+
+  async deleteIsibo(id: string, user: User): Promise<void> {
+    const isibo = await this.isiboRepository.findOne({
+      where: { id },
+      relations: [
+        "leader",
+        "village",
+        "village.profiles",
+        "village.cell",
+        "village.cell.profiles",
+      ],
+    });
+
+    if (!isibo) {
+      throw new NotFoundException("Isibo not found");
+    }
+
+    // Check if user is the isibo leader, village leader, cell leader, or admin
+    const isIsiboLeader = isibo.leader && isibo.leader.user.id === user.id;
+    const isVillageLeader = isibo.village.profiles.some(
+      (profile) => profile.isVillageLeader && profile.user.id === user.id,
+    );
+    const isCellLeader = isibo.village.cell.profiles.some(
+      (profile) => profile.isCellLeader && profile.user.id === user.id,
+    );
+
+    if (
+      !isIsiboLeader &&
+      !isVillageLeader &&
+      !isCellLeader &&
+      user.role !== UserRole.ADMIN
+    ) {
+      throw new ForbiddenException(
+        "You can only delete isibos you lead or are in your village",
+      );
+    }
+
+    // If there's a leader, remove the isibo leader flag
+    if (isibo.leader) {
+      isibo.leader.isIsiboLeader = false;
+      await this.usersService.saveProfile(isibo.leader);
+    }
+
+    await this.isiboRepository.softDelete(id);
+  }
+
+  async findAllIsibos(dto: FetchIsiboDto.Input): Promise<FetchIsiboDto.Output> {
+    const queryBuilder = this.isiboRepository
+      .createQueryBuilder("isibo")
+      .leftJoinAndSelect("isibo.leader", "leader")
+      .leftJoin("isibo.village", "village")
+      .where("village.id = :villageId", { villageId: dto.villageId });
+
+    if (dto.q) {
+      queryBuilder.andWhere("isibo.name ILIKE :search", {
+        search: `%${dto.q.toUpperCase()}%`,
+      });
+    }
+
+    return paginate(queryBuilder, {
+      page: dto.page,
+      limit: dto.size,
+    });
+  }
+
+  async findIsiboById(id: string): Promise<Isibo> {
+    const isibo = await this.isiboRepository.findOne({
+      where: { id },
+      relations: ["leader", "village", "houses"],
+    });
+
+    if (!isibo) {
+      throw new NotFoundException("Isibo not found");
+    }
+
+    return isibo;
+  }
+
+  async assignIsiboLeader(
+    id: string,
+    userId: string,
+    user: User,
+  ): Promise<Isibo> {
+    const isibo = await this.isiboRepository.findOne({
+      where: { id },
+      relations: [
+        "leader",
+        "village",
+        "village.profiles",
+        "village.cell",
+        "village.cell.profiles",
+      ],
+    });
+
+    if (!isibo) {
+      throw new NotFoundException("Isibo not found");
+    }
+
+    // Check if user is the village leader, cell leader, or admin
+    const isVillageLeader = isibo.village.profiles.some(
+      (profile) => profile.isVillageLeader && profile.user.id === user.id,
+    );
+    const isCellLeader = isibo.village.cell.profiles.some(
+      (profile) => profile.isCellLeader && profile.user.id === user.id,
+    );
+
+    if (!isVillageLeader && !isCellLeader && user.role !== UserRole.ADMIN) {
+      throw new ForbiddenException(
+        "You can only assign leaders to isibos in your village or cell",
+      );
+    }
+
+    // Check if isibo already has a leader
+    if (isibo.leader) {
+      throw new ConflictException("This isibo already has a leader");
+    }
+
+    // Find the user to be assigned as leader
+    const leaderUser = await this.usersService.findUserById(userId);
+    if (!leaderUser) {
+      throw new NotFoundException("User not found");
+    }
+
+    // Update the user's role to ISIBO_LEADER
+    leaderUser.role = UserRole.ISIBO_LEADER;
+    leaderUser.profile.isIsiboLeader = true;
+    await this.usersService.saveUser(leaderUser);
+    await this.usersService.saveProfile(leaderUser.profile);
+
+    // Set the isibo's leader
+    isibo.leader = leaderUser.profile;
+
+    return this.isiboRepository.save(isibo);
+  }
+
+  async removeIsiboLeader(id: string, user: User): Promise<Isibo> {
+    const isibo = await this.isiboRepository.findOne({
+      where: { id },
+      relations: [
+        "leader",
+        "leader.user",
+        "village",
+        "village.profiles",
+        "village.cell",
+        "village.cell.profiles",
+      ],
+    });
+
+    if (!isibo) {
+      throw new NotFoundException("Isibo not found");
+    }
+
+    // Check if user is the village leader, cell leader, or admin
+    const isVillageLeader = isibo.village.profiles.some(
+      (profile) => profile.isVillageLeader && profile.user.id === user.id,
+    );
+    const isCellLeader = isibo.village.cell.profiles.some(
+      (profile) => profile.isCellLeader && profile.user.id === user.id,
+    );
+    const isIsiboLeader = isibo.leader && isibo.leader.user.id === user.id;
+
+    if (
+      !isVillageLeader &&
+      !isCellLeader &&
+      !isIsiboLeader &&
+      user.role !== UserRole.ADMIN
+    ) {
+      throw new ForbiddenException(
+        "You can only remove leaders from isibos in your village or cell",
+      );
+    }
+
+    // Check if isibo has a leader
+    if (!isibo.leader) {
+      throw new NotFoundException("This isibo does not have a leader");
+    }
+
+    // Get the leader user
+    const leaderUser = isibo.leader.user;
+
+    // Update the user's role back to CITIZEN
+    leaderUser.role = UserRole.CITIZEN;
+    leaderUser.profile.isIsiboLeader = false;
+    await this.usersService.saveUser(leaderUser);
+    await this.usersService.saveProfile(leaderUser.profile);
+
+    // Remove the leader from the isibo
+    isibo.leader = null;
+
+    return this.isiboRepository.save(isibo);
+  }
+}
