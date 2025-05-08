@@ -1,7 +1,8 @@
 "use client";
 
 import { useAuth } from "@/contexts/auth-context";
-import { type Icon } from "@tabler/icons-react";
+import { IconLogout, IconSettings, IconUserCircle } from "@tabler/icons-react";
+import { useRouter } from "next/navigation";
 import * as React from "react";
 
 import {
@@ -12,55 +13,56 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
 
-export function NavSecondary({
-  items,
-  ...props
-}: {
-  items: {
-    title: string;
-    url: string;
-    icon: Icon;
-  }[];
-} & React.ComponentPropsWithoutRef<typeof SidebarGroup>) {
+export function NavSecondary(
+  props: React.ComponentPropsWithoutRef<typeof SidebarGroup>
+) {
   // Get the logout function from auth context
   const { logout } = useAuth();
+  const router = useRouter();
 
-  // Handle item click
-  const handleItemClick = (item: { title: string; url: string }) => {
-    if (item.title === "Logout") {
-      logout();
-      return;
-    }
+  // Handle navigation
+  const navigateTo = (url: string) => {
+    router.push(url);
+  };
+
+  // Handle logout
+  const handleLogout = () => {
+    logout();
   };
 
   return (
     <SidebarGroup {...props}>
       <SidebarGroupContent>
         <SidebarMenu>
-          {items.map((item) => (
-            <SidebarMenuItem key={item.title}>
-              <SidebarMenuButton
-                asChild={item.title !== "Logout"}
-                onClick={
-                  item.title === "Logout"
-                    ? () => handleItemClick(item)
-                    : undefined
-                }
-              >
-                {item.title !== "Logout" ? (
-                  <a href={item.url}>
-                    <item.icon />
-                    <span>{item.title}</span>
-                  </a>
-                ) : (
-                  <div className="cursor-pointer">
-                    <item.icon />
-                    <span>{item.title}</span>
-                  </div>
-                )}
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          ))}
+          {/* Settings Item */}
+          <SidebarMenuItem>
+            <SidebarMenuButton asChild>
+              <a href="/settings">
+                <IconSettings />
+                <span>Settings</span>
+              </a>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+
+          {/* Profile Item */}
+          <SidebarMenuItem>
+            <SidebarMenuButton asChild>
+              <a href="/profile">
+                <IconUserCircle />
+                <span>Profile</span>
+              </a>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+
+          {/* Logout Item */}
+          <SidebarMenuItem>
+            <SidebarMenuButton asChild onClick={handleLogout}>
+              <div className="cursor-pointer">
+                <IconLogout />
+                <span>Logout</span>
+              </div>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
         </SidebarMenu>
       </SidebarGroupContent>
     </SidebarGroup>

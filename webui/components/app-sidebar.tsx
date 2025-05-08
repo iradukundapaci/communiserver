@@ -4,11 +4,8 @@ import {
   IconChecklist,
   IconDashboard,
   IconInnerShadowTop,
-  IconLogout,
   IconMessage,
   IconNotification,
-  IconSettings,
-  IconUserCircle,
 } from "@tabler/icons-react";
 import * as React from "react";
 
@@ -51,23 +48,6 @@ const data = {
       icon: IconMessage,
     },
   ],
-  navSecondary: [
-    {
-      title: "Settings",
-      url: "#",
-      icon: IconSettings,
-    },
-    {
-      title: "Profile",
-      url: "#",
-      icon: IconUserCircle,
-    },
-    {
-      title: "Logout",
-      url: "/",
-      icon: IconLogout,
-    },
-  ],
 };
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
@@ -90,7 +70,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       </SidebarHeader>
       <SidebarContent>
         <NavMain items={data.navMain} />
-        <NavSecondary items={data.navSecondary} className="mt-auto" />
+        <NavSecondary className="mt-auto" />
       </SidebarContent>
     </Sidebar>
   );
