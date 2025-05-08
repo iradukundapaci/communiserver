@@ -21,19 +21,15 @@ export async function PATCH(
       );
     }
 
-    // Get the request body
-    const body = await request.json();
-
     // Forward the request to the backend API
     const response = await fetch(
-      `${API_URL}/api/v1/users/${id}/change-password`,
+      `${API_URL}/api/v1/cells/${id}/remove-leader`,
       {
         method: "PATCH",
         headers: {
           Authorization: authHeader,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(body),
       }
     );
 
@@ -42,7 +38,7 @@ export async function PATCH(
     // Return the response from the backend
     return NextResponse.json(data, { status: response.status });
   } catch (error) {
-    console.error("Change password API error:", error);
+    console.error("Remove cell leader API error:", error);
     return NextResponse.json(
       { message: "Internal server error" },
       { status: 500 }

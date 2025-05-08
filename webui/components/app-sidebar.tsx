@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  IconBuilding,
   IconChecklist,
   IconDashboard,
   IconInnerShadowTop,
@@ -31,6 +32,11 @@ const data = {
       title: "Dashboard",
       url: "/dashboard",
       icon: IconDashboard,
+    },
+    {
+      title: "Locations",
+      url: "/dashboard/locations/cells",
+      icon: IconBuilding,
     },
     {
       title: "Activities",

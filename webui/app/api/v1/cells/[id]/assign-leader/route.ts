@@ -26,7 +26,7 @@ export async function PATCH(
 
     // Forward the request to the backend API
     const response = await fetch(
-      `${API_URL}/api/v1/users/${id}/change-password`,
+      `${API_URL}/api/v1/cells/${id}/assign-leader`,
       {
         method: "PATCH",
         headers: {
@@ -42,7 +42,7 @@ export async function PATCH(
     // Return the response from the backend
     return NextResponse.json(data, { status: response.status });
   } catch (error) {
-    console.error("Change password API error:", error);
+    console.error("Assign cell leader API error:", error);
     return NextResponse.json(
       { message: "Internal server error" },
       { status: 500 }
