@@ -58,11 +58,6 @@ export function appConfig(): IAppConfig {
 function validateEnvVariables(): void {
   const requiredEnvVars = [
     "PORT",
-    "DB_USERNAME",
-    "DB_PASSWORD",
-    "DB_DATABASE",
-    "DB_HOST",
-    "DB_PORT",
     "JWT_SECRET",
     "JWT_EXPIRES_IN",
     "JWT_REFRESH_SECRET",
