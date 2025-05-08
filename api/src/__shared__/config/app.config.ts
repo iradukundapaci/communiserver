@@ -1,11 +1,11 @@
-import { CorsOptions } from "@nestjs/common/interfaces/external/cors-options.interface";
 import { INestApplication, UnauthorizedException } from "@nestjs/common";
-import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
-import { IAppConfig } from "../interfaces/app-config.interface";
+import { CorsOptions } from "@nestjs/common/interfaces/external/cors-options.interface";
 import { ConfigService } from "@nestjs/config";
+import { RuntimeException } from "@nestjs/core/errors/exceptions";
+import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
 import * as cookieParser from "cookie-parser";
 import helmet from "helmet";
-import { RuntimeException } from "@nestjs/core/errors/exceptions";
+import { IAppConfig } from "../interfaces/app-config.interface";
 
 /**
  * Defines the application config variables
@@ -22,6 +22,7 @@ export function appConfig(): IAppConfig {
       database: process.env.DB_DATABASE,
       host: process.env.DB_HOST,
       port: +process.env.DB_PORT,
+      url: process.env.DATABASE_URL,
     },
     allowedOrigins: process.env.ALLOWED_ORIGINS?.split(","),
     swaggerEnabled: process.env.SWAGGER_ENABLED === "true",

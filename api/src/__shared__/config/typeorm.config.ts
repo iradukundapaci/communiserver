@@ -6,7 +6,8 @@ import { appConfig } from "./app.config";
 const config = appConfig();
 export const typeormOptions = {
   type: "postgres",
-  ...config.database,
+  // ...config.database,
+  url: config.database.url,
   logging: false,
   entities: [join(__dirname, "../../**/*.entity.{ts,js}")],
   autoLoadEntities: true,
