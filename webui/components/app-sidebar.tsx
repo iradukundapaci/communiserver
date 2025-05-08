@@ -1,6 +1,5 @@
-'use client';
+"use client";
 
-import * as React from 'react';
 import {
   IconChecklist,
   IconDashboard,
@@ -10,10 +9,11 @@ import {
   IconNotification,
   IconSettings,
   IconUserCircle,
-} from '@tabler/icons-react';
+} from "@tabler/icons-react";
+import * as React from "react";
 
-import { NavMain } from '@/components/nav-main';
-import { NavSecondary } from '@/components/nav-secondary';
+import { NavMain } from "@/components/nav-main";
+import { NavSecondary } from "@/components/nav-secondary";
 import {
   Sidebar,
   SidebarContent,
@@ -21,50 +21,50 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-} from '@/components/ui/sidebar';
+} from "@/components/ui/sidebar";
 
 const data = {
   user: {
-    name: 'shadcn',
-    email: 'm@example.com',
-    avatar: '/avatars/shadcn.jpg',
+    name: "shadcn",
+    email: "m@example.com",
+    avatar: "/avatars/shadcn.jpg",
   },
   navMain: [
     {
-      title: 'Dashboard',
-      url: '/login',
+      title: "Dashboard",
+      url: "/dashboard",
       icon: IconDashboard,
     },
     {
-      title: 'Activities',
-      url: '/activities',
+      title: "Activities",
+      url: "/activities",
       icon: IconChecklist,
     },
     {
-      title: 'Notifications',
-      url: '/notifications',
+      title: "Notifications",
+      url: "/notifications",
       icon: IconNotification,
     },
     {
-      title: 'Chat',
-      url: '/chat',
+      title: "Chat",
+      url: "/chat",
       icon: IconMessage,
-    }
+    },
   ],
   navSecondary: [
     {
-      title: 'Settings',
-      url: '#',
+      title: "Settings",
+      url: "#",
       icon: IconSettings,
     },
     {
-      title: 'Profile',
-      url: '#',
+      title: "Profile",
+      url: "#",
       icon: IconUserCircle,
     },
     {
-      title: 'Logout',
-      url: '#',
+      title: "Logout",
+      url: "/",
       icon: IconLogout,
     },
   ],
