@@ -61,19 +61,25 @@ export default function AssignLeaderPage({
 
     const fetchUsers = async () => {
       try {
-        // Get users with VILLAGE_LEADER role
-        const response = await getUsers("", UserRole.VILLAGE_LEADER, 1, 10);
-        setUsers(response.items || []);
-        setFilteredUsers(response.items || []);
+        // Get all users without role filter
+        const response = await getUsers("", "", 1, 10);
+
+        // Filter users with appropriate role on the client side
+        const filteredByRole = response.items.filter(
+          (user) => user.role === UserRole.VILLAGE_LEADER
+        );
+
+        setUsers(filteredByRole);
+        setFilteredUsers(filteredByRole);
         setTotalPages(response.meta.totalPages);
         setCurrentPage(1);
-      } catch (error: any) {
-        if (error.message) {
-          toast.error(error.message);
+      } catch (error: unknown) {
+        if (error && typeof error === "object" && "message" in error) {
+          toast.error(error.message as string);
         } else {
           toast.error("Failed to fetch users");
         }
-        console.error("Error fetching users:", error);
+        console.error(error);
       } finally {
         setIsLoading(false);
       }
@@ -124,15 +130,15 @@ export default function AssignLeaderPage({
 
     try {
       const nextPage = currentPage + 1;
-      const response = await getUsers(
-        "",
-        UserRole.VILLAGE_LEADER,
-        nextPage,
-        10
+      const response = await getUsers("", "", nextPage, 10);
+
+      // Filter users with appropriate role
+      const filteredByRole = response.items.filter(
+        (user) => user.role === UserRole.VILLAGE_LEADER
       );
 
       // Append new users to existing users
-      setUsers((prevUsers) => [...prevUsers, ...response.items]);
+      setUsers((prevUsers) => [...prevUsers, ...filteredByRole]);
 
       // Update filtered users if no search query
       if (!searchQuery.trim()) {
@@ -154,11 +160,11 @@ export default function AssignLeaderPage({
       }
 
       setCurrentPage(nextPage);
-    } catch (error: any) {
-      if (error.message) {
-        toast.error(error.message);
+    } catch (error: unknown) {
+      if (error && typeof error === "object" && "message" in error) {
+        toast.error(error.message as string);
       } else {
-        toast.error("Failed to load more users");
+        toast.error("Failed to fetch users");
       }
       console.error(error);
     } finally {

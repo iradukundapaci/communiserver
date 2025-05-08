@@ -36,10 +36,14 @@ export default function AssignLeaderPage({
   });
   const [searchQuery, setSearchQuery] = useState("");
   const [users, setUsers] = useState<User[]>([]);
+  const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
   const [selectedUserId, setSelectedUserId] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
 
   useEffect(() => {
     const fetchIsibo = async () => {
@@ -52,41 +56,119 @@ export default function AssignLeaderPage({
       } catch (error) {
         toast.error("Failed to fetch isibo");
         console.error(error);
+      }
+    };
+
+    const fetchUsers = async () => {
+      try {
+        // Get all users without role filter
+        const response = await getUsers("", "", 1, 10);
+
+        // Filter users with appropriate role on the client side
+        const filteredByRole = response.items.filter(
+          (user) => user.role === UserRole.ISIBO_LEADER
+        );
+
+        setUsers(filteredByRole);
+        setFilteredUsers(filteredByRole);
+        setTotalPages(response.meta.totalPages);
+        setCurrentPage(1);
+      } catch (error: any) {
+        if (error.message) {
+          toast.error(error.message);
+        } else {
+          toast.error("Failed to fetch users");
+        }
+        console.error(error);
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchIsibo();
+    const initialize = async () => {
+      await fetchIsibo();
+      await fetchUsers();
+    };
+
+    initialize();
   }, [id]);
 
-  const handleSearch = async (e: React.FormEvent) => {
+  const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (!searchQuery.trim()) {
-      toast.error("Please enter a search term");
-      return;
-    }
-
     setIsSearching(true);
 
     try {
-      // Search for users who can be assigned as isibo leaders
-      const response = await getUsers(searchQuery, UserRole.ISIBO_LEADER);
-      setUsers(response.items || []);
+      if (!searchQuery.trim()) {
+        // If search query is empty, show all users
+        setFilteredUsers(users);
+      } else {
+        // Filter users locally based on search query
+        const filtered = users.filter(
+          (user) =>
+            user.names.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            user.email.toLowerCase().includes(searchQuery.toLowerCase())
+        );
+        setFilteredUsers(filtered);
 
-      if (response.items.length === 0) {
-        toast.info("No users found matching your search");
+        if (filtered.length === 0) {
+          toast.info("No users found matching your search");
+        }
       }
+    } catch (error) {
+      toast.error("Failed to search users");
+      console.error(error);
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  // Function to load more users
+  const loadMoreUsers = async () => {
+    if (currentPage >= totalPages || isLoadingMore) return;
+
+    setIsLoadingMore(true);
+
+    try {
+      const nextPage = currentPage + 1;
+      const response = await getUsers("", "", nextPage, 10);
+
+      // Filter users with appropriate role
+      const filteredByRole = response.items.filter(
+        (user) => user.role === UserRole.ISIBO_LEADER
+      );
+
+      // Append new users to existing users
+      setUsers((prevUsers) => [...prevUsers, ...filteredByRole]);
+
+      // Update filtered users if no search query
+      if (!searchQuery.trim()) {
+        setFilteredUsers((prevFiltered) => [
+          ...prevFiltered,
+          ...filteredByRole,
+        ]);
+      } else {
+        // Filter new users based on search query
+        const newFilteredUsers = filteredByRole.filter(
+          (user) =>
+            user.names.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            user.email.toLowerCase().includes(searchQuery.toLowerCase())
+        );
+        setFilteredUsers((prevFiltered) => [
+          ...prevFiltered,
+          ...newFilteredUsers,
+        ]);
+      }
+
+      setCurrentPage(nextPage);
     } catch (error: any) {
       if (error.message) {
         toast.error(error.message);
       } else {
-        toast.error("Failed to search users");
+        toast.error("Failed to load more users");
       }
       console.error(error);
     } finally {
-      setIsSearching(false);
+      setIsLoadingMore(false);
     }
   };
 
@@ -174,7 +256,7 @@ export default function AssignLeaderPage({
                   </tr>
                 </thead>
                 <tbody>
-                  {users.length === 0 ? (
+                  {filteredUsers.length === 0 ? (
                     <tr>
                       <td
                         colSpan={3}
@@ -184,7 +266,7 @@ export default function AssignLeaderPage({
                       </td>
                     </tr>
                   ) : (
-                    users.map((user) => (
+                    filteredUsers.map((user) => (
                       <tr key={user.id} className="border-b">
                         <td className="p-4">
                           <input
@@ -204,6 +286,25 @@ export default function AssignLeaderPage({
                 </tbody>
               </table>
             </div>
+
+            {currentPage < totalPages && (
+              <div className="mt-4 flex justify-center">
+                <Button
+                  variant="outline"
+                  onClick={loadMoreUsers}
+                  disabled={isLoadingMore}
+                >
+                  {isLoadingMore ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-primary mr-2"></div>
+                      Loading...
+                    </>
+                  ) : (
+                    "Load More Users"
+                  )}
+                </Button>
+              </div>
+            )}
           </CardContent>
           <CardFooter className="flex justify-end space-x-2">
             <Button

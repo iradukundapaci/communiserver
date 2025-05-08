@@ -36,10 +36,14 @@ export default function AssignRepresentativePage({
   });
   const [searchQuery, setSearchQuery] = useState("");
   const [users, setUsers] = useState<User[]>([]);
+  const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
   const [selectedUserId, setSelectedUserId] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
 
   useEffect(() => {
     const fetchHouse = async () => {
@@ -57,55 +61,119 @@ export default function AssignRepresentativePage({
         }
         console.error(error);
         router.push("/dashboard/locations/houses");
+      }
+    };
+
+    const fetchUsers = async () => {
+      try {
+        // Get all users without role filter
+        const response = await getUsers("", "", 1, 10);
+
+        // Filter users with appropriate role on the client side
+        const filteredByRole = response.items.filter(
+          (user) => user.role === UserRole.CITIZEN
+        );
+
+        setUsers(filteredByRole);
+        setFilteredUsers(filteredByRole);
+        setTotalPages(response.meta.totalPages);
+        setCurrentPage(1);
+      } catch (error: any) {
+        if (error.message) {
+          toast.error(error.message);
+        } else {
+          toast.error("Failed to fetch users");
+        }
+        console.error(error);
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchHouse();
+    const initialize = async () => {
+      await fetchHouse();
+      await fetchUsers();
+    };
+
+    initialize();
   }, [id, router]);
 
-  const handleSearch = async (e: React.FormEvent) => {
+  const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Search form submitted");
-
-    if (!searchQuery.trim()) {
-      toast.error("Please enter a search term");
-      return;
-    }
-
     setIsSearching(true);
-    console.log(
-      "Searching for users with query:",
-      searchQuery,
-      "and role:",
-      UserRole.CITIZEN
-    );
 
     try {
-      // Check if we're authenticated
-      const tokens = localStorage.getItem("accessToken");
-      console.log("Access token available:", !!tokens);
+      if (!searchQuery.trim()) {
+        // If search query is empty, show all users
+        setFilteredUsers(users);
+      } else {
+        // Filter users locally based on search query
+        const filtered = users.filter(
+          (user) =>
+            user.names.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            user.email.toLowerCase().includes(searchQuery.toLowerCase())
+        );
+        setFilteredUsers(filtered);
 
-      // Search for users with the CITIZEN role who can be assigned as house representatives
-      const response = await getUsers(searchQuery, UserRole.CITIZEN);
-      console.log("Search response:", response);
-
-      setUsers(response.items || []);
-
-      if (response.items.length === 0) {
-        toast.info("No users found matching your search");
+        if (filtered.length === 0) {
+          toast.info("No users found matching your search");
+        }
       }
-    } catch (error: any) {
-      console.error("Search error details:", error);
+    } catch (error) {
+      toast.error("Failed to search users");
+      console.error(error);
+    } finally {
+      setIsSearching(false);
+    }
+  };
 
+  // Function to load more users
+  const loadMoreUsers = async () => {
+    if (currentPage >= totalPages || isLoadingMore) return;
+
+    setIsLoadingMore(true);
+
+    try {
+      const nextPage = currentPage + 1;
+      const response = await getUsers("", "", nextPage, 10);
+
+      // Filter users with appropriate role
+      const filteredByRole = response.items.filter(
+        (user) => user.role === UserRole.CITIZEN
+      );
+
+      // Append new users to existing users
+      setUsers((prevUsers) => [...prevUsers, ...filteredByRole]);
+
+      // Update filtered users if no search query
+      if (!searchQuery.trim()) {
+        setFilteredUsers((prevFiltered) => [
+          ...prevFiltered,
+          ...filteredByRole,
+        ]);
+      } else {
+        // Filter new users based on search query
+        const newFilteredUsers = filteredByRole.filter(
+          (user) =>
+            user.names.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            user.email.toLowerCase().includes(searchQuery.toLowerCase())
+        );
+        setFilteredUsers((prevFiltered) => [
+          ...prevFiltered,
+          ...newFilteredUsers,
+        ]);
+      }
+
+      setCurrentPage(nextPage);
+    } catch (error: any) {
       if (error.message) {
         toast.error(error.message);
       } else {
-        toast.error("Failed to search users");
+        toast.error("Failed to load more users");
       }
+      console.error(error);
     } finally {
-      setIsSearching(false);
+      setIsLoadingMore(false);
     }
   };
 
@@ -197,7 +265,7 @@ export default function AssignRepresentativePage({
                   </tr>
                 </thead>
                 <tbody>
-                  {users.length === 0 ? (
+                  {filteredUsers.length === 0 ? (
                     <tr>
                       <td
                         colSpan={3}
@@ -207,7 +275,7 @@ export default function AssignRepresentativePage({
                       </td>
                     </tr>
                   ) : (
-                    users.map((user) => (
+                    filteredUsers.map((user) => (
                       <tr key={user.id} className="border-b">
                         <td className="p-4">
                           <input
@@ -227,6 +295,25 @@ export default function AssignRepresentativePage({
                 </tbody>
               </table>
             </div>
+
+            {currentPage < totalPages && (
+              <div className="mt-4 flex justify-center">
+                <Button
+                  variant="outline"
+                  onClick={loadMoreUsers}
+                  disabled={isLoadingMore}
+                >
+                  {isLoadingMore ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-primary mr-2"></div>
+                      Loading...
+                    </>
+                  ) : (
+                    "Load More Users"
+                  )}
+                </Button>
+              </div>
+            )}
           </CardContent>
           <CardFooter className="flex justify-end space-x-2">
             <Button
