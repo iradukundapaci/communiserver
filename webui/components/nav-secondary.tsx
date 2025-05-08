@@ -34,27 +34,24 @@ export function NavSecondary(
     <SidebarGroup {...props}>
       <SidebarGroupContent>
         <SidebarMenu>
-          {/* Settings Item */}
           <SidebarMenuItem>
-            <SidebarMenuButton asChild>
-              <a href="/settings">
+            <SidebarMenuButton asChild onClick={() => navigateTo("/settings")}>
+              <div className="cursor-pointer">
                 <IconSettings />
                 <span>Settings</span>
-              </a>
+              </div>
             </SidebarMenuButton>
           </SidebarMenuItem>
 
-          {/* Profile Item */}
           <SidebarMenuItem>
-            <SidebarMenuButton asChild>
-              <a href="/profile">
+            <SidebarMenuButton asChild onClick={() => navigateTo("/profile")}>
+              <div className="cursor-pointer">
                 <IconUserCircle />
                 <span>Profile</span>
-              </a>
+              </div>
             </SidebarMenuButton>
           </SidebarMenuItem>
 
-          {/* Logout Item */}
           <SidebarMenuItem>
             <SidebarMenuButton asChild onClick={handleLogout}>
               <div className="cursor-pointer">

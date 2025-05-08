@@ -179,3 +179,69 @@ export function getUserFromToken(): {
     return null;
   }
 }
+
+/**
+ * Request password reset email
+ * @param email User email
+ * @returns Promise with success message
+ */
+export async function forgotPassword(email: string): Promise<string> {
+  try {
+    const response = await fetch("/api/v1/auth/forgot-password", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ email }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+
+      if (errorData.message === "User not found") {
+        return "If your email exists in our system, you will receive password reset instructions shortly.";
+      }
+
+      // For other errors, we'll throw an exception
+      throw new Error(errorData.message || "Failed to request password reset");
+    }
+
+    const data: ApiResponse<null> = await response.json();
+    return data.message;
+  } catch (error) {
+    console.error("Forgot password error:", error);
+    throw error;
+  }
+}
+
+/**
+ * Reset password with token
+ * @param password New password
+ * @param token Reset token from email
+ * @returns Promise with success message
+ */
+export async function resetPassword(
+  password: string,
+  token: string
+): Promise<string> {
+  try {
+    const response = await fetch("/api/v1/auth/reset-password", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ password, token }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || "Failed to reset password");
+    }
+
+    const data: ApiResponse<null> = await response.json();
+    return data.message;
+  } catch (error) {
+    console.error("Reset password error:", error);
+    throw error;
+  }
+}

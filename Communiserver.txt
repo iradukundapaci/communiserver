@@ -13,7 +13,7 @@ uses cases:
 		- Login into account(done)
 		- Logout (done)
 		- Get notifications for activities
-	- Admin:
+	- Admin(can do everything):
 		- Admin can assign cell leaders to cells.(done)
 		- Admin can de-assign cell leaders.(done)
 		- Create cell leader.(done)
