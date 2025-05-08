@@ -21,6 +21,8 @@ export enum Permission {
   UPDATE_CELL = "UPDATE_CELL",
   DELETE_CELL = "DELETE_CELL",
   VIEW_ALL_CELLS = "VIEW_ALL_CELLS",
+  VIEW_LEADERS = "VIEW_LEADERS",
+  MANAGE_LEADERS = "MANAGE_LEADERS",
 
   // Cell leader permissions
   VIEW_CELL = "VIEW_CELL",
@@ -43,6 +45,7 @@ export enum Permission {
   UPDATE_ISIBO = "UPDATE_ISIBO",
   DELETE_ISIBO = "DELETE_ISIBO",
   CREATE_ISIBO_LEADER = "CREATE_ISIBO_LEADER",
+  VIEW_ALL_ISIBOS = "VIEW_ALL_ISIBOS",
   CREATE_ACTIVITY = "CREATE_ACTIVITY",
   UPDATE_ACTIVITY = "UPDATE_ACTIVITY",
   ADD_ACTIVITY_REPORT = "ADD_ACTIVITY_REPORT",
@@ -55,6 +58,7 @@ export enum Permission {
   CREATE_HOUSE = "CREATE_HOUSE",
   UPDATE_HOUSE = "UPDATE_HOUSE",
   DELETE_HOUSE = "DELETE_HOUSE",
+  VIEW_ALL_HOUSES = "VIEW_ALL_HOUSES",
   ADD_CITIZENS = "ADD_CITIZENS",
   ASSIGN_CITIZENS_TO_HOUSE = "ASSIGN_CITIZENS_TO_HOUSE",
   VIEW_VILLAGE_ACTIVITY = "VIEW_VILLAGE_ACTIVITY",
@@ -91,6 +95,7 @@ export const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     Permission.UPDATE_VILLAGE,
     Permission.DELETE_VILLAGE,
     Permission.VIEW_ALL_VILLAGES,
+    Permission.VIEW_LEADERS,
   ],
 
   [UserRole.VILLAGE_LEADER]: [
@@ -107,9 +112,11 @@ export const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     Permission.UPDATE_ISIBO,
     Permission.DELETE_ISIBO,
     Permission.CREATE_ISIBO_LEADER,
+    Permission.VIEW_ALL_ISIBOS,
     Permission.CREATE_ACTIVITY,
     Permission.UPDATE_ACTIVITY,
     Permission.ADD_ACTIVITY_REPORT,
+    Permission.VIEW_LEADERS,
   ],
 
   [UserRole.ISIBO_LEADER]: [
@@ -125,6 +132,7 @@ export const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     Permission.CREATE_HOUSE,
     Permission.UPDATE_HOUSE,
     Permission.DELETE_HOUSE,
+    Permission.VIEW_ALL_HOUSES,
     Permission.ADD_CITIZENS,
     Permission.ASSIGN_CITIZENS_TO_HOUSE,
     Permission.VIEW_VILLAGE_ACTIVITY,

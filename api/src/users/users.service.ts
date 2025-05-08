@@ -18,6 +18,7 @@ import { CreateCitizenDTO } from "./dto/create-citizen.dto";
 import { CreateIsiboLeaderDTO } from "./dto/create-isibo-leader.dto";
 import { CreateVillageLeaderDTO } from "./dto/create-village-leader.dto";
 import { FetchProfileDto } from "./dto/fetch-profile.dto";
+import { FetchUserDto } from "./dto/fetch-user.dto";
 import { UpdateProfileDto } from "./dto/update-profile.dto";
 import { Profile } from "./entities/profile.entity";
 import { User } from "./entities/user.entity";
@@ -484,6 +485,74 @@ export class UsersService {
       isVillageLeader: user.profile.isVillageLeader,
       isCellLeader: user.profile.isCellLeader,
     };
+  }
+
+  async findAllUsers(fetchUserDto: FetchUserDto.Input) {
+    try {
+      const { q, role, page, size } = fetchUserDto;
+
+      const queryBuilder = this.usersRepository
+        .createQueryBuilder("user")
+        .leftJoinAndSelect("user.profile", "profile")
+        .select([
+          "user.id",
+          "user.email",
+          "user.phone",
+          "user.role",
+          "user.activated",
+          "user.createdAt",
+          "profile.names",
+        ]);
+
+      // Apply search filter if query is provided
+      if (q) {
+        queryBuilder.andWhere(
+          "(profile.names ILIKE :query OR user.email ILIKE :query OR user.phone ILIKE :query)",
+          { query: `%${q}%` },
+        );
+      }
+
+      // Apply role filter if provided
+      if (role) {
+        queryBuilder.andWhere("user.role = :role", { role });
+      }
+
+      // Calculate pagination
+      const skip = (page - 1) * size;
+      queryBuilder.skip(skip).take(size);
+
+      // Order by ID as a fallback since createdAt might not be selected
+      queryBuilder.orderBy("user.createdAt", "DESC");
+
+      // Execute query with count
+      const [items, totalItems] = await queryBuilder.getManyAndCount();
+
+      // Transform results
+      const transformedItems = items.map((user) => ({
+        id: user.id,
+        names: user.profile.names,
+        email: user.email,
+        phone: user.phone,
+        role: user.role,
+        activated: user.activated,
+      }));
+
+      // Calculate pagination metadata
+      const totalPages = Math.ceil(totalItems / size);
+
+      return {
+        items: transformedItems,
+        meta: {
+          totalItems,
+          itemCount: transformedItems.length,
+          itemsPerPage: size,
+          totalPages,
+          currentPage: page,
+        },
+      };
+    } catch (error) {
+      throw error;
+    }
   }
 
   async updatePassword(userId: string, newPassword: string): Promise<void> {

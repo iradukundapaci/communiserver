@@ -7,6 +7,7 @@ import {
   IconInnerShadowTop,
   IconMessage,
   IconNotification,
+  IconUsers,
 } from "@tabler/icons-react";
 import * as React from "react";
 
@@ -37,6 +38,11 @@ const data = {
       title: "Locations",
       url: "/dashboard/locations/cells",
       icon: IconBuilding,
+    },
+    {
+      title: "Leaders",
+      url: "/dashboard/leaders",
+      icon: IconUsers,
     },
     {
       title: "Activities",

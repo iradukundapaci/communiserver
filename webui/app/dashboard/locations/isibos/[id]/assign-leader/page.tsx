@@ -11,7 +11,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { assignCellLeader, getCellById } from "@/lib/api/cells";
+import { assignIsiboLeader, getIsiboById } from "@/lib/api/isibos";
 import { User } from "@/lib/api/leaders";
 import { getUsers } from "@/lib/api/users";
 import { Permission } from "@/lib/permissions";
@@ -30,134 +30,63 @@ export default function AssignLeaderPage({
   const router = useRouter();
   const { id } = React.use(params);
 
-  const [cell, setCell] = useState<{ id: string; name: string }>({
+  const [isibo, setIsibo] = useState<{ id: string; name: string }>({
     id: "",
     name: "",
   });
   const [searchQuery, setSearchQuery] = useState("");
   const [users, setUsers] = useState<User[]>([]);
-  const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
   const [selectedUserId, setSelectedUserId] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [isLoadingMore, setIsLoadingMore] = useState(false);
 
   useEffect(() => {
-    const fetchCell = async () => {
+    const fetchIsibo = async () => {
       try {
-        const cellData = await getCellById(id);
-        setCell({
-          id: cellData.id,
-          name: cellData.name,
+        const isiboData = await getIsiboById(id);
+        setIsibo({
+          id: isiboData.id,
+          name: isiboData.name,
         });
       } catch (error) {
-        toast.error("Failed to fetch cell");
+        toast.error("Failed to fetch isibo");
         console.error(error);
-      }
-    };
-
-    const fetchUsers = async () => {
-      try {
-        // Get users with CELL_LEADER role
-        const response = await getUsers("", UserRole.CELL_LEADER, 1, 10);
-        setUsers(response.items || []);
-        setFilteredUsers(response.items || []);
-        setTotalPages(response.meta.totalPages);
-        setCurrentPage(1);
-      } catch (error: any) {
-        if (error.message) {
-          toast.error(error.message);
-        } else {
-          toast.error("Failed to fetch users");
-        }
-        console.error("Error fetching users:", error);
       } finally {
         setIsLoading(false);
       }
     };
 
-    const initialize = async () => {
-      await fetchCell();
-      await fetchUsers();
-    };
-
-    initialize();
+    fetchIsibo();
   }, [id]);
 
-  const handleSearch = (e: React.FormEvent) => {
+  const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!searchQuery.trim()) {
+      toast.error("Please enter a search term");
+      return;
+    }
+
     setIsSearching(true);
 
     try {
-      if (!searchQuery.trim()) {
-        // If search query is empty, show all users
-        setFilteredUsers(users);
-      } else {
-        // Filter users locally based on search query
-        const filtered = users.filter(
-          (user) =>
-            user.names.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            user.email.toLowerCase().includes(searchQuery.toLowerCase())
-        );
-        setFilteredUsers(filtered);
+      // Search for users who can be assigned as isibo leaders
+      const response = await getUsers(searchQuery, UserRole.ISIBO_LEADER);
+      setUsers(response.items || []);
 
-        if (filtered.length === 0) {
-          toast.info("No users found matching your search");
-        }
+      if (response.items.length === 0) {
+        toast.info("No users found matching your search");
       }
-    } catch (error) {
-      toast.error("Failed to search users");
-      console.error(error);
-    } finally {
-      setIsSearching(false);
-    }
-  };
-
-  // Function to load more users
-  const loadMoreUsers = async () => {
-    if (currentPage >= totalPages || isLoadingMore) return;
-
-    setIsLoadingMore(true);
-
-    try {
-      const nextPage = currentPage + 1;
-      const response = await getUsers("", UserRole.CELL_LEADER, nextPage, 10);
-
-      // Append new users to existing users
-      setUsers((prevUsers) => [...prevUsers, ...response.items]);
-
-      // Update filtered users if no search query
-      if (!searchQuery.trim()) {
-        setFilteredUsers((prevFiltered) => [
-          ...prevFiltered,
-          ...response.items,
-        ]);
-      } else {
-        // Filter new users based on search query
-        const newFilteredUsers = response.items.filter(
-          (user) =>
-            user.names.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            user.email.toLowerCase().includes(searchQuery.toLowerCase())
-        );
-        setFilteredUsers((prevFiltered) => [
-          ...prevFiltered,
-          ...newFilteredUsers,
-        ]);
-      }
-
-      setCurrentPage(nextPage);
     } catch (error: any) {
       if (error.message) {
         toast.error(error.message);
       } else {
-        toast.error("Failed to load more users");
+        toast.error("Failed to search users");
       }
       console.error(error);
     } finally {
-      setIsLoadingMore(false);
+      setIsSearching(false);
     }
   };
 
@@ -170,11 +99,11 @@ export default function AssignLeaderPage({
     setIsSaving(true);
 
     try {
-      await assignCellLeader(id, selectedUserId);
-      toast.success("Cell leader assigned successfully");
-      router.push("/dashboard/locations/cells");
+      await assignIsiboLeader(id, selectedUserId);
+      toast.success("Isibo leader assigned successfully");
+      router.push("/dashboard/locations/isibos");
     } catch (error) {
-      toast.error("Failed to assign cell leader");
+      toast.error("Failed to assign isibo leader");
       console.error(error);
     } finally {
       setIsSaving(false);
@@ -190,24 +119,24 @@ export default function AssignLeaderPage({
   }
 
   return (
-    <PermissionRoute permission={Permission.ASSIGN_CELL_LEADERS}>
+    <PermissionRoute permission={Permission.ASSIGN_ISIBO_LEADERS}>
       <div className="flex flex-col gap-4">
         <div className="flex items-center gap-2">
           <Button
             variant="outline"
             size="icon"
-            onClick={() => router.push("/dashboard/locations/cells")}
+            onClick={() => router.push("/dashboard/locations/isibos")}
           >
             <ArrowLeft className="h-4 w-4" />
           </Button>
-          <h1 className="text-3xl font-bold">Assign Cell Leader</h1>
+          <h1 className="text-3xl font-bold">Assign Isibo Leader</h1>
         </div>
 
         <Card>
           <CardHeader>
-            <CardTitle>Assign Leader to {cell.name}</CardTitle>
+            <CardTitle>Assign Leader to {isibo.name}</CardTitle>
             <CardDescription>
-              Search for a user to assign as the leader of this cell
+              Search for a user to assign as the leader of this isibo
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -245,7 +174,7 @@ export default function AssignLeaderPage({
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredUsers.length === 0 ? (
+                  {users.length === 0 ? (
                     <tr>
                       <td
                         colSpan={3}
@@ -255,7 +184,7 @@ export default function AssignLeaderPage({
                       </td>
                     </tr>
                   ) : (
-                    filteredUsers.map((user) => (
+                    users.map((user) => (
                       <tr key={user.id} className="border-b">
                         <td className="p-4">
                           <input
@@ -275,30 +204,11 @@ export default function AssignLeaderPage({
                 </tbody>
               </table>
             </div>
-
-            {currentPage < totalPages && (
-              <div className="mt-4 flex justify-center">
-                <Button
-                  variant="outline"
-                  onClick={loadMoreUsers}
-                  disabled={isLoadingMore}
-                >
-                  {isLoadingMore ? (
-                    <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-primary mr-2"></div>
-                      Loading...
-                    </>
-                  ) : (
-                    "Load More Users"
-                  )}
-                </Button>
-              </div>
-            )}
           </CardContent>
           <CardFooter className="flex justify-end space-x-2">
             <Button
               variant="outline"
-              onClick={() => router.push("/dashboard/locations/cells")}
+              onClick={() => router.push("/dashboard/locations/isibos")}
               disabled={isSaving}
             >
               Cancel

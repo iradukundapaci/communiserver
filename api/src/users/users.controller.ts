@@ -1,4 +1,4 @@
-import { Body, Controller, Param } from "@nestjs/common";
+import { Body, Controller, Param, Query } from "@nestjs/common";
 import { ApiTags } from "@nestjs/swagger";
 import {
   ApiRequestBody,
@@ -9,6 +9,7 @@ import {
   GetOperation,
   NotFoundResponse,
   OkResponse,
+  PaginatedOkResponse,
   PatchOperation,
   PostOperation,
   UnauthorizedResponse,
@@ -26,6 +27,7 @@ import { CreateCitizenDTO } from "./dto/create-citizen.dto";
 import { CreateIsiboLeaderDTO } from "./dto/create-isibo-leader.dto";
 import { CreateVillageLeaderDTO } from "./dto/create-village-leader.dto";
 import { FetchProfileDto } from "./dto/fetch-profile.dto";
+import { FetchUserDto } from "./dto/fetch-user.dto";
 import { PasswordDto } from "./dto/update-password.dto";
 import { UpdateProfileDto } from "./dto/update-profile.dto";
 import { User } from "./entities/user.entity";
@@ -84,6 +86,15 @@ export class UsersController {
       updatePasswordDto.newPassword,
     );
     return new GenericResponse("Password updated successfully");
+  }
+
+  @GetOperation("", "Get all users")
+  @IsAuthorized()
+  @PaginatedOkResponse(FetchUserDto.Output)
+  @ErrorResponses(UnauthorizedResponse, ForbiddenResponse, NotFoundResponse)
+  async getAllUsers(@Query() fetchUserDto: FetchUserDto.Input) {
+    const result = await this.usersService.findAllUsers(fetchUserDto);
+    return new GenericResponse("Users retrieved successfully", result);
   }
 
   @OkResponse(FetchProfileDto.Output)

@@ -4,7 +4,7 @@ import { IsEnum, IsOptional, IsString } from "class-validator";
 import { PaginationDto } from "src/__shared__/dto/pagination.dto";
 import { UserRole } from "src/__shared__/enums/user-role.enum";
 
-export namespace FetchUserDto {
+export namespace SearchUsersDto {
   export class Input extends PaginationDto {
     @ApiProperty({
       description: "Search query for name, email, or phone",

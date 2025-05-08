@@ -15,6 +15,7 @@ import {
   UnauthorizedResponse,
 } from "src/__shared__/decorators";
 import {
+  IsAdminOrIsiboLeader,
   IsAuthorized,
   IsIsiboLeader,
 } from "src/auth/decorators/authorize.decorator";
@@ -38,7 +39,7 @@ export class HousesController {
   constructor(private readonly housesService: HousesService) {}
 
   @PostOperation("", "Create a new house")
-  @IsIsiboLeader()
+  @IsAdminOrIsiboLeader()
   @OkResponse(House)
   @ApiRequestBody(CreateHouseDto.Input)
   @ErrorResponses(
@@ -56,7 +57,7 @@ export class HousesController {
   }
 
   @PatchOperation(":id", "Update a house")
-  @IsIsiboLeader()
+  @IsAdminOrIsiboLeader()
   @OkResponse(House)
   @ApiRequestBody(UpdateHouseDto.Input)
   @ErrorResponses(
@@ -79,7 +80,7 @@ export class HousesController {
   }
 
   @DeleteOperation(":id", "Delete a house")
-  @IsIsiboLeader()
+  @IsAdminOrIsiboLeader()
   @OkResponse()
   @ErrorResponses(UnauthorizedResponse, ForbiddenResponse, NotFoundResponse)
   async deleteHouse(
@@ -91,7 +92,7 @@ export class HousesController {
   }
 
   @GetOperation("", "Get all houses in an isibo")
-  @IsIsiboLeader()
+  @IsAdminOrIsiboLeader()
   @PaginatedOkResponse(FetchHouseDto.Output)
   @ErrorResponses(UnauthorizedResponse, ForbiddenResponse, NotFoundResponse)
   async getAllHouses(@Query() fetchHouseDto: FetchHouseDto.Input) {
@@ -112,7 +113,7 @@ export class HousesController {
     ":id/assign-representative",
     "Assign a representative to a house",
   )
-  @IsIsiboLeader()
+  @IsAdminOrIsiboLeader()
   @OkResponse(House)
   @ApiRequestBody(AssignHouseRepresentativeDto.Input)
   @ErrorResponses(

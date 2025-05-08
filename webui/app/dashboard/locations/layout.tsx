@@ -66,13 +66,21 @@ export default function LocationsLayout({
           </PermissionGate>
 
           <PermissionGate
-            anyPermissions={[Permission.VIEW_ISIBO, Permission.CREATE_HOUSE]}
+            anyPermissions={[
+              Permission.VIEW_ALL_ISIBOS,
+              Permission.CREATE_ISIBO,
+              Permission.UPDATE_ISIBO,
+            ]}
           >
             <TabsTrigger value="isibos">Isibos</TabsTrigger>
           </PermissionGate>
 
           <PermissionGate
-            anyPermissions={[Permission.VIEW_HOUSE, Permission.ADD_CITIZENS]}
+            anyPermissions={[
+              Permission.VIEW_ALL_HOUSES,
+              Permission.CREATE_HOUSE,
+              Permission.UPDATE_HOUSE,
+            ]}
           >
             <TabsTrigger value="houses">Houses</TabsTrigger>
           </PermissionGate>

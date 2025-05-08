@@ -92,7 +92,7 @@ export class IsibosController {
   }
 
   @GetOperation("", "Get all isibos in a village")
-  @IsVillageLeader()
+  @IsAdminOrVillageLeader()
   @PaginatedOkResponse(FetchIsiboDto.Output)
   @ErrorResponses(UnauthorizedResponse, ForbiddenResponse, NotFoundResponse)
   async getAllIsibos(@Query() fetchIsiboDto: FetchIsiboDto.Input) {
