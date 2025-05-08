@@ -231,10 +231,15 @@ export default function CellsPage() {
                     <PaginationContent>
                       <PaginationItem>
                         <PaginationPrevious
+                          size="default"
                           onClick={() =>
                             setCurrentPage((prev) => Math.max(prev - 1, 1))
                           }
-                          disabled={currentPage === 1}
+                          className={
+                            currentPage === 1
+                              ? "pointer-events-none opacity-50"
+                              : ""
+                          }
                         />
                       </PaginationItem>
 
@@ -254,6 +259,7 @@ export default function CellsPage() {
                           return (
                             <PaginationItem key={pageNumber}>
                               <PaginationLink
+                                size="icon"
                                 isActive={currentPage === pageNumber}
                                 onClick={() => setCurrentPage(pageNumber)}
                               >
@@ -266,12 +272,17 @@ export default function CellsPage() {
 
                       <PaginationItem>
                         <PaginationNext
+                          size="default"
                           onClick={() =>
                             setCurrentPage((prev) =>
                               Math.min(prev + 1, totalPages)
                             )
                           }
-                          disabled={currentPage === totalPages}
+                          className={
+                            currentPage === totalPages
+                              ? "pointer-events-none opacity-50"
+                              : ""
+                          }
                         />
                       </PaginationItem>
                     </PaginationContent>

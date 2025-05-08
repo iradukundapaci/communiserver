@@ -1,26 +1,45 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { PermissionGate } from "@/components/permission-gate";
-import { Permission } from "@/lib/permissions";
-import { Village, getVillages, deleteVillage } from "@/lib/api/villages";
-import { Cell, getCells } from "@/lib/api/cells";
-import { PlusCircle, Pencil, Trash2, UserPlus, UserMinus } from "lucide-react";
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import { toast } from "sonner";
-import { 
-  Pagination, 
-  PaginationContent, 
-  PaginationItem, 
-  PaginationLink, 
-  PaginationNext, 
-  PaginationPrevious 
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
 } from "@/components/ui/pagination";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Cell, getCells } from "@/lib/api/cells";
+import { Village, deleteVillage, getVillages } from "@/lib/api/villages";
+import { Permission } from "@/lib/permissions";
+import { Pencil, PlusCircle, Trash2, UserMinus, UserPlus } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
 
 export default function VillagesPage() {
   const router = useRouter();
@@ -50,7 +69,7 @@ export default function VillagesPage() {
       setIsCellsLoading(true);
       const response = await getCells(1, 100); // Get all cells
       setCells(response.items || []);
-      
+
       // Select the first cell by default
       if (response.items && response.items.length > 0) {
         setSelectedCellId(response.items[0].id);
@@ -65,10 +84,15 @@ export default function VillagesPage() {
 
   const fetchVillages = async () => {
     if (!selectedCellId) return;
-    
+
     try {
       setIsLoading(true);
-      const response = await getVillages(selectedCellId, currentPage, itemsPerPage, searchQuery);
+      const response = await getVillages(
+        selectedCellId,
+        currentPage,
+        itemsPerPage,
+        searchQuery
+      );
       setVillages(response.items || []);
       setTotalPages(response.meta?.totalPages || 1);
       setTotalItems(response.meta?.totalItems || 0);
@@ -110,7 +134,11 @@ export default function VillagesPage() {
   };
 
   const handleRemoveLeader = async (id: string) => {
-    if (window.confirm("Are you sure you want to remove the leader from this village?")) {
+    if (
+      window.confirm(
+        "Are you sure you want to remove the leader from this village?"
+      )
+    ) {
       try {
         // Implementation will be added later
         toast.success("Village leader removed successfully");
@@ -131,15 +159,17 @@ export default function VillagesPage() {
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold">Villages Management</h1>
-        
+
         <PermissionGate permission={Permission.CREATE_VILLAGE}>
-          <Button onClick={() => router.push("/dashboard/locations/villages/create")}>
+          <Button
+            onClick={() => router.push("/dashboard/locations/villages/create")}
+          >
             <PlusCircle className="mr-2 h-4 w-4" />
             Create Village
           </Button>
         </PermissionGate>
       </div>
-      
+
       <Card>
         <CardHeader>
           <CardTitle>Villages</CardTitle>
@@ -151,7 +181,9 @@ export default function VillagesPage() {
           <div className="flex flex-col gap-4">
             <div className="flex flex-col sm:flex-row gap-4">
               <div className="w-full sm:w-1/3">
-                <label className="text-sm font-medium mb-2 block">Select Cell</label>
+                <label className="text-sm font-medium mb-2 block">
+                  Select Cell
+                </label>
                 <Select
                   value={selectedCellId}
                   onValueChange={handleCellChange}
@@ -169,11 +201,16 @@ export default function VillagesPage() {
                   </SelectContent>
                 </Select>
               </div>
-              
+
               <div className="w-full sm:w-2/3">
-                <form onSubmit={handleSearch} className="flex items-center gap-2">
+                <form
+                  onSubmit={handleSearch}
+                  className="flex items-center gap-2"
+                >
                   <div className="flex-1">
-                    <label className="text-sm font-medium mb-2 block">Search</label>
+                    <label className="text-sm font-medium mb-2 block">
+                      Search
+                    </label>
                     <Input
                       placeholder="Search villages..."
                       value={searchQuery}
@@ -186,7 +223,7 @@ export default function VillagesPage() {
                 </form>
               </div>
             </div>
-            
+
             {isLoading ? (
               <div className="flex justify-center py-8">
                 <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
@@ -212,10 +249,14 @@ export default function VillagesPage() {
                     <TableBody>
                       {villages.map((village) => (
                         <TableRow key={village.id}>
-                          <TableCell className="font-medium">{village.name}</TableCell>
+                          <TableCell className="font-medium">
+                            {village.name}
+                          </TableCell>
                           <TableCell>
                             <div className="flex items-center gap-2">
-                              <PermissionGate permission={Permission.UPDATE_VILLAGE}>
+                              <PermissionGate
+                                permission={Permission.UPDATE_VILLAGE}
+                              >
                                 <Button
                                   variant="outline"
                                   size="sm"
@@ -225,8 +266,10 @@ export default function VillagesPage() {
                                   <span className="sr-only">Edit</span>
                                 </Button>
                               </PermissionGate>
-                              
-                              <PermissionGate permission={Permission.ASSIGN_VILLAGE_LEADERS}>
+
+                              <PermissionGate
+                                permission={Permission.ASSIGN_VILLAGE_LEADERS}
+                              >
                                 <Button
                                   variant="outline"
                                   size="sm"
@@ -236,8 +279,10 @@ export default function VillagesPage() {
                                   <span className="sr-only">Assign Leader</span>
                                 </Button>
                               </PermissionGate>
-                              
-                              <PermissionGate permission={Permission.DEASSIGN_VILLAGE_LEADERS}>
+
+                              <PermissionGate
+                                permission={Permission.DEASSIGN_VILLAGE_LEADERS}
+                              >
                                 <Button
                                   variant="outline"
                                   size="sm"
@@ -247,12 +292,16 @@ export default function VillagesPage() {
                                   <span className="sr-only">Remove Leader</span>
                                 </Button>
                               </PermissionGate>
-                              
-                              <PermissionGate permission={Permission.DELETE_VILLAGE}>
+
+                              <PermissionGate
+                                permission={Permission.DELETE_VILLAGE}
+                              >
                                 <Button
                                   variant="destructive"
                                   size="sm"
-                                  onClick={() => handleDeleteVillage(village.id)}
+                                  onClick={() =>
+                                    handleDeleteVillage(village.id)
+                                  }
                                 >
                                   <Trash2 className="h-4 w-4" />
                                   <span className="sr-only">Delete</span>
@@ -265,51 +314,65 @@ export default function VillagesPage() {
                     </TableBody>
                   </Table>
                 </div>
-                
+
                 {totalPages > 1 && (
                   <div className="mt-4">
                     <Pagination>
                       <PaginationContent>
                         <PaginationItem>
                           <PaginationPrevious
+                            size="default"
                             onClick={() =>
                               setCurrentPage((prev) => Math.max(prev - 1, 1))
                             }
-                            disabled={currentPage === 1}
+                            className={
+                              currentPage === 1
+                                ? "pointer-events-none opacity-50"
+                                : ""
+                            }
                           />
                         </PaginationItem>
 
-                        {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                          const pageNumber =
-                            currentPage <= 3
-                              ? i + 1
-                              : currentPage >= totalPages - 2
-                              ? totalPages - 4 + i
-                              : currentPage - 2 + i;
+                        {Array.from(
+                          { length: Math.min(5, totalPages) },
+                          (_, i) => {
+                            const pageNumber =
+                              currentPage <= 3
+                                ? i + 1
+                                : currentPage >= totalPages - 2
+                                ? totalPages - 4 + i
+                                : currentPage - 2 + i;
 
-                          if (pageNumber <= 0 || pageNumber > totalPages)
-                            return null;
+                            if (pageNumber <= 0 || pageNumber > totalPages)
+                              return null;
 
-                          return (
-                            <PaginationItem key={pageNumber}>
-                              <PaginationLink
-                                isActive={currentPage === pageNumber}
-                                onClick={() => setCurrentPage(pageNumber)}
-                              >
-                                {pageNumber}
-                              </PaginationLink>
-                            </PaginationItem>
-                          );
-                        })}
+                            return (
+                              <PaginationItem key={pageNumber}>
+                                <PaginationLink
+                                  size="icon"
+                                  isActive={currentPage === pageNumber}
+                                  onClick={() => setCurrentPage(pageNumber)}
+                                >
+                                  {pageNumber}
+                                </PaginationLink>
+                              </PaginationItem>
+                            );
+                          }
+                        )}
 
                         <PaginationItem>
                           <PaginationNext
+                            size="default"
                             onClick={() =>
                               setCurrentPage((prev) =>
                                 Math.min(prev + 1, totalPages)
                               )
                             }
-                            disabled={currentPage === totalPages}
+                            className={
+                              currentPage === totalPages
+                                ? "pointer-events-none opacity-50"
+                                : ""
+                            }
                           />
                         </PaginationItem>
                       </PaginationContent>

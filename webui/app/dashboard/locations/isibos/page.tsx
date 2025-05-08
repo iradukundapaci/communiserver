@@ -386,10 +386,15 @@ export default function IsibosPage() {
                       <PaginationContent>
                         <PaginationItem>
                           <PaginationPrevious
+                            size="default"
                             onClick={() =>
                               setCurrentPage((prev) => Math.max(prev - 1, 1))
                             }
-                            disabled={currentPage === 1}
+                            className={
+                              currentPage === 1
+                                ? "pointer-events-none opacity-50"
+                                : ""
+                            }
                           />
                         </PaginationItem>
 
@@ -409,6 +414,7 @@ export default function IsibosPage() {
                             return (
                               <PaginationItem key={pageNumber}>
                                 <PaginationLink
+                                  size="icon"
                                   isActive={currentPage === pageNumber}
                                   onClick={() => setCurrentPage(pageNumber)}
                                 >
@@ -421,12 +427,17 @@ export default function IsibosPage() {
 
                         <PaginationItem>
                           <PaginationNext
+                            size="default"
                             onClick={() =>
                               setCurrentPage((prev) =>
                                 Math.min(prev + 1, totalPages)
                               )
                             }
-                            disabled={currentPage === totalPages}
+                            className={
+                              currentPage === totalPages
+                                ? "pointer-events-none opacity-50"
+                                : ""
+                            }
                           />
                         </PaginationItem>
                       </PaginationContent>
