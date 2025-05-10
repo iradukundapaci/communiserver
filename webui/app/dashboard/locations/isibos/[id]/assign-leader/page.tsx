@@ -21,6 +21,12 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { assignIsiboLeader, getIsiboById } from "@/lib/api/isibos";
 import {
   CreateIsiboLeaderInput,
@@ -199,10 +205,7 @@ function CreateLeaderModal({
             </div>
           </div>
           <DialogFooter>
-            <Button
-              type="submit"
-              disabled={isCreating}
-            >
+            <Button type="submit" disabled={isCreating}>
               {isCreating ? "Creating..." : "Create Leader"}
             </Button>
           </DialogFooter>
@@ -244,11 +247,27 @@ export default function AssignLeaderPage({
     const fetchIsibo = async () => {
       try {
         const isiboData = await getIsiboById(id);
+
+        // Get the village ID from the isibo
+        const villageId = isiboData.village?.id;
+        let cellId: string | undefined = undefined;
+
+        // If we have a village ID, fetch the village to get the cell ID
+        if (villageId) {
+          try {
+            const { getVillageById } = await import("@/lib/api/villages");
+            const villageData = await getVillageById(villageId);
+            cellId = villageData.cell?.id;
+          } catch (villageError) {
+            console.error("Failed to fetch village:", villageError);
+          }
+        }
+
         setIsibo({
           id: isiboData.id,
           name: isiboData.name,
-          villageId: isiboData.village?.id,
-          cellId: isiboData.village?.cell?.id,
+          villageId: villageId,
+          cellId: cellId,
         });
       } catch (error) {
         toast.error("Failed to fetch isibo");
@@ -472,12 +491,28 @@ export default function AssignLeaderPage({
               </div>
 
               <div>
-                <CreateLeaderModal
-                  isiboId={isibo.id}
-                  villageId={isibo.villageId || ""}
-                  cellId={isibo.cellId || ""}
-                  onLeaderCreated={refreshUsers}
-                />
+                {isibo.villageId && isibo.cellId ? (
+                  <CreateLeaderModal
+                    isiboId={isibo.id}
+                    villageId={isibo.villageId}
+                    cellId={isibo.cellId}
+                    onLeaderCreated={refreshUsers}
+                  />
+                ) : (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button variant="outline" disabled>
+                          <PlusCircle className="h-4 w-4 mr-2" />
+                          Create New Leader
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Missing required village or cell information</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                )}
               </div>
             </div>
 

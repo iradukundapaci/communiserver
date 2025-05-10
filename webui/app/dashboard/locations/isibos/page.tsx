@@ -34,7 +34,12 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Cell, getCells } from "@/lib/api/cells";
-import { Isibo, deleteIsibo, getIsibos } from "@/lib/api/isibos";
+import {
+  Isibo,
+  deleteIsibo,
+  getIsibos,
+  removeIsiboLeader,
+} from "@/lib/api/isibos";
 import { Village, getVillages } from "@/lib/api/villages";
 import { Permission } from "@/lib/permissions";
 import { Pencil, PlusCircle, Trash2, UserMinus, UserPlus } from "lucide-react";
