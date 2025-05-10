@@ -34,7 +34,12 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Cell, getCells } from "@/lib/api/cells";
-import { House, deleteHouse, getHouses } from "@/lib/api/houses";
+import {
+  House,
+  deleteHouse,
+  getHouses,
+  removeHouseRepresentative,
+} from "@/lib/api/houses";
 import { Isibo, getIsibos } from "@/lib/api/isibos";
 import { Village, getVillages } from "@/lib/api/villages";
 import { Permission } from "@/lib/permissions";
