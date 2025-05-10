@@ -16,8 +16,8 @@ import {
 } from "src/__shared__/decorators";
 import {
   IsAdmin,
+  IsAdminOrCellLeader,
   IsAuthorized,
-  IsCellLeader,
 } from "src/auth/decorators/authorize.decorator";
 import { GenericResponse } from "../__shared__/dto/generic-response.dto";
 import { GetUser } from "../auth/decorators/get-user.decorator";
@@ -115,7 +115,7 @@ export class VillagesController {
   }
 
   @PatchOperation(":id/assign-leader", "Assign a leader to a village")
-  @IsCellLeader()
+  @IsAdminOrCellLeader()
   @OkResponse(Village)
   @ApiRequestBody(AssignVillageLeaderDto.Input)
   @ErrorResponses(
@@ -136,7 +136,7 @@ export class VillagesController {
   }
 
   @PatchOperation(":id/remove-leader", "Remove the leader from a village")
-  @IsCellLeader()
+  @IsAdminOrCellLeader()
   @OkResponse(Village)
   @ErrorResponses(
     UnauthorizedResponse,

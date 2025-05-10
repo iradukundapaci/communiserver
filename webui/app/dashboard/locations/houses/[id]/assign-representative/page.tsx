@@ -10,17 +10,219 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { assignHouseRepresentative, getHouseById } from "@/lib/api/houses";
 import { User } from "@/lib/api/leaders";
 import { getUsers } from "@/lib/api/users";
 import { Permission } from "@/lib/permissions";
 import { UserRole } from "@/lib/user-roles";
-import { ArrowLeft, Search } from "lucide-react";
+import { ArrowLeft, PlusCircle, Search } from "lucide-react";
 import { useRouter } from "next/navigation";
 import * as React from "react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+
+// Create Representative Modal Component
+function CreateRepresentativeModal({
+  houseId,
+  isiboId,
+  villageId,
+  cellId,
+  onRepresentativeCreated,
+}: {
+  houseId: string;
+  isiboId: string;
+  villageId: string;
+  cellId: string;
+  onRepresentativeCreated: () => void;
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [formData, setFormData] = useState({
+    names: "",
+    email: "",
+    phone: "",
+  });
+  const [isCreating, setIsCreating] = useState(false);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!formData.names.trim()) {
+      toast.error("Name is required");
+      return;
+    }
+
+    if (!formData.email.trim()) {
+      toast.error("Email is required");
+      return;
+    }
+
+    if (!formData.phone.trim()) {
+      toast.error("Phone number is required");
+      return;
+    }
+
+    setIsCreating(true);
+
+    try {
+      // Create a new citizen user
+      const response = await fetch("/api/v1/users/citizens", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+        },
+        body: JSON.stringify({
+          ...formData,
+          cellId,
+          villageId,
+          isiboId,
+          houseId,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to create citizen");
+      }
+
+      const data = await response.json();
+
+      // Refresh the users list to get the newly created user
+      onRepresentativeCreated();
+
+      // Get the latest users after refresh
+      const usersResponse = await getUsers("", UserRole.CITIZEN, 1, 100);
+
+      // Find the newly created user by email (most reliable way to find them)
+      const newUser = usersResponse.items.find(
+        (user) => user.email.toLowerCase() === formData.email.toLowerCase()
+      );
+
+      // If we found the user, assign them as the house representative
+      if (newUser) {
+        try {
+          await assignHouseRepresentative(houseId, newUser.id);
+          toast.success("Citizen created and assigned as representative successfully");
+
+          // Close the modal and redirect to the houses page
+          setIsOpen(false);
+          window.location.href = "/dashboard/locations/houses";
+        } catch (assignError) {
+          toast.error("Citizen created but could not be assigned as representative");
+          console.error("Assignment error:", assignError);
+        }
+      } else {
+        toast.success("Citizen created successfully");
+        toast.info("Please select the new citizen from the list to assign them");
+        setIsOpen(false);
+      }
+
+      // Reset form
+      setFormData({
+        names: "",
+        email: "",
+        phone: "",
+      });
+    } catch (error: any) {
+      if (error.message) {
+        toast.error(error.message);
+      } else {
+        toast.error("Failed to create citizen");
+      }
+      console.error(error);
+    } finally {
+      setIsCreating(false);
+    }
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <DialogTrigger asChild>
+        <Button variant="outline">
+          <PlusCircle className="h-4 w-4 mr-2" />
+          Create New Citizen
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-[425px]">
+        <DialogHeader>
+          <DialogTitle>Create New Citizen</DialogTitle>
+          <DialogDescription>
+            Enter the details for the new citizen. The system will
+            automatically generate a password and send it to the provided email.
+          </DialogDescription>
+        </DialogHeader>
+        <form onSubmit={handleSubmit}>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="names" className="text-right">
+                Full Name
+              </Label>
+              <Input
+                id="names"
+                name="names"
+                value={formData.names}
+                onChange={handleChange}
+                className="col-span-3"
+                required
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="email" className="text-right">
+                Email
+              </Label>
+              <Input
+                id="email"
+                name="email"
+                type="email"
+                value={formData.email}
+                onChange={handleChange}
+                className="col-span-3"
+                required
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="phone" className="text-right">
+                Phone
+              </Label>
+              <Input
+                id="phone"
+                name="phone"
+                value={formData.phone}
+                onChange={handleChange}
+                className="col-span-3"
+                required
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              type="submit"
+              disabled={isCreating}
+            >
+              {isCreating ? "Creating..." : "Create Citizen"}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
 
 export default function AssignRepresentativePage({
   params,
@@ -30,7 +232,23 @@ export default function AssignRepresentativePage({
   const router = useRouter();
   const { id } = React.use(params);
 
-  const [house, setHouse] = useState<{ id: string; code: string }>({
+  const [house, setHouse] = useState<{
+    id: string;
+    code: string;
+    isiboId?: string;
+    isibo?: {
+      id: string;
+      name: string;
+      village?: {
+        id: string;
+        name: string;
+        cell?: {
+          id: string;
+          name: string;
+        }
+      }
+    }
+  }>({
     id: "",
     code: "",
   });
@@ -52,6 +270,8 @@ export default function AssignRepresentativePage({
         setHouse({
           id: houseData.id,
           code: houseData.code,
+          isiboId: houseData.isibo?.id,
+          isibo: houseData.isibo,
         });
       } catch (error: any) {
         if (error.message) {
@@ -97,6 +317,34 @@ export default function AssignRepresentativePage({
 
     initialize();
   }, [id, router]);
+
+  // Function to refresh users after creating a new citizen
+  const refreshUsers = async () => {
+    setIsLoading(true);
+    try {
+      // Get all users without role filter
+      const response = await getUsers("", "", 1, 10);
+
+      // Filter users with appropriate role on the client side
+      const filteredByRole = response.items.filter(
+        (user) => user.role === UserRole.CITIZEN
+      );
+
+      setUsers(filteredByRole);
+      setFilteredUsers(filteredByRole);
+      setTotalPages(response.meta.totalPages);
+      setCurrentPage(1);
+    } catch (error: any) {
+      if (error.message) {
+        toast.error(error.message);
+      } else {
+        toast.error("Failed to fetch users");
+      }
+      console.error(error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -231,23 +479,40 @@ export default function AssignRepresentativePage({
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <form onSubmit={handleSearch} className="flex items-center gap-2">
-              <div className="flex-1">
-                <Input
-                  placeholder="Search users by name or email"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+            <div className="flex justify-between items-center">
+              <div className="w-1/4">
+                <form
+                  onSubmit={handleSearch}
+                  className="flex items-center gap-2"
+                >
+                  <div className="flex-1">
+                    <Input
+                      placeholder="Search"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                    />
+                  </div>
+                  <Button type="submit" disabled={isSearching}>
+                    {isSearching ? (
+                      <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white mr-2"></div>
+                    ) : (
+                      <Search className="h-4 w-4 mr-2" />
+                    )}
+                    {isSearching ? "..." : "Search"}
+                  </Button>
+                </form>
+              </div>
+
+              <div>
+                <CreateRepresentativeModal
+                  houseId={house.id}
+                  isiboId={house.isiboId || ""}
+                  villageId={house.isibo?.village?.id || ""}
+                  cellId={house.isibo?.village?.cell?.id || ""}
+                  onRepresentativeCreated={refreshUsers}
                 />
               </div>
-              <Button type="submit" disabled={isSearching}>
-                {isSearching ? (
-                  <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white mr-2"></div>
-                ) : (
-                  <Search className="h-4 w-4 mr-2" />
-                )}
-                {isSearching ? "Searching..." : "Search"}
-              </Button>
-            </form>
+            </div>
 
             <div className="rounded-md border">
               <table className="w-full">
@@ -271,7 +536,7 @@ export default function AssignRepresentativePage({
                         colSpan={3}
                         className="p-4 text-center text-muted-foreground"
                       >
-                        No users found
+                        <p>No users found with the specified criteria</p>
                       </td>
                     </tr>
                   ) : (

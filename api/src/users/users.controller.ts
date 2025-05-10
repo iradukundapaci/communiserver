@@ -17,9 +17,9 @@ import {
 import { GenericResponse } from "src/__shared__/dto/generic-response.dto";
 import {
   IsAdmin,
+  IsAdminOrCellLeader,
   IsAdminOrVillageLeader,
   IsAuthorized,
-  IsCellLeader,
 } from "src/auth/decorators/authorize.decorator";
 import { GetUser } from "src/auth/decorators/get-user.decorator";
 import { CreateCellLeaderDTO } from "./dto/create-cell-leader.dto";
@@ -126,7 +126,7 @@ export class UsersController {
   }
 
   @PostOperation("village-leaders", "Create a new village leader")
-  @IsCellLeader()
+  @IsAdminOrCellLeader()
   @ApiRequestBody(CreateVillageLeaderDTO.Input)
   @ErrorResponses(
     UnauthorizedResponse,

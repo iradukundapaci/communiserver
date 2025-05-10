@@ -142,7 +142,7 @@ export class CellsService {
   async findAllCells(dto: FetchCellDto.Input): Promise<FetchCellDto.Output> {
     const queryBuilder = this.cellRepository
       .createQueryBuilder("cell")
-      .select(["cell.id", "cell.name"]);
+      .select(["cell.id", "cell.name", "cell.hasLeader", "cell.leaderId"]);
 
     if (dto.q) {
       queryBuilder.where("cell.name ILIKE :search", {

@@ -10,17 +10,207 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { assignIsiboLeader, getIsiboById } from "@/lib/api/isibos";
-import { User } from "@/lib/api/leaders";
+import {
+  CreateIsiboLeaderInput,
+  User,
+  createIsiboLeader,
+} from "@/lib/api/leaders";
 import { getUsers } from "@/lib/api/users";
 import { Permission } from "@/lib/permissions";
 import { UserRole } from "@/lib/user-roles";
-import { ArrowLeft, Search } from "lucide-react";
+import { ArrowLeft, PlusCircle, Search } from "lucide-react";
 import { useRouter } from "next/navigation";
 import * as React from "react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+
+// Create Leader Modal Component
+function CreateLeaderModal({
+  isiboId,
+  villageId,
+  cellId,
+  onLeaderCreated,
+}: {
+  isiboId: string;
+  villageId: string;
+  cellId: string;
+  onLeaderCreated: () => void;
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [formData, setFormData] = useState<CreateIsiboLeaderInput>({
+    names: "",
+    email: "",
+    phone: "",
+    cellId: cellId,
+    villageId: villageId,
+    isiboId: isiboId,
+  });
+  const [isCreating, setIsCreating] = useState(false);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!formData.names.trim()) {
+      toast.error("Leader name is required");
+      return;
+    }
+
+    if (!formData.email.trim()) {
+      toast.error("Email is required");
+      return;
+    }
+
+    if (!formData.phone.trim()) {
+      toast.error("Phone number is required");
+      return;
+    }
+
+    setIsCreating(true);
+
+    try {
+      // Create the isibo leader - this returns a success message, not the user object
+      await createIsiboLeader(formData);
+
+      // Refresh the users list to get the newly created user
+      onLeaderCreated();
+
+      // Get the latest users after refresh
+      const response = await getUsers("", UserRole.ISIBO_LEADER, 1, 100);
+
+      // Find the newly created user by email (most reliable way to find them)
+      const newUser = response.items.find(
+        (user) => user.email.toLowerCase() === formData.email.toLowerCase()
+      );
+
+      // If we found the user, assign them as the isibo leader
+      if (newUser) {
+        try {
+          await assignIsiboLeader(isiboId, newUser.id);
+          toast.success("Isibo leader created and assigned successfully");
+
+          // Close the modal and redirect to the isibos page
+          setIsOpen(false);
+          window.location.href = "/dashboard/locations/isibos";
+        } catch (assignError) {
+          toast.error("Leader created but could not be assigned to the isibo");
+          console.error("Assignment error:", assignError);
+        }
+      } else {
+        toast.success("Isibo leader created successfully");
+        toast.info("Please select the new leader from the list to assign them");
+        setIsOpen(false);
+      }
+
+      // Reset form
+      setFormData({
+        names: "",
+        email: "",
+        phone: "",
+        cellId: cellId,
+        villageId: villageId,
+        isiboId: isiboId,
+      });
+    } catch (error: any) {
+      if (error.message) {
+        toast.error(error.message);
+      } else {
+        toast.error("Failed to create isibo leader");
+      }
+      console.error(error);
+    } finally {
+      setIsCreating(false);
+    }
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <DialogTrigger asChild>
+        <Button variant="outline">
+          <PlusCircle className="h-4 w-4 mr-2" />
+          Create New Leader
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-[425px]">
+        <DialogHeader>
+          <DialogTitle>Create New Isibo Leader</DialogTitle>
+          <DialogDescription>
+            Enter the details for the new isibo leader. The system will
+            automatically generate a password and send it to the provided email.
+          </DialogDescription>
+        </DialogHeader>
+        <form onSubmit={handleSubmit}>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="names" className="text-right">
+                Full Name
+              </Label>
+              <Input
+                id="names"
+                name="names"
+                value={formData.names}
+                onChange={handleChange}
+                className="col-span-3"
+                required
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="email" className="text-right">
+                Email
+              </Label>
+              <Input
+                id="email"
+                name="email"
+                type="email"
+                value={formData.email}
+                onChange={handleChange}
+                className="col-span-3"
+                required
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="phone" className="text-right">
+                Phone
+              </Label>
+              <Input
+                id="phone"
+                name="phone"
+                value={formData.phone}
+                onChange={handleChange}
+                className="col-span-3"
+                required
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              type="submit"
+              disabled={isCreating}
+            >
+              {isCreating ? "Creating..." : "Create Leader"}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
 
 export default function AssignLeaderPage({
   params,
@@ -30,7 +220,12 @@ export default function AssignLeaderPage({
   const router = useRouter();
   const { id } = React.use(params);
 
-  const [isibo, setIsibo] = useState<{ id: string; name: string }>({
+  const [isibo, setIsibo] = useState<{
+    id: string;
+    name: string;
+    villageId?: string;
+    cellId?: string;
+  }>({
     id: "",
     name: "",
   });
@@ -52,6 +247,8 @@ export default function AssignLeaderPage({
         setIsibo({
           id: isiboData.id,
           name: isiboData.name,
+          villageId: isiboData.village?.id,
+          cellId: isiboData.village?.cell?.id,
         });
       } catch (error) {
         toast.error("Failed to fetch isibo");
@@ -92,6 +289,34 @@ export default function AssignLeaderPage({
 
     initialize();
   }, [id]);
+
+  // Function to refresh users after creating a new leader
+  const refreshUsers = async () => {
+    setIsLoading(true);
+    try {
+      // Get all users without role filter
+      const response = await getUsers("", "", 1, 10);
+
+      // Filter users with appropriate role on the client side
+      const filteredByRole = response.items.filter(
+        (user) => user.role === UserRole.ISIBO_LEADER
+      );
+
+      setUsers(filteredByRole);
+      setFilteredUsers(filteredByRole);
+      setTotalPages(response.meta.totalPages);
+      setCurrentPage(1);
+    } catch (error: any) {
+      if (error.message) {
+        toast.error(error.message);
+      } else {
+        toast.error("Failed to fetch users");
+      }
+      console.error(error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -222,23 +447,39 @@ export default function AssignLeaderPage({
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <form onSubmit={handleSearch} className="flex items-center gap-2">
-              <div className="flex-1">
-                <Input
-                  placeholder="Search users by name or email"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+            <div className="flex justify-between items-center">
+              <div className="w-1/4">
+                <form
+                  onSubmit={handleSearch}
+                  className="flex items-center gap-2"
+                >
+                  <div className="flex-1">
+                    <Input
+                      placeholder="Search"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                    />
+                  </div>
+                  <Button type="submit" disabled={isSearching}>
+                    {isSearching ? (
+                      <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white mr-2"></div>
+                    ) : (
+                      <Search className="h-4 w-4 mr-2" />
+                    )}
+                    {isSearching ? "..." : "Search"}
+                  </Button>
+                </form>
+              </div>
+
+              <div>
+                <CreateLeaderModal
+                  isiboId={isibo.id}
+                  villageId={isibo.villageId || ""}
+                  cellId={isibo.cellId || ""}
+                  onLeaderCreated={refreshUsers}
                 />
               </div>
-              <Button type="submit" disabled={isSearching}>
-                {isSearching ? (
-                  <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white mr-2"></div>
-                ) : (
-                  <Search className="h-4 w-4 mr-2" />
-                )}
-                {isSearching ? "Searching..." : "Search"}
-              </Button>
-            </form>
+            </div>
 
             <div className="rounded-md border">
               <table className="w-full">
@@ -262,7 +503,7 @@ export default function AssignLeaderPage({
                         colSpan={3}
                         className="p-4 text-center text-muted-foreground"
                       >
-                        No users found
+                        <p>No users found with the specified criteria</p>
                       </td>
                     </tr>
                   ) : (
