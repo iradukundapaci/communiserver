@@ -77,7 +77,7 @@ export class CellsController {
   }
 
   @GetOperation("", "Get all cells")
-  @IsAdmin()
+  @IsAuthorized()
   @PaginatedOkResponse(FetchCellDto.Output)
   @ErrorResponses(UnauthorizedResponse, ForbiddenResponse)
   async getAllCells(@Query() fetchCellDto: FetchCellDto.Input) {

@@ -26,7 +26,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Cell, deleteCell, getCells } from "@/lib/api/cells";
+import { Cell, deleteCell, getCells, removeCellLeader } from "@/lib/api/cells";
 import { Permission } from "@/lib/permissions";
 import { Pencil, PlusCircle, Trash2, UserMinus, UserPlus } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -98,7 +98,7 @@ export default function CellsPage() {
       )
     ) {
       try {
-        // Implementation will be added later
+        await removeCellLeader(id);
         toast.success("Cell leader removed successfully");
         fetchCells();
       } catch (error) {
@@ -159,6 +159,7 @@ export default function CellsPage() {
                   <TableHeader>
                     <TableRow>
                       <TableHead>Name</TableHead>
+                      <TableHead>Leader Status</TableHead>
                       <TableHead className="w-[200px]">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -167,6 +168,17 @@ export default function CellsPage() {
                       <TableRow key={cell.id}>
                         <TableCell className="font-medium">
                           {cell.name}
+                        </TableCell>
+                        <TableCell>
+                          {cell.hasLeader ? (
+                            <span className="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800">
+                              Has Leader
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-800">
+                              No Leader
+                            </span>
+                          )}
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-2">
@@ -181,31 +193,33 @@ export default function CellsPage() {
                               </Button>
                             </PermissionGate>
 
-                            <PermissionGate
-                              permission={Permission.ASSIGN_CELL_LEADERS}
-                            >
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleAssignLeader(cell.id)}
+                            {!cell.hasLeader ? (
+                              <PermissionGate
+                                permission={Permission.ASSIGN_CELL_LEADERS}
                               >
-                                <UserPlus className="h-4 w-4" />
-                                <span className="sr-only">Assign Leader</span>
-                              </Button>
-                            </PermissionGate>
-
-                            <PermissionGate
-                              permission={Permission.DEASSIGN_CELL_LEADERS}
-                            >
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleRemoveLeader(cell.id)}
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleAssignLeader(cell.id)}
+                                >
+                                  <UserPlus className="h-4 w-4" />
+                                  <span className="sr-only">Assign Leader</span>
+                                </Button>
+                              </PermissionGate>
+                            ) : (
+                              <PermissionGate
+                                permission={Permission.DEASSIGN_CELL_LEADERS}
                               >
-                                <UserMinus className="h-4 w-4" />
-                                <span className="sr-only">Remove Leader</span>
-                              </Button>
-                            </PermissionGate>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleRemoveLeader(cell.id)}
+                                >
+                                  <UserMinus className="h-4 w-4" />
+                                  <span className="sr-only">Remove Leader</span>
+                                </Button>
+                              </PermissionGate>
+                            )}
 
                             <PermissionGate permission={Permission.DELETE_CELL}>
                               <Button

@@ -22,7 +22,6 @@ export function appConfig(): IAppConfig {
       database: process.env.DB_DATABASE,
       host: process.env.DB_HOST,
       port: +process.env.DB_PORT,
-      url: process.env.DATABASE_URL,
     },
     allowedOrigins: process.env.ALLOWED_ORIGINS?.split(","),
     swaggerEnabled: process.env.SWAGGER_ENABLED === "true",

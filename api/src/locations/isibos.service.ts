@@ -317,7 +317,7 @@ export class IsibosService {
     }
 
     // Check if isibo already has a leader
-    if (isibo.leader) {
+    if (isibo.hasLeader) {
       throw new ConflictException("This isibo already has a leader");
     }
 
@@ -335,6 +335,8 @@ export class IsibosService {
 
     // Set the isibo's leader
     isibo.leader = leaderUser.profile;
+    isibo.hasLeader = true;
+    isibo.leaderId = userId;
 
     return this.isiboRepository.save(isibo);
   }
@@ -377,7 +379,7 @@ export class IsibosService {
     }
 
     // Check if isibo has a leader
-    if (!isibo.leader) {
+    if (!isibo.hasLeader) {
       throw new NotFoundException("This isibo does not have a leader");
     }
 
@@ -392,6 +394,8 @@ export class IsibosService {
 
     // Remove the leader from the isibo
     isibo.leader = null;
+    isibo.hasLeader = false;
+    isibo.leaderId = null;
 
     return this.isiboRepository.save(isibo);
   }

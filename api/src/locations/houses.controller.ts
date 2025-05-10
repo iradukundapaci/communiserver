@@ -92,7 +92,7 @@ export class HousesController {
   }
 
   @GetOperation("", "Get all houses in an isibo")
-  @IsAdminOrIsiboLeader()
+  @IsAuthorized()
   @PaginatedOkResponse(FetchHouseDto.Output)
   @ErrorResponses(UnauthorizedResponse, ForbiddenResponse, NotFoundResponse)
   async getAllHouses(@Query() fetchHouseDto: FetchHouseDto.Input) {

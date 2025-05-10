@@ -236,7 +236,7 @@ export default function HousesPage() {
       )
     ) {
       try {
-        // Implementation will be added later
+        await removeHouseRepresentative(id);
         toast.success("House representative removed successfully");
         fetchHouses();
       } catch (error: any) {
@@ -415,9 +415,18 @@ export default function HousesPage() {
                           </TableCell>
                           <TableCell>{house.street || "N/A"}</TableCell>
                           <TableCell>
-                            {house.representative
-                              ? house.representative.names
-                              : "None"}
+                            {house.hasLeader ? (
+                              <div className="flex flex-col">
+                                <span className="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800 mb-1 w-fit">
+                                  Has Representative
+                                </span>
+                                {house.representative?.names}
+                              </div>
+                            ) : (
+                              <span className="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-800 w-fit">
+                                No Representative
+                              </span>
+                            )}
                           </TableCell>
                           <TableCell>
                             <div className="flex items-center gap-2">
@@ -434,43 +443,45 @@ export default function HousesPage() {
                                 </Button>
                               </PermissionGate>
 
-                              <PermissionGate
-                                permission={
-                                  Permission.ASSIGN_HOUSE_REPRESENTATIVES
-                                }
-                              >
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() =>
-                                    handleAssignRepresentative(house.id)
+                              {!house.hasLeader ? (
+                                <PermissionGate
+                                  permission={
+                                    Permission.ASSIGN_HOUSE_REPRESENTATIVES
                                   }
                                 >
-                                  <UserPlus className="h-4 w-4" />
-                                  <span className="sr-only">
-                                    Assign Representative
-                                  </span>
-                                </Button>
-                              </PermissionGate>
-
-                              <PermissionGate
-                                permission={
-                                  Permission.DEASSIGN_HOUSE_REPRESENTATIVES
-                                }
-                              >
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() =>
-                                    handleRemoveRepresentative(house.id)
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() =>
+                                      handleAssignRepresentative(house.id)
+                                    }
+                                  >
+                                    <UserPlus className="h-4 w-4" />
+                                    <span className="sr-only">
+                                      Assign Representative
+                                    </span>
+                                  </Button>
+                                </PermissionGate>
+                              ) : (
+                                <PermissionGate
+                                  permission={
+                                    Permission.DEASSIGN_HOUSE_REPRESENTATIVES
                                   }
                                 >
-                                  <UserMinus className="h-4 w-4" />
-                                  <span className="sr-only">
-                                    Remove Representative
-                                  </span>
-                                </Button>
-                              </PermissionGate>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() =>
+                                      handleRemoveRepresentative(house.id)
+                                    }
+                                  >
+                                    <UserMinus className="h-4 w-4" />
+                                    <span className="sr-only">
+                                      Remove Representative
+                                    </span>
+                                  </Button>
+                                </PermissionGate>
+                              )}
 
                               <PermissionGate
                                 permission={Permission.DELETE_HOUSE}

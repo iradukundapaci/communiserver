@@ -22,6 +22,8 @@ export interface House {
   id: string;
   code: string;
   street?: string;
+  hasLeader: boolean;
+  leaderId: string | null;
   isibo?: {
     id: string;
     name: string;

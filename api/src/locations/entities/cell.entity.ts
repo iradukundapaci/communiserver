@@ -17,6 +17,12 @@ export class Cell extends AbstractEntity {
   @Column({ name: "name", nullable: false })
   name: string;
 
+  @Column({ name: "has_leader", default: false })
+  hasLeader: boolean;
+
+  @Column({ name: "leader_id", nullable: true })
+  leaderId: string;
+
   @BeforeInsert()
   @BeforeUpdate()
   transformName() {

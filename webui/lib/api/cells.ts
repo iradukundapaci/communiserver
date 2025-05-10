@@ -5,6 +5,8 @@ import { getAuthTokens } from "./auth";
 export interface Cell {
   id: string;
   name: string;
+  hasLeader: boolean;
+  leaderId: string | null;
   sector?: {
     id: string;
     name: string;
@@ -62,33 +64,33 @@ export async function getCells(
 ): Promise<PaginatedResponse<Cell>> {
   try {
     const tokens = getAuthTokens();
-    
+
     if (!tokens) {
-      throw new Error('Not authenticated');
+      throw new Error("Not authenticated");
     }
-    
+
     let url = `/api/v1/cells?page=${page}&size=${size}`;
     if (search) {
       url += `&q=${encodeURIComponent(search)}`;
     }
-    
+
     const response = await fetch(url, {
-      method: 'GET',
+      method: "GET",
       headers: {
-        'Authorization': `Bearer ${tokens.accessToken}`,
-        'Content-Type': 'application/json',
+        Authorization: `Bearer ${tokens.accessToken}`,
+        "Content-Type": "application/json",
       },
     });
 
     if (!response.ok) {
       const errorData = await response.json();
-      throw new Error(errorData.message || 'Failed to fetch cells');
+      throw new Error(errorData.message || "Failed to fetch cells");
     }
 
     const data: ApiResponse<PaginatedResponse<Cell>> = await response.json();
     return data.payload;
   } catch (error) {
-    console.error('Get cells error:', error);
+    console.error("Get cells error:", error);
     throw error;
   }
 }
@@ -101,28 +103,28 @@ export async function getCells(
 export async function getCellById(id: string): Promise<Cell> {
   try {
     const tokens = getAuthTokens();
-    
+
     if (!tokens) {
-      throw new Error('Not authenticated');
+      throw new Error("Not authenticated");
     }
-    
+
     const response = await fetch(`/api/v1/cells/${id}`, {
-      method: 'GET',
+      method: "GET",
       headers: {
-        'Authorization': `Bearer ${tokens.accessToken}`,
-        'Content-Type': 'application/json',
+        Authorization: `Bearer ${tokens.accessToken}`,
+        "Content-Type": "application/json",
       },
     });
 
     if (!response.ok) {
       const errorData = await response.json();
-      throw new Error(errorData.message || 'Failed to fetch cell');
+      throw new Error(errorData.message || "Failed to fetch cell");
     }
 
     const data: ApiResponse<Cell> = await response.json();
     return data.payload;
   } catch (error) {
-    console.error('Get cell error:', error);
+    console.error("Get cell error:", error);
     throw error;
   }
 }
@@ -135,29 +137,29 @@ export async function getCellById(id: string): Promise<Cell> {
 export async function createCell(cellData: CreateCellInput): Promise<Cell> {
   try {
     const tokens = getAuthTokens();
-    
+
     if (!tokens) {
-      throw new Error('Not authenticated');
+      throw new Error("Not authenticated");
     }
-    
-    const response = await fetch('/api/v1/cells', {
-      method: 'POST',
+
+    const response = await fetch("/api/v1/cells", {
+      method: "POST",
       headers: {
-        'Authorization': `Bearer ${tokens.accessToken}`,
-        'Content-Type': 'application/json',
+        Authorization: `Bearer ${tokens.accessToken}`,
+        "Content-Type": "application/json",
       },
       body: JSON.stringify(cellData),
     });
 
     if (!response.ok) {
       const errorData = await response.json();
-      throw new Error(errorData.message || 'Failed to create cell');
+      throw new Error(errorData.message || "Failed to create cell");
     }
 
     const data: ApiResponse<Cell> = await response.json();
     return data.payload;
   } catch (error) {
-    console.error('Create cell error:', error);
+    console.error("Create cell error:", error);
     throw error;
   }
 }
@@ -168,32 +170,35 @@ export async function createCell(cellData: CreateCellInput): Promise<Cell> {
  * @param cellData Cell data to update
  * @returns Promise with updated cell
  */
-export async function updateCell(id: string, cellData: UpdateCellInput): Promise<Cell> {
+export async function updateCell(
+  id: string,
+  cellData: UpdateCellInput
+): Promise<Cell> {
   try {
     const tokens = getAuthTokens();
-    
+
     if (!tokens) {
-      throw new Error('Not authenticated');
+      throw new Error("Not authenticated");
     }
-    
+
     const response = await fetch(`/api/v1/cells/${id}`, {
-      method: 'PATCH',
+      method: "PATCH",
       headers: {
-        'Authorization': `Bearer ${tokens.accessToken}`,
-        'Content-Type': 'application/json',
+        Authorization: `Bearer ${tokens.accessToken}`,
+        "Content-Type": "application/json",
       },
       body: JSON.stringify(cellData),
     });
 
     if (!response.ok) {
       const errorData = await response.json();
-      throw new Error(errorData.message || 'Failed to update cell');
+      throw new Error(errorData.message || "Failed to update cell");
     }
 
     const data: ApiResponse<Cell> = await response.json();
     return data.payload;
   } catch (error) {
-    console.error('Update cell error:', error);
+    console.error("Update cell error:", error);
     throw error;
   }
 }
@@ -206,28 +211,28 @@ export async function updateCell(id: string, cellData: UpdateCellInput): Promise
 export async function deleteCell(id: string): Promise<string> {
   try {
     const tokens = getAuthTokens();
-    
+
     if (!tokens) {
-      throw new Error('Not authenticated');
+      throw new Error("Not authenticated");
     }
-    
+
     const response = await fetch(`/api/v1/cells/${id}`, {
-      method: 'DELETE',
+      method: "DELETE",
       headers: {
-        'Authorization': `Bearer ${tokens.accessToken}`,
-        'Content-Type': 'application/json',
+        Authorization: `Bearer ${tokens.accessToken}`,
+        "Content-Type": "application/json",
       },
     });
 
     if (!response.ok) {
       const errorData = await response.json();
-      throw new Error(errorData.message || 'Failed to delete cell');
+      throw new Error(errorData.message || "Failed to delete cell");
     }
 
     const data: ApiResponse<null> = await response.json();
     return data.message;
   } catch (error) {
-    console.error('Delete cell error:', error);
+    console.error("Delete cell error:", error);
     throw error;
   }
 }
@@ -238,32 +243,35 @@ export async function deleteCell(id: string): Promise<string> {
  * @param userId User ID to assign as leader
  * @returns Promise with updated cell
  */
-export async function assignCellLeader(cellId: string, userId: string): Promise<Cell> {
+export async function assignCellLeader(
+  cellId: string,
+  userId: string
+): Promise<Cell> {
   try {
     const tokens = getAuthTokens();
-    
+
     if (!tokens) {
-      throw new Error('Not authenticated');
+      throw new Error("Not authenticated");
     }
-    
+
     const response = await fetch(`/api/v1/cells/${cellId}/assign-leader`, {
-      method: 'PATCH',
+      method: "PATCH",
       headers: {
-        'Authorization': `Bearer ${tokens.accessToken}`,
-        'Content-Type': 'application/json',
+        Authorization: `Bearer ${tokens.accessToken}`,
+        "Content-Type": "application/json",
       },
       body: JSON.stringify({ userId }),
     });
 
     if (!response.ok) {
       const errorData = await response.json();
-      throw new Error(errorData.message || 'Failed to assign cell leader');
+      throw new Error(errorData.message || "Failed to assign cell leader");
     }
 
     const data: ApiResponse<Cell> = await response.json();
     return data.payload;
   } catch (error) {
-    console.error('Assign cell leader error:', error);
+    console.error("Assign cell leader error:", error);
     throw error;
   }
 }
@@ -276,28 +284,28 @@ export async function assignCellLeader(cellId: string, userId: string): Promise<
 export async function removeCellLeader(cellId: string): Promise<Cell> {
   try {
     const tokens = getAuthTokens();
-    
+
     if (!tokens) {
-      throw new Error('Not authenticated');
+      throw new Error("Not authenticated");
     }
-    
+
     const response = await fetch(`/api/v1/cells/${cellId}/remove-leader`, {
-      method: 'PATCH',
+      method: "PATCH",
       headers: {
-        'Authorization': `Bearer ${tokens.accessToken}`,
-        'Content-Type': 'application/json',
+        Authorization: `Bearer ${tokens.accessToken}`,
+        "Content-Type": "application/json",
       },
     });
 
     if (!response.ok) {
       const errorData = await response.json();
-      throw new Error(errorData.message || 'Failed to remove cell leader');
+      throw new Error(errorData.message || "Failed to remove cell leader");
     }
 
     const data: ApiResponse<Cell> = await response.json();
     return data.payload;
   } catch (error) {
-    console.error('Remove cell leader error:', error);
+    console.error("Remove cell leader error:", error);
     throw error;
   }
 }

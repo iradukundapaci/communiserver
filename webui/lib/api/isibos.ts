@@ -5,6 +5,8 @@ import { getAuthTokens } from "./auth";
 export interface Isibo {
   id: string;
   name: string;
+  hasLeader: boolean;
+  leaderId: string | null;
   village?: {
     id: string;
     name: string;

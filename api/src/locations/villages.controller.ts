@@ -16,7 +16,6 @@ import {
 } from "src/__shared__/decorators";
 import {
   IsAdmin,
-  IsAdminOrCellLeader,
   IsAuthorized,
   IsCellLeader,
 } from "src/auth/decorators/authorize.decorator";
@@ -96,7 +95,7 @@ export class VillagesController {
   }
 
   @GetOperation("", "Get all villages")
-  @IsAdminOrCellLeader()
+  @IsAuthorized()
   @PaginatedOkResponse(FetchVillageDto.Output)
   @ErrorResponses(UnauthorizedResponse, ForbiddenResponse, NotFoundResponse)
   async getAllVillages(@Query() fetchVillageDto: FetchVillageDto.Input) {

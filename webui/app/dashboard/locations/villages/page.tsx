@@ -140,7 +140,7 @@ export default function VillagesPage() {
       )
     ) {
       try {
-        // Implementation will be added later
+        await removeVillageLeader(id);
         toast.success("Village leader removed successfully");
         fetchVillages();
       } catch (error) {
@@ -243,6 +243,7 @@ export default function VillagesPage() {
                     <TableHeader>
                       <TableRow>
                         <TableHead>Name</TableHead>
+                        <TableHead>Leader Status</TableHead>
                         <TableHead className="w-[200px]">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -251,6 +252,17 @@ export default function VillagesPage() {
                         <TableRow key={village.id}>
                           <TableCell className="font-medium">
                             {village.name}
+                          </TableCell>
+                          <TableCell>
+                            {village.hasLeader ? (
+                              <span className="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800">
+                                Has Leader
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-800">
+                                No Leader
+                              </span>
+                            )}
                           </TableCell>
                           <TableCell>
                             <div className="flex items-center gap-2">
@@ -267,31 +279,43 @@ export default function VillagesPage() {
                                 </Button>
                               </PermissionGate>
 
-                              <PermissionGate
-                                permission={Permission.ASSIGN_VILLAGE_LEADERS}
-                              >
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => handleAssignLeader(village.id)}
+                              {!village.hasLeader ? (
+                                <PermissionGate
+                                  permission={Permission.ASSIGN_VILLAGE_LEADERS}
                                 >
-                                  <UserPlus className="h-4 w-4" />
-                                  <span className="sr-only">Assign Leader</span>
-                                </Button>
-                              </PermissionGate>
-
-                              <PermissionGate
-                                permission={Permission.DEASSIGN_VILLAGE_LEADERS}
-                              >
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => handleRemoveLeader(village.id)}
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() =>
+                                      handleAssignLeader(village.id)
+                                    }
+                                  >
+                                    <UserPlus className="h-4 w-4" />
+                                    <span className="sr-only">
+                                      Assign Leader
+                                    </span>
+                                  </Button>
+                                </PermissionGate>
+                              ) : (
+                                <PermissionGate
+                                  permission={
+                                    Permission.DEASSIGN_VILLAGE_LEADERS
+                                  }
                                 >
-                                  <UserMinus className="h-4 w-4" />
-                                  <span className="sr-only">Remove Leader</span>
-                                </Button>
-                              </PermissionGate>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() =>
+                                      handleRemoveLeader(village.id)
+                                    }
+                                  >
+                                    <UserMinus className="h-4 w-4" />
+                                    <span className="sr-only">
+                                      Remove Leader
+                                    </span>
+                                  </Button>
+                                </PermissionGate>
+                              )}
 
                               <PermissionGate
                                 permission={Permission.DELETE_VILLAGE}
@@ -386,4 +410,7 @@ export default function VillagesPage() {
       </Card>
     </div>
   );
+}
+function removeVillageLeader(id: string) {
+  throw new Error("Function not implemented.");
 }

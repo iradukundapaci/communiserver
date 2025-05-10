@@ -318,7 +318,7 @@ export class HousesService {
     }
 
     // Check if house already has a representative
-    if (house.representative) {
+    if (house.hasLeader) {
       throw new ConflictException("This house already has a representative");
     }
 
@@ -334,6 +334,8 @@ export class HousesService {
 
     // Set the house's representative
     house.representative = representativeUser.profile;
+    house.hasLeader = true;
+    house.leaderId = userId;
 
     return this.houseRepository.save(house);
   }
@@ -382,7 +384,7 @@ export class HousesService {
     }
 
     // Check if house has a representative
-    if (!house.representative) {
+    if (!house.hasLeader) {
       throw new NotFoundException("This house does not have a representative");
     }
 
@@ -395,6 +397,8 @@ export class HousesService {
 
     // Remove the representative from the house
     house.representative = null;
+    house.hasLeader = false;
+    house.leaderId = null;
 
     return this.houseRepository.save(house);
   }

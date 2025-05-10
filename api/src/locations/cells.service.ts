@@ -179,8 +179,7 @@ export class CellsService {
     }
 
     // Check if cell already has a leader
-    const hasCellLeader = cell.profiles.some((profile) => profile.isCellLeader);
-    if (hasCellLeader) {
+    if (cell.hasLeader) {
       throw new ConflictException("Cell already has a leader");
     }
 
@@ -197,6 +196,11 @@ export class CellsService {
     await this.usersService.saveUser(user);
     await this.usersService.saveProfile(user.profile);
 
+    // Update the cell with the leader information
+    cell.hasLeader = true;
+    cell.leaderId = userId;
+    await this.cellRepository.save(cell);
+
     return this.findCellById(cellId);
   }
 
@@ -210,10 +214,15 @@ export class CellsService {
       throw new NotFoundException("Cell not found");
     }
 
+    // Check if cell has a leader
+    if (!cell.hasLeader) {
+      throw new NotFoundException("Cell does not have a leader");
+    }
+
     // Find the cell leader
     const cellLeader = cell.profiles.find((profile) => profile.isCellLeader);
     if (!cellLeader) {
-      throw new NotFoundException("Cell does not have a leader");
+      throw new NotFoundException("Cell leader profile not found");
     }
 
     // Get the user
@@ -227,6 +236,11 @@ export class CellsService {
     user.profile.isCellLeader = false;
     await this.usersService.saveUser(user);
     await this.usersService.saveProfile(user.profile);
+
+    // Update the cell to remove leader information
+    cell.hasLeader = false;
+    cell.leaderId = null;
+    await this.cellRepository.save(cell);
 
     return this.findCellById(cellId);
   }

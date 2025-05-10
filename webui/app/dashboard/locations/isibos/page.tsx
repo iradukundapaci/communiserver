@@ -179,7 +179,7 @@ export default function IsibosPage() {
       )
     ) {
       try {
-        // Implementation will be added later
+        await removeIsiboLeader(id);
         toast.success("Isibo leader removed successfully");
         fetchIsibos();
       } catch (error) {
@@ -310,6 +310,7 @@ export default function IsibosPage() {
                     <TableHeader>
                       <TableRow>
                         <TableHead>Name</TableHead>
+                        <TableHead>Leader Status</TableHead>
                         <TableHead className="w-[200px]">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -318,6 +319,17 @@ export default function IsibosPage() {
                         <TableRow key={isibo.id}>
                           <TableCell className="font-medium">
                             {isibo.name}
+                          </TableCell>
+                          <TableCell>
+                            {isibo.hasLeader ? (
+                              <span className="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800">
+                                Has Leader
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-800">
+                                No Leader
+                              </span>
+                            )}
                           </TableCell>
                           <TableCell>
                             <div className="flex items-center gap-2">
@@ -334,31 +346,37 @@ export default function IsibosPage() {
                                 </Button>
                               </PermissionGate>
 
-                              <PermissionGate
-                                permission={Permission.ASSIGN_ISIBO_LEADERS}
-                              >
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => handleAssignLeader(isibo.id)}
+                              {!isibo.hasLeader ? (
+                                <PermissionGate
+                                  permission={Permission.ASSIGN_ISIBO_LEADERS}
                                 >
-                                  <UserPlus className="h-4 w-4" />
-                                  <span className="sr-only">Assign Leader</span>
-                                </Button>
-                              </PermissionGate>
-
-                              <PermissionGate
-                                permission={Permission.DEASSIGN_ISIBO_LEADERS}
-                              >
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => handleRemoveLeader(isibo.id)}
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => handleAssignLeader(isibo.id)}
+                                  >
+                                    <UserPlus className="h-4 w-4" />
+                                    <span className="sr-only">
+                                      Assign Leader
+                                    </span>
+                                  </Button>
+                                </PermissionGate>
+                              ) : (
+                                <PermissionGate
+                                  permission={Permission.DEASSIGN_ISIBO_LEADERS}
                                 >
-                                  <UserMinus className="h-4 w-4" />
-                                  <span className="sr-only">Remove Leader</span>
-                                </Button>
-                              </PermissionGate>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => handleRemoveLeader(isibo.id)}
+                                  >
+                                    <UserMinus className="h-4 w-4" />
+                                    <span className="sr-only">
+                                      Remove Leader
+                                    </span>
+                                  </Button>
+                                </PermissionGate>
+                              )}
 
                               <PermissionGate
                                 permission={Permission.DELETE_ISIBO}
