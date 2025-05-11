@@ -1,4 +1,4 @@
-import { IsString, IsDate, IsOptional, IsEnum, IsUUID } from "class-validator";
+import { IsEnum, IsOptional, IsString, IsUUID } from "class-validator";
 import { EActivityStatus } from "../enum/EActivityStatus";
 
 export namespace CreateActivityDTO {
@@ -9,11 +9,11 @@ export namespace CreateActivityDTO {
     @IsString()
     description: string;
 
-    @IsDate()
-    startDate: Date;
+    @IsString()
+    startDate: string;
 
-    @IsDate()
-    endDate: Date;
+    @IsString()
+    endDate: string;
 
     @IsString()
     @IsOptional()

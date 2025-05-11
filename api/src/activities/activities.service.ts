@@ -1,23 +1,22 @@
 import {
+  BadRequestException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
-  ForbiddenException,
-  BadRequestException,
-  ConflictException,
 } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
-import { Repository, Brackets } from "typeorm";
-import { User } from "../users/entities/user.entity";
-import { UserRole } from "../__shared__/enums/user-role.enum";
 import { plainToInstance } from "class-transformer";
-import { UsersService } from "../users/users.service";
 import { paginate } from "nestjs-typeorm-paginate";
-import { Activity } from "./entities/activity.entity";
-import { CreateActivityDTO } from "./dto/create-activity.dto";
-import { UpdateActivityDTO } from "./dto/update-activity.dto";
-import { FetchActivityDTO } from "./dto/fetch-activity.dto";
+import { Brackets, Repository } from "typeorm";
+import { UserRole } from "../__shared__/enums/user-role.enum";
 import { CellsService } from "../locations/cells.service";
 import { VillagesService } from "../locations/villages.service";
+import { User } from "../users/entities/user.entity";
+import { UsersService } from "../users/users.service";
+import { CreateActivityDTO } from "./dto/create-activity.dto";
+import { FetchActivityDTO } from "./dto/fetch-activity.dto";
+import { UpdateActivityDTO } from "./dto/update-activity.dto";
+import { Activity } from "./entities/activity.entity";
 
 @Injectable()
 export class ActivitiesService {
@@ -52,8 +51,11 @@ export class ActivitiesService {
       );
     }
 
+    // Convert string dates to Date objects for database storage
     const activity = this.activityRepository.create({
       ...createActivityDTO,
+      startDate: new Date(createActivityDTO.startDate),
+      endDate: new Date(createActivityDTO.endDate),
       organizer: organizer.profile,
       cell,
       village,
@@ -213,8 +215,20 @@ export class ActivitiesService {
       );
     }
 
+    // Create an update object with converted dates if provided
+    const updateData = { ...updateActivityDTO };
+
+    // Convert string dates to Date objects if they exist
+    if (updateData.startDate) {
+      updateData.startDate = new Date(updateData.startDate);
+    }
+
+    if (updateData.endDate) {
+      updateData.endDate = new Date(updateData.endDate);
+    }
+
     Object.assign(activity, {
-      ...updateActivityDTO,
+      ...updateData,
       cell,
       village,
     });
