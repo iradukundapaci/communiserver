@@ -5,10 +5,12 @@ const API_URL = process.env.API_URL || "http://localhost:8000";
 
 export async function GET(
   request: NextRequest,
-  context: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  const { params } = context;
   try {
+    const resolvedParams = await params;
+    const { id } = resolvedParams;
+
     // Get the access token from the request headers
     const authHeader = request.headers.get("Authorization");
 
@@ -18,9 +20,6 @@ export async function GET(
         { status: 401 }
       );
     }
-
-    // Get the ID from params
-    const { id } = params;
 
     const response = await fetch(`${API_URL}/api/v1/tasks/${id}`, {
       method: "GET",
@@ -48,10 +47,12 @@ export async function GET(
 
 export async function PATCH(
   request: NextRequest,
-  context: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  const { params } = context;
   try {
+    const resolvedParams = await params;
+    const { id } = resolvedParams;
+
     // Get the access token from the request headers
     const authHeader = request.headers.get("Authorization");
 
@@ -61,9 +62,6 @@ export async function PATCH(
         { status: 401 }
       );
     }
-
-    // Get the ID from params
-    const { id } = params;
     const body = await request.json();
 
     // If assignedToId is an empty string, remove it from the request body
@@ -98,10 +96,12 @@ export async function PATCH(
 
 export async function DELETE(
   request: NextRequest,
-  context: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  const { params } = context;
   try {
+    const resolvedParams = await params;
+    const { id } = resolvedParams;
+
     // Get the access token from the request headers
     const authHeader = request.headers.get("Authorization");
 
@@ -111,9 +111,6 @@ export async function DELETE(
         { status: 401 }
       );
     }
-
-    // Get the ID from params
-    const { id } = params;
 
     const response = await fetch(`${API_URL}/api/v1/tasks/${id}`, {
       method: "DELETE",

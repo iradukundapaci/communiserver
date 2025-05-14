@@ -28,20 +28,15 @@ import {
 import { getCells } from "@/lib/api/cells";
 import { getVillages } from "@/lib/api/villages";
 import { ArrowLeft } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import * as React from "react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
-export default function ActivityDetailPage({
-  params,
-}: {
-  params: { id: string };
-}) {
-  // Unwrap params with React.use() as recommended by Next.js
-  const unwrappedParams = React.use(params);
+export default function ActivityDetailPage() {
+  const params = useParams();
   const router = useRouter();
-  const id = unwrappedParams.id;
+  const id = params.id as string;
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [activity, setActivity] = useState<Activity | null>(null);

@@ -9,6 +9,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -19,24 +20,18 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Activity, getActivities } from "@/lib/api/activities";
 import { Task, getTaskById, updateTask } from "@/lib/api/tasks";
 import { ArrowLeft } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import * as React from "react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
-export default function TaskDetailPage({
-  params,
-}: {
-  params: { id: string };
-}) {
-  // Unwrap params with React.use() as recommended by Next.js
-  const unwrappedParams = React.use(params);
+export default function TaskDetailPage() {
+  const params = useParams();
   const router = useRouter();
-  const id = unwrappedParams.id;
+  const id = params.id as string;
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [task, setTask] = useState<Task | null>(null);
@@ -189,7 +184,9 @@ export default function TaskDetailPage({
               <Label htmlFor="activityId">Activity</Label>
               <Select
                 value={formData.activityId}
-                onValueChange={(value) => handleSelectChange("activityId", value)}
+                onValueChange={(value) =>
+                  handleSelectChange("activityId", value)
+                }
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select activity" />

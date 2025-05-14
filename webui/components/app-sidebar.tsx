@@ -46,7 +46,7 @@ const data = {
     },
     {
       title: "Activities",
-      url: "dashboard/activities",
+      url: "/dashboard/activities",
       icon: IconChecklist,
     },
     {

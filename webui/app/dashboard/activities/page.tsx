@@ -42,22 +42,16 @@ import { getVillages } from "@/lib/api/villages";
 import { Permission } from "@/lib/permissions";
 import { format } from "date-fns";
 import { Pencil, PlusCircle, RefreshCw, Search, Trash2 } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import * as React from "react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import TasksTabComponent from "./tasks-tab";
 
-export default function ActivitiesPage({
-  searchParams,
-}: {
-  searchParams?: { tab?: string };
-}) {
-  // Unwrap searchParams with React.use() as recommended by Next.js
-  const unwrappedSearchParams = React.use(searchParams || {});
-  const router = useRouter();
+export default function ActivitiesPage() {
+  const searchParams = useSearchParams();
   const initialTab =
-    unwrappedSearchParams.tab === "tasks" ? "tasks" : "activities";
+    searchParams?.get("tab") === "tasks" ? "tasks" : "activities";
   const [activeTab, setActiveTab] = useState(initialTab);
 
   // Handle tab change and update URL

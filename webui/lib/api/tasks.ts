@@ -1,6 +1,14 @@
 // Tasks API service
+import {
+  CreateTaskInput,
+  PaginatedResponse,
+  Task as TaskType,
+  UpdateTaskInput,
+} from "./activities";
 import { getAuthTokens } from "./auth";
-import { Task, CreateTaskInput, UpdateTaskInput, PaginatedResponse } from "./activities";
+
+// Re-export the Task interface
+export type Task = TaskType;
 
 interface ApiResponse<T> {
   message: string;

@@ -20,21 +20,18 @@ export async function GET(request: NextRequest) {
     const size = searchParams.get("size") || "10";
     const q = searchParams.get("q") || "";
 
-    let url = `${API_URL}/activities?page=${page}&size=${size}`;
+    let url = `${API_URL}/api/v1/activities?page=${page}&size=${size}`;
     if (q) {
       url += `&q=${encodeURIComponent(q)}`;
     }
 
-    const response = await fetch(
-      `${API_URL}/api/v1${url.substring(url.indexOf("/activities"))}`,
-      {
-        method: "GET",
-        headers: {
-          Authorization: authHeader,
-          "Content-Type": "application/json",
-        },
-      }
-    );
+    const response = await fetch(url, {
+      method: "GET",
+      headers: {
+        Authorization: authHeader,
+        "Content-Type": "application/json",
+      },
+    });
 
     const data = await response.json();
 
