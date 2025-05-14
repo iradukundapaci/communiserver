@@ -215,20 +215,18 @@ export class ActivitiesService {
       );
     }
 
-    // Create an update object with converted dates if provided
+    // Create an update object with the DTO data
     const updateData = { ...updateActivityDTO };
 
-    // Convert string dates to Date objects if they exist
-    if (updateData.startDate) {
-      updateData.startDate = new Date(updateData.startDate);
-    }
-
-    if (updateData.endDate) {
-      updateData.endDate = new Date(updateData.endDate);
-    }
+    // We'll handle date conversion directly in the Object.assign below
 
     Object.assign(activity, {
       ...updateData,
+      // Convert dates if they exist in the DTO
+      ...(updateData.startDate && {
+        startDate: new Date(updateData.startDate),
+      }),
+      ...(updateData.endDate && { endDate: new Date(updateData.endDate) }),
       cell,
       village,
     });
