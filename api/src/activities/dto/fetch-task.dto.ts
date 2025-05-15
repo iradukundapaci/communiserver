@@ -1,5 +1,6 @@
-import { IsOptional, IsUUID, IsBoolean } from "class-validator";
+import { IsBoolean, IsOptional, IsUUID } from "class-validator";
 import { PaginationDto } from "src/__shared__/dto/pagination.dto";
+import { ETaskStatus } from "../enum/ETaskStatus";
 
 export namespace FetchTaskDTO {
   export class Input extends PaginationDto {
@@ -9,23 +10,19 @@ export namespace FetchTaskDTO {
 
     @IsBoolean()
     @IsOptional()
-    completed?: boolean;
+    status?: ETaskStatus;
 
     @IsUUID()
     @IsOptional()
-    assignedToId?: string;
+    isiboId?: string;
   }
 
   export class Output {
     id: string;
     title: string;
     description: string;
-    completed: boolean;
-    activity: {
-      id: string;
-      title: string;
-    };
-    assignedTo?: {
+    status: ETaskStatus;
+    isibo: {
       id: string;
       names: string;
     };

@@ -1,31 +1,34 @@
-import { IsString, IsOptional, IsUUID } from "class-validator";
+import { IsNotEmpty, IsString, IsUUID } from "class-validator";
 
 export namespace CreateTaskDTO {
   export class Input {
     @IsString()
+    @IsNotEmpty()
     title: string;
 
     @IsString()
+    @IsNotEmpty()
     description: string;
 
     @IsUUID()
+    @IsNotEmpty()
     activityId: string;
 
     @IsUUID()
-    @IsOptional()
-    assignedToId?: string;
+    @IsNotEmpty()
+    isiboId: string;
   }
 
   export class Output {
     id: string;
     title: string;
     description: string;
-    completed: boolean;
+    status: string;
     activity: {
       id: string;
       title: string;
     };
-    assignedTo?: {
+    isibo: {
       id: string;
       names: string;
     };

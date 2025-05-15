@@ -1,4 +1,5 @@
-import { IsString, IsOptional, IsUUID, IsBoolean } from "class-validator";
+import { IsEnum, IsOptional, IsString, IsUUID } from "class-validator";
+import { ETaskStatus } from "../enum/ETaskStatus";
 
 export namespace UpdateTaskDTO {
   export class Input {
@@ -10,27 +11,31 @@ export namespace UpdateTaskDTO {
     @IsOptional()
     description?: string;
 
-    @IsBoolean()
+    @IsEnum(ETaskStatus)
     @IsOptional()
-    completed?: boolean;
+    status?: ETaskStatus;
 
     @IsUUID()
     @IsOptional()
-    assignedToId?: string;
+    activityId?: string;
+
+    @IsUUID()
+    @IsOptional()
+    isiboId?: string;
   }
 
   export class Output {
     id: string;
     title: string;
     description: string;
-    completed: boolean;
+    status: ETaskStatus;
     activity: {
       id: string;
       title: string;
     };
-    assignedTo?: {
+    isibo: {
       id: string;
-      names: string;
+      name: string;
     };
   }
 }

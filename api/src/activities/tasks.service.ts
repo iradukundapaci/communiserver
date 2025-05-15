@@ -1,18 +1,15 @@
-import {
-  Injectable,
-  NotFoundException,
-  BadRequestException,
-} from "@nestjs/common";
+import { Injectable, NotFoundException } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
-import { Repository, Brackets } from "typeorm";
-import { Task } from "./entities/task.entity";
-import { Activity } from "./entities/activity.entity";
-import { UpdateTaskDTO } from "./dto/update-task.dto";
-import { FetchTaskDTO } from "./dto/fetch-task.dto";
-import { UsersService } from "../users/users.service";
 import { plainToInstance } from "class-transformer";
 import { paginate } from "nestjs-typeorm-paginate";
+import { Repository } from "typeorm";
+import { IsibosService } from "../locations/isibos.service";
 import { CreateTaskDTO } from "./dto/create-task.dto";
+import { FetchTaskDTO } from "./dto/fetch-task.dto";
+import { UpdateTaskDTO } from "./dto/update-task.dto";
+import { Activity } from "./entities/activity.entity";
+import { Task } from "./entities/task.entity";
+import { ETaskStatus } from "./enum/ETaskStatus";
 
 @Injectable()
 export class TasksService {
@@ -21,7 +18,7 @@ export class TasksService {
     private readonly taskRepository: Repository<Task>,
     @InjectRepository(Activity)
     private readonly activityRepository: Repository<Activity>,
-    private readonly usersService: UsersService,
+    private readonly isibosService: IsibosService,
   ) {}
 
   async create(
@@ -35,21 +32,15 @@ export class TasksService {
       throw new NotFoundException("Activity not found");
     }
 
-    let assignedTo;
-    if (createTaskDTO.assignedToId) {
-      const user = await this.usersService.findUserById(
-        createTaskDTO.assignedToId,
-      );
-      if (!user) {
-        throw new NotFoundException("Assigned user not found");
-      }
-      assignedTo = user.profile;
-    }
+    // Find the isibo
+    const isibo = await this.isibosService.findIsiboById(createTaskDTO.isiboId);
 
     const task = this.taskRepository.create({
-      ...createTaskDTO,
+      title: createTaskDTO.title,
+      description: createTaskDTO.description,
+      status: ETaskStatus.PENDING,
       activity,
-      assignedTo,
+      isibo,
     });
 
     const savedTask = await this.taskRepository.save(task);
@@ -60,7 +51,7 @@ export class TasksService {
     const queryBuilder = this.taskRepository
       .createQueryBuilder("task")
       .leftJoinAndSelect("task.activity", "activity")
-      .leftJoinAndSelect("task.assignedTo", "assignedTo")
+      .leftJoinAndSelect("task.isibo", "isibo")
       .orderBy("task.createdAt", "DESC");
 
     if (dto.activityId) {
@@ -69,15 +60,15 @@ export class TasksService {
       });
     }
 
-    if (dto.completed !== undefined) {
-      queryBuilder.andWhere("task.completed = :completed", {
-        completed: dto.completed,
+    if (dto.status) {
+      queryBuilder.andWhere("task.status = :status", {
+        status: dto.status,
       });
     }
 
-    if (dto.assignedToId) {
-      queryBuilder.andWhere("assignedTo.id = :assignedToId", {
-        assignedToId: dto.assignedToId,
+    if (dto.isiboId) {
+      queryBuilder.andWhere("isibo.id = :isiboId", {
+        isiboId: dto.isiboId,
       });
     }
 
@@ -97,7 +88,7 @@ export class TasksService {
   async findOne(id: string): Promise<FetchTaskDTO.Output> {
     const task = await this.taskRepository.findOne({
       where: { id },
-      relations: ["activity", "assignedTo"],
+      relations: ["activity", "isibo"],
     });
 
     if (!task) {
@@ -113,28 +104,46 @@ export class TasksService {
   ): Promise<UpdateTaskDTO.Output> {
     const task = await this.taskRepository.findOne({
       where: { id },
-      relations: ["activity", "assignedTo"],
+      relations: ["activity", "isibo"],
     });
 
     if (!task) {
       throw new NotFoundException("Task not found");
     }
 
-    let assignedTo = task.assignedTo;
-    if (updateTaskDTO.assignedToId) {
-      const user = await this.usersService.findUserById(
-        updateTaskDTO.assignedToId,
-      );
-      if (!user) {
-        throw new NotFoundException("Assigned user not found");
+    // Update activity if provided
+    if (updateTaskDTO.activityId) {
+      const activity = await this.activityRepository.findOne({
+        where: { id: updateTaskDTO.activityId },
+      });
+
+      if (!activity) {
+        throw new NotFoundException("Activity not found");
       }
-      assignedTo = user.profile;
+
+      task.activity = activity;
     }
 
-    Object.assign(task, {
-      ...updateTaskDTO,
-      assignedTo,
-    });
+    // Update isibo if provided
+    if (updateTaskDTO.isiboId) {
+      const isibo = await this.isibosService.findIsiboById(
+        updateTaskDTO.isiboId,
+      );
+      task.isibo = isibo;
+    }
+
+    // Update other fields
+    if (updateTaskDTO.title) {
+      task.title = updateTaskDTO.title;
+    }
+
+    if (updateTaskDTO.description) {
+      task.description = updateTaskDTO.description;
+    }
+
+    if (updateTaskDTO.status) {
+      task.status = updateTaskDTO.status;
+    }
 
     const updatedTask = await this.taskRepository.save(task);
     return plainToInstance(UpdateTaskDTO.Output, updatedTask);

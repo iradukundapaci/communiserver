@@ -1,5 +1,6 @@
 import { IsEnum, IsOptional, IsString, IsUUID } from "class-validator";
 import { EActivityStatus } from "../enum/EActivityStatus";
+import { ETaskStatus } from "../enum/ETaskStatus";
 
 export namespace UpdateActivityDTO {
   export class Input {
@@ -13,15 +14,7 @@ export namespace UpdateActivityDTO {
 
     @IsString()
     @IsOptional()
-    startDate?: string;
-
-    @IsString()
-    @IsOptional()
-    endDate?: string;
-
-    @IsString()
-    @IsOptional()
-    location?: string;
+    date?: string;
 
     @IsEnum(EActivityStatus)
     @IsOptional()
@@ -29,33 +22,41 @@ export namespace UpdateActivityDTO {
 
     @IsUUID()
     @IsOptional()
-    organizerId?: string;
-
-    @IsUUID()
-    @IsOptional()
-    cellId?: string;
-
-    @IsUUID()
-    @IsOptional()
     villageId?: string;
+
+    @IsOptional()
+    tasks?: Task[];
+  }
+
+  class Task {
+    @IsUUID()
+    @IsOptional()
+    id?: string;
+
+    @IsString()
+    @IsOptional()
+    title?: string;
+
+    @IsString()
+    @IsOptional()
+    description?: string;
+
+    @IsEnum(ETaskStatus)
+    @IsOptional()
+    status?: ETaskStatus;
+
+    @IsString()
+    @IsOptional()
+    isiboId?: string;
   }
 
   export class Output {
     id: string;
     title: string;
     description: string;
-    startDate: Date;
-    endDate: Date;
-    location: string;
     status: EActivityStatus;
-    organizer: {
-      id: string;
-      names: string;
-    };
-    cell?: {
-      id: string;
-      name: string;
-    };
+    date: Date;
+    tasks: Task[];
     village?: {
       id: string;
       name: string;

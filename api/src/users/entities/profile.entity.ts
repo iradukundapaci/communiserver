@@ -1,17 +1,9 @@
 import { AbstractEntity } from "src/__shared__/entities/abstract.entity";
-import { Activity } from "src/activities/entities/activity.entity";
 import { Cell } from "src/locations/entities/cell.entity";
 import { House } from "src/locations/entities/house.entity";
 import { Isibo } from "src/locations/entities/isibo.entity";
 import { Village } from "src/locations/entities/village.entity";
-import {
-  Column,
-  Entity,
-  JoinColumn,
-  ManyToMany,
-  ManyToOne,
-  OneToOne,
-} from "typeorm";
+import { Column, Entity, JoinColumn, ManyToOne, OneToOne } from "typeorm";
 import { User } from "./user.entity";
 
 @Entity("profiles")
@@ -43,9 +35,6 @@ export class Profile extends AbstractEntity {
   @ManyToOne(() => House, (house) => house.members)
   @JoinColumn({ name: "house_id" })
   house: House;
-
-  @ManyToMany(() => Activity, (activity) => activity.participants)
-  activities: Activity[];
 
   @Column({ name: "is_isibo_leader", default: false })
   isIsiboLeader: boolean;

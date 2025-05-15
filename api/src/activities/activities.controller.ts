@@ -1,9 +1,5 @@
-import { Controller, Body, Param, UseGuards, Query } from "@nestjs/common";
-import { ActivitiesService } from "./activities.service";
-import { JwtGuard } from "../auth/guards/jwt.guard";
-import { RolesGuard } from "../auth/guards/roles.guard";
-import { ApiTags, ApiBearerAuth } from "@nestjs/swagger";
-import { GenericResponse } from "../__shared__/dto/generic-response.dto";
+import { Body, Controller, Param, Query, UseGuards } from "@nestjs/common";
+import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
 import {
   ApiRequestBody,
   BadRequestResponse,
@@ -17,13 +13,18 @@ import {
   PostOperation,
   UnauthorizedResponse,
 } from "src/__shared__/decorators";
-import { IsAuthorized } from "src/auth/decorators/authorize.decorator";
+import {
+  IsAuthorized,
+  IsCellLeaderOrVillageLeader,
+} from "src/auth/decorators/authorize.decorator";
+import { GenericResponse } from "../__shared__/dto/generic-response.dto";
+import { JwtGuard } from "../auth/guards/jwt.guard";
+import { RolesGuard } from "../auth/guards/roles.guard";
+import { ActivitiesService } from "./activities.service";
+import { CreateActivityDTO } from "./dto/create-activity.dto";
 import { FetchActivityDTO } from "./dto/fetch-activity.dto";
 import { UpdateActivityDTO } from "./dto/update-activity.dto";
-import { CreateActivityDTO } from "./dto/create-activity.dto";
 import { Activity } from "./entities/activity.entity";
-import { GetUser } from "src/auth/decorators/get-user.decorator";
-import { User } from "src/users/entities/user.entity";
 
 @ApiTags("Activities")
 @ApiBearerAuth()
@@ -33,7 +34,7 @@ export class ActivitiesController {
   constructor(private readonly activitiesService: ActivitiesService) {}
 
   @PostOperation("", "Create a new activity")
-  @IsAuthorized()
+  @IsCellLeaderOrVillageLeader()
   @ApiRequestBody(CreateActivityDTO.Input)
   @ErrorResponses(
     UnauthorizedResponse,
@@ -68,7 +69,7 @@ export class ActivitiesController {
   }
 
   @PatchOperation(":id", "Update an activity")
-  @IsAuthorized()
+  @IsCellLeaderOrVillageLeader()
   @ApiRequestBody(UpdateActivityDTO.Input)
   @ErrorResponses(
     UnauthorizedResponse,
@@ -86,13 +87,10 @@ export class ActivitiesController {
   }
 
   @DeleteOperation(":id", "Delete an activity")
-  @IsAuthorized()
+  @IsCellLeaderOrVillageLeader()
   @ErrorResponses(UnauthorizedResponse, ForbiddenResponse, NotFoundResponse)
-  async remove(
-    @Param("id") id: string,
-    @GetUser() user: User,
-  ): Promise<GenericResponse> {
-    await this.activitiesService.delete(id, user);
+  async remove(@Param("id") id: string): Promise<GenericResponse> {
+    await this.activitiesService.delete(id);
     return new GenericResponse("Activity deleted successfully");
   }
 }

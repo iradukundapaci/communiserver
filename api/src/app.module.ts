@@ -10,18 +10,14 @@ import { TypeOrmModule } from "@nestjs/typeorm";
 import { AdminSeedService } from "src/__shared__/seed/admin-seed.service";
 import { LocationSeedService } from "src/__shared__/seed/location-seed.service";
 import { SeedModule } from "src/__shared__/seed/seed.module";
-import { SettingsSeedService } from "src/__shared__/seed/setting-seed.service";
 import { appConfig } from "./__shared__/config/app.config";
 import { AppDataSource } from "./__shared__/config/typeorm.config";
 import { GlobalExceptionFilter } from "./__shared__/filters/global-exception.filter";
 import { AuditInterceptor } from "./__shared__/interceptors/audit.interceptor";
 import { ActivitiesModule } from "./activities/activities.module";
 import { AuthModule } from "./auth/auth.module";
-import { ContactUsModule } from "./contact-us/contact-us.module";
-import { HealthModule } from "./health-check/health-module";
 import { LocationsModule } from "./locations/locations.module";
 import { NotificationsModule } from "./notifications/notifications.module";
-import { SettingsModule } from "./settings/settings.module";
 import { UsersModule } from "./users/users.module";
 import { VerificationModule } from "./verification/verification.module";
 
@@ -36,12 +32,9 @@ import { VerificationModule } from "./verification/verification.module";
     UsersModule,
     NotificationsModule,
     SeedModule,
-    ContactUsModule,
     ActivitiesModule,
     LocationsModule,
     VerificationModule,
-    HealthModule,
-    SettingsModule,
   ],
   providers: [
     {
@@ -68,16 +61,14 @@ import { VerificationModule } from "./verification/verification.module";
 export class AppModule implements OnApplicationBootstrap {
   constructor(
     private adminSeedService: AdminSeedService,
-    private settingsSeedService: SettingsSeedService,
     private locationSeedService: LocationSeedService,
   ) {}
 
   async onApplicationBootstrap() {
     /**
-     * Seed admin user, settings, and locations
+     * Seed admin user and locations
      */
     await this.adminSeedService.run();
-    await this.settingsSeedService.run();
     await this.locationSeedService.run();
   }
 }

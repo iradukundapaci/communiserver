@@ -1,7 +1,8 @@
-import { Entity, Column, ManyToOne, JoinColumn } from "typeorm";
 import { AbstractEntity } from "src/__shared__/entities/abstract.entity";
+import { Isibo } from "src/locations/entities/isibo.entity";
+import { Column, Entity, JoinColumn, ManyToOne, OneToOne } from "typeorm";
+import { ETaskStatus } from "../enum/ETaskStatus";
 import { Activity } from "./activity.entity";
-import { Profile } from "src/users/entities/profile.entity";
 
 @Entity("tasks")
 export class Task extends AbstractEntity {
@@ -11,14 +12,17 @@ export class Task extends AbstractEntity {
   @Column("text")
   description: string;
 
-  @Column({ default: false })
-  completed: boolean;
+  @Column({ length: 50 })
+  status: ETaskStatus = ETaskStatus.PENDING;
 
   @ManyToOne(() => Activity, (activity) => activity.tasks)
   @JoinColumn({ name: "activity_id" })
   activity: Activity;
 
-  @ManyToOne(() => Profile, { nullable: true })
-  @JoinColumn({ name: "assigned_to_id" })
-  assignedTo: Profile;
+  @OneToOne(() => Isibo, (isibo) => isibo.id, {
+    nullable: true,
+    eager: true,
+  })
+  @JoinColumn({ name: "isibo_id" })
+  isibo: Isibo;
 }

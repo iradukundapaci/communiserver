@@ -23,6 +23,10 @@ export function IsCellLeader() {
   return Authorize(JwtGuard, UserRole.CELL_LEADER);
 }
 
+export function IsCellLeaderOrVillageLeader() {
+  return Authorize(JwtGuard, UserRole.CELL_LEADER, UserRole.VILLAGE_LEADER);
+}
+
 export function IsVillageLeader() {
   return Authorize(JwtGuard, UserRole.VILLAGE_LEADER);
 }

@@ -47,5 +47,3 @@ uses cases:
 		- Can add citizens and assign citizen to house.(done)
 		- Can see village activity and assigned task
 		- Can add report for task, take attendance.
-		
-		

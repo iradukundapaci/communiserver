@@ -1,4 +1,4 @@
-import { IsOptional, IsEnum, IsUUID } from "class-validator";
+import { IsEnum, IsOptional, IsUUID } from "class-validator";
 import { PaginationDto } from "src/__shared__/dto/pagination.dto";
 import { EActivityStatus } from "../enum/EActivityStatus";
 
@@ -28,18 +28,8 @@ export namespace FetchActivityDTO {
     id: string;
     title: string;
     description: string;
-    startDate: Date;
-    endDate: Date;
-    location: string;
+    date: Date;
     status: EActivityStatus;
-    organizer: {
-      id: string;
-      names: string;
-    };
-    cell?: {
-      id: string;
-      name: string;
-    };
     village?: {
       id: string;
       name: string;

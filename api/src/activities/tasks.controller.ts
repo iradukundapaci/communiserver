@@ -1,24 +1,27 @@
-import { Controller, Body, Param, Query } from "@nestjs/common";
-import { TasksService } from "./tasks.service";
-import { UpdateTaskDTO } from "./dto/update-task.dto";
-import { FetchTaskDTO } from "./dto/fetch-task.dto";
-import { GenericResponse } from "src/__shared__/dto/generic-response.dto";
-import { IsAuthorized } from "src/auth/decorators/authorize.decorator";
+import { Body, Controller, Param, Query } from "@nestjs/common";
 import { ApiTags } from "@nestjs/swagger";
 import {
   ApiRequestBody,
   BadRequestResponse,
   ConflictResponse,
+  DeleteOperation,
   ErrorResponses,
   ForbiddenResponse,
+  GetOperation,
   NotFoundResponse,
   PatchOperation,
   PostOperation,
   UnauthorizedResponse,
-  GetOperation,
-  DeleteOperation,
 } from "src/__shared__/decorators";
+import { GenericResponse } from "src/__shared__/dto/generic-response.dto";
+import {
+  IsAuthorized,
+  IsCellLeaderOrVillageLeader,
+} from "src/auth/decorators/authorize.decorator";
 import { CreateTaskDTO } from "./dto/create-task.dto";
+import { FetchTaskDTO } from "./dto/fetch-task.dto";
+import { UpdateTaskDTO } from "./dto/update-task.dto";
+import { TasksService } from "./tasks.service";
 
 @ApiTags("Tasks")
 @Controller("tasks")
@@ -26,7 +29,7 @@ export class TasksController {
   constructor(private readonly tasksService: TasksService) {}
 
   @PostOperation("", "Create a new task")
-  @IsAuthorized()
+  @IsCellLeaderOrVillageLeader()
   @ApiRequestBody(CreateTaskDTO.Input)
   @ErrorResponses(
     UnauthorizedResponse,
@@ -63,7 +66,7 @@ export class TasksController {
   }
 
   @PatchOperation(":id", "Update a task")
-  @IsAuthorized()
+  @IsCellLeaderOrVillageLeader()
   @ApiRequestBody(UpdateTaskDTO.Input)
   @ErrorResponses(
     UnauthorizedResponse,
@@ -81,7 +84,7 @@ export class TasksController {
   }
 
   @DeleteOperation(":id", "Delete a task")
-  @IsAuthorized()
+  @IsCellLeaderOrVillageLeader()
   @ErrorResponses(UnauthorizedResponse, ForbiddenResponse, NotFoundResponse)
   async remove(@Param("id") id: string): Promise<GenericResponse> {
     await this.tasksService.remove(id);

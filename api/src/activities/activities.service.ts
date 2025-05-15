@@ -1,6 +1,5 @@
 import {
   BadRequestException,
-  ForbiddenException,
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
@@ -8,95 +7,86 @@ import { InjectRepository } from "@nestjs/typeorm";
 import { plainToInstance } from "class-transformer";
 import { paginate } from "nestjs-typeorm-paginate";
 import { Brackets, Repository } from "typeorm";
-import { UserRole } from "../__shared__/enums/user-role.enum";
-import { CellsService } from "../locations/cells.service";
+import { IsibosService } from "../locations/isibos.service";
 import { VillagesService } from "../locations/villages.service";
-import { User } from "../users/entities/user.entity";
-import { UsersService } from "../users/users.service";
 import { CreateActivityDTO } from "./dto/create-activity.dto";
 import { FetchActivityDTO } from "./dto/fetch-activity.dto";
 import { UpdateActivityDTO } from "./dto/update-activity.dto";
 import { Activity } from "./entities/activity.entity";
+import { Task } from "./entities/task.entity";
+import { EActivityStatus } from "./enum/EActivityStatus";
+import { ETaskStatus } from "./enum/ETaskStatus";
 
 @Injectable()
 export class ActivitiesService {
   constructor(
     @InjectRepository(Activity)
     private readonly activityRepository: Repository<Activity>,
-    private readonly usersService: UsersService,
-    private readonly cellsService: CellsService,
+    private readonly isibosService: IsibosService,
     private readonly villagesService: VillagesService,
   ) {}
 
   async create(
     createActivityDTO: CreateActivityDTO.Input,
   ): Promise<CreateActivityDTO.Output> {
-    const organizer = await this.usersService.findUserById(
-      createActivityDTO.organizerId,
-    );
-    if (!organizer) {
-      throw new NotFoundException("Organizer not found");
-    }
-
-    let cell;
-    let village;
-
-    if (createActivityDTO.cellId) {
-      cell = await this.cellsService.findCellById(createActivityDTO.cellId);
-    }
+    let village = null;
 
     if (createActivityDTO.villageId) {
       village = await this.villagesService.findVillageById(
         createActivityDTO.villageId,
       );
+
+      if (!village) {
+        throw new NotFoundException("Village not found");
+      }
     }
 
-    // Convert string dates to Date objects for database storage
+    // Convert string date to Date object for database storage
     const activity = this.activityRepository.create({
-      ...createActivityDTO,
-      startDate: new Date(createActivityDTO.startDate),
-      endDate: new Date(createActivityDTO.endDate),
-      organizer: organizer.profile,
-      cell,
+      title: createActivityDTO.title,
+      description: createActivityDTO.description,
+      date: new Date(createActivityDTO.date),
+      status: EActivityStatus.PENDING,
       village,
     });
+
+    // Handle tasks if provided
+    if (createActivityDTO.tasks && createActivityDTO.tasks.length > 0) {
+      activity.tasks = [];
+
+      for (const taskDto of createActivityDTO.tasks) {
+        const task = new Task();
+        task.title = taskDto.title;
+        task.description = taskDto.description;
+        task.status = ETaskStatus.PENDING;
+
+        // Find isibo
+        if (taskDto.isiboId) {
+          const isibo = await this.isibosService.findIsiboById(taskDto.isiboId);
+          task.isibo = isibo;
+        }
+
+        activity.tasks.push(task);
+      }
+    }
 
     const savedActivity = await this.activityRepository.save(activity);
     return plainToInstance(CreateActivityDTO.Output, savedActivity);
   }
 
-  async delete(id: string, user: User): Promise<void> {
+  async delete(id: string): Promise<void> {
     try {
       const activity = await this.activityRepository.findOne({
         where: { id },
-        relations: ["organizer"],
       });
 
       if (!activity) {
         throw new NotFoundException("Activity not found");
       }
 
-      if (
-        user.role !== UserRole.VILLAGE_LEADER &&
-        user.role !== UserRole.CELL_LEADER
-      ) {
-        throw new ForbiddenException(
-          "Only village and cell leaders can delete activities",
-        );
-      }
-
-      if (activity.organizer.id !== user.profile.id) {
-        throw new ForbiddenException(
-          "You can only delete activities you organize",
-        );
-      }
-
       await this.activityRepository.softDelete(id);
     } catch (error) {
-      if (
-        error instanceof NotFoundException ||
-        error instanceof ForbiddenException
-      ) {
+      if (error instanceof NotFoundException) {
         throw error;
       }
       throw new BadRequestException(
@@ -108,7 +98,7 @@ export class ActivitiesService {
   async findOne(id: string): Promise<Activity> {
     const activity = await this.activityRepository.findOne({
       where: { id },
-      relations: ["organizer", "participants", "tasks"],
+      relations: ["village", "tasks", "tasks.isibo"],
     });
 
     if (!activity) {
@@ -121,9 +111,8 @@ export class ActivitiesService {
   async findAll(DTO: FetchActivityDTO.Input) {
     const queryBuilder = this.activityRepository
       .createQueryBuilder("activity")
-      .leftJoinAndSelect("activity.organizer", "organizer")
-      .leftJoinAndSelect("activity.cell", "cell")
       .leftJoinAndSelect("activity.village", "village")
+      .leftJoinAndSelect("activity.tasks", "tasks")
       .orderBy("activity.createdAt", "DESC");
 
     if (DTO.q) {
@@ -144,19 +133,9 @@ export class ActivitiesService {
       });
     }
 
-    if (DTO.cellId) {
-      queryBuilder.andWhere("cell.id = :cellId", { cellId: DTO.cellId });
-    }
-
     if (DTO.villageId) {
       queryBuilder.andWhere("village.id = :villageId", {
         villageId: DTO.villageId,
-      });
-    }
-
-    if (DTO.organizerId) {
-      queryBuilder.andWhere("organizer.id = :organizerId", {
-        organizerId: DTO.organizerId,
       });
     }
 
@@ -179,12 +158,9 @@ export class ActivitiesService {
       id: activity.id,
       title: activity.title,
       description: activity.description,
-      startDate: activity.startDate,
-      endDate: activity.endDate,
-      location: activity.location,
+      date: activity.date,
       status: activity.status,
-      organizer: activity.organizer,
-      participants: activity.participants,
+      village: activity.village,
       tasks: activity.tasks,
     });
   }
@@ -195,41 +171,100 @@ export class ActivitiesService {
   ): Promise<Activity> {
     const activity = await this.activityRepository.findOne({
       where: { id },
-      relations: ["organizer", "cell", "village"],
+      relations: ["village", "tasks", "tasks.isibo"],
     });
 
     if (!activity) {
       throw new NotFoundException("Activity not found");
     }
 
-    let cell;
-    let village;
-
-    if (updateActivityDTO.cellId) {
-      cell = await this.cellsService.findCellById(updateActivityDTO.cellId);
-    }
+    let village = null;
 
     if (updateActivityDTO.villageId) {
       village = await this.villagesService.findVillageById(
         updateActivityDTO.villageId,
       );
+
+      if (!village) {
+        throw new NotFoundException("Village not found");
+      }
+
+      activity.village = village;
     }
 
-    // Create an update object with the DTO data
-    const updateData = { ...updateActivityDTO };
+    // Update basic fields
+    if (updateActivityDTO.title) {
+      activity.title = updateActivityDTO.title;
+    }
 
-    // We'll handle date conversion directly in the Object.assign below
+    if (updateActivityDTO.description) {
+      activity.description = updateActivityDTO.description;
+    }
 
-    Object.assign(activity, {
-      ...updateData,
-      // Convert dates if they exist in the DTO
-      ...(updateData.startDate && {
-        startDate: new Date(updateData.startDate),
-      }),
-      ...(updateData.endDate && { endDate: new Date(updateData.endDate) }),
-      cell,
-      village,
-    });
+    if (updateActivityDTO.date) {
+      activity.date = new Date(updateActivityDTO.date);
+    }
+
+    if (updateActivityDTO.status) {
+      activity.status = updateActivityDTO.status;
+    }
+
+    // Handle tasks if provided
+    if (updateActivityDTO.tasks && updateActivityDTO.tasks.length > 0) {
+      // Process each task in the DTO
+      for (const taskDto of updateActivityDTO.tasks) {
+        if (taskDto.id) {
+          // Update existing task
+          const existingTask = activity.tasks.find(
+            (task) => task.id === taskDto.id,
+          );
+
+          if (existingTask) {
+            // Update task fields
+            if (taskDto.title) {
+              existingTask.title = taskDto.title;
+            }
+
+            if (taskDto.description) {
+              existingTask.description = taskDto.description;
+            }
+
+            if (taskDto.status) {
+              existingTask.status = taskDto.status;
+            }
+
+            // Update isibo if provided
+            if (taskDto.isiboId) {
+              const isibo = await this.isibosService.findIsiboById(
+                taskDto.isiboId,
+              );
+              existingTask.isibo = isibo;
+            }
+          }
+        } else {
+          // Create new task
+          const newTask = new Task();
+          newTask.title = taskDto.title;
+          newTask.description = taskDto.description;
+          newTask.status = ETaskStatus.PENDING;
+
+          // Find isibo
+          if (taskDto.isiboId) {
+            const isibo = await this.isibosService.findIsiboById(
+              taskDto.isiboId,
+            );
+            newTask.isibo = isibo;
+          }
+
+          // Add to activity tasks
+          if (!activity.tasks) {
+            activity.tasks = [];
+          }
+
+          activity.tasks.push(newTask);
+        }
+      }
+    }
 
     return await this.activityRepository.save(activity);
   }
