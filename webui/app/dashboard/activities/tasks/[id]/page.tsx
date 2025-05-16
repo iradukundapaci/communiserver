@@ -29,6 +29,7 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 export default function TaskDetailPage() {
+  const { user } = useUser();
   const params = useParams();
   const router = useRouter();
   const id = params.id as string;
@@ -72,22 +73,24 @@ export default function TaskDetailPage() {
       }
     };
 
+    fetchTask();
+  }, [id, router]);
+
+  useEffect(() => {
     const fetchData = async () => {
       try {
-        // First get the user profile
-        const profile = await getProfile();
-
         // Fetch activities
         const activitiesResponse = await getActivities(1, 100);
         setActivities(activitiesResponse.items);
 
         // Fetch isibos based on user's village
-        if (profile.village) {
-          const isibosResponse = await getIsibos(profile.village.id, 1, 100);
+        if (user?.village) {
+          const isibosResponse = await getIsibos(user.village.id, 1, 100);
           setIsibos(isibosResponse.items);
         } else {
           // If user doesn't have a village, show an empty list
           setIsibos([]);
+          toast.error("You need to be assigned to a village to edit tasks");
         }
       } catch (error) {
         console.error("Failed to fetch data:", error);
@@ -95,9 +98,10 @@ export default function TaskDetailPage() {
       }
     };
 
-    fetchTask();
-    fetchData();
-  }, [id, router]);
+    if (user) {
+      fetchData();
+    }
+  }, [user]);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>

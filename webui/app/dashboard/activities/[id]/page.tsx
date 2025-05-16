@@ -33,6 +33,7 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 export default function ActivityDetailPage() {
+  const { user } = useUser();
   const params = useParams();
   const router = useRouter();
   const id = params.id as string;
@@ -46,11 +47,9 @@ export default function ActivityDetailPage() {
     status: ActivityStatus.PENDING,
     villageId: "",
   });
-  const [cells, setCells] = useState<Array<{ id: string; name: string }>>([]);
   const [villages, setVillages] = useState<Array<{ id: string; name: string }>>(
     []
   );
-  const [selectedCellId, setSelectedCellId] = useState("");
 
   useEffect(() => {
     const fetchActivity = async () => {
@@ -86,14 +85,15 @@ export default function ActivityDetailPage() {
       }
     };
 
+    fetchActivity();
+  }, [id, router]);
+
+  useEffect(() => {
     const fetchVillages = async () => {
       try {
-        // First get the user profile
-        const profile = await getProfile();
-
         // Fetch villages based on user's cell
-        if (profile.cell) {
-          const response = await getVillages(profile.cell.id, 1, 100);
+        if (user?.cell) {
+          const response = await getVillages(user.cell.id, 1, 100);
           setVillages(response.items);
         } else {
           // If user doesn't have a cell, show an empty list
@@ -106,9 +106,10 @@ export default function ActivityDetailPage() {
       }
     };
 
-    fetchActivity();
-    fetchVillages();
-  }, [id, router]);
+    if (user) {
+      fetchVillages();
+    }
+  }, [user]);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>

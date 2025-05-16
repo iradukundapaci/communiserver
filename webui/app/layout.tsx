@@ -18,8 +18,9 @@ export const metadata: Metadata = {
   description: "Communiserver platform",
 };
 
-// Import the AuthProvider
+// Import the providers
 import { AuthProvider } from "@/contexts/auth-context";
+import { UserProvider } from "@/lib/contexts/user-context";
 
 export default function RootLayout({
   children,
@@ -31,7 +32,9 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <AuthProvider>{children}</AuthProvider>
+        <AuthProvider>
+          <UserProvider>{children}</UserProvider>
+        </AuthProvider>
         <Toaster />
       </body>
     </html>

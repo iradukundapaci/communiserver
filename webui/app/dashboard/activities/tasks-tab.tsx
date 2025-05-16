@@ -30,7 +30,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Activity, getActivities } from "@/lib/api/activities";
 import { getIsibos } from "@/lib/api/isibos";
 import { Task, createTask, deleteTask, getTasks } from "@/lib/api/tasks";
-import { getProfile } from "@/lib/api/users";
+import { useUser } from "@/lib/contexts/user-context";
 import { Pencil, PlusCircle, RefreshCw, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import * as React from "react";
@@ -42,42 +42,33 @@ interface CreateTaskDialogProps {
 }
 
 function CreateTaskDialog({ onTaskCreated }: CreateTaskDialogProps) {
+  const { user } = useUser();
   const [isOpen, setIsOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     title: "",
     description: "",
     activityId: "",
-    isiboId: "",
+    isiboId: user?.isibo?.id || "",
   });
   const [activities, setActivities] = useState<Activity[]>([]);
-  const [isibos, setIsibos] = useState<any[]>([]);
+  const [isibos, setIsibos] = useState<unknown[]>([]);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // First get the user profile
-        const profile = await getProfile();
-
         // Fetch activities
         const activitiesResponse = await getActivities(1, 100);
         setActivities(activitiesResponse.items);
 
-        // If user has an isibo, pre-select it
-        if (profile.isibo) {
-          setFormData((prev) => ({
-            ...prev,
-            isiboId: profile.isibo!.id,
-          }));
-        }
-
         // Fetch isibos based on user's village
-        if (profile.village) {
-          const isibosResponse = await getIsibos(profile.village.id, 1, 100);
+        if (user?.village) {
+          const isibosResponse = await getIsibos(user.village.id, 1, 100);
           setIsibos(isibosResponse.items);
         } else {
           // If user doesn't have a village, show an empty list
           setIsibos([]);
+          toast.error("You need to be assigned to a village to create tasks");
         }
       } catch (error) {
         console.error("Failed to fetch data:", error);
@@ -85,8 +76,16 @@ function CreateTaskDialog({ onTaskCreated }: CreateTaskDialogProps) {
       }
     };
 
-    fetchData();
-  }, []);
+    // Update form data when user changes
+    if (user) {
+      setFormData((prev) => ({
+        ...prev,
+        isiboId: user.isibo?.id || "",
+      }));
+
+      fetchData();
+    }
+  }, [user]);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -135,7 +134,7 @@ function CreateTaskDialog({ onTaskCreated }: CreateTaskDialogProps) {
         activityId: "",
         isiboId: "",
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       if (error.message) {
         toast.error(error.message);
       } else {
@@ -282,7 +281,7 @@ export default function TasksTab() {
 
       setTotalPages(response.meta.totalPages);
       setCurrentPage(page);
-    } catch (error: any) {
+    } catch (error: unknown) {
       if (error.message) {
         toast.error(error.message);
       } else {
@@ -350,7 +349,7 @@ export default function TasksTab() {
         const activityIdParam =
           selectedActivityId === "ALL_ACTIVITIES" ? "" : selectedActivityId;
         fetchTasks(activityIdParam, 1, true);
-      } catch (error: any) {
+      } catch (error: unknown) {
         if (error.message) {
           toast.error(error.message);
         } else {

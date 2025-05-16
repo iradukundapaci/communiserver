@@ -36,8 +36,9 @@ import {
   deleteActivity,
   getActivities,
 } from "@/lib/api/activities";
-import { getProfile } from "@/lib/api/users";
+import { getIsibos } from "@/lib/api/isibos";
 import { getVillages } from "@/lib/api/villages";
+import { useUser } from "@/lib/contexts/user-context";
 import { Permission } from "@/lib/permissions";
 import { format } from "date-fns";
 import { Pencil, PlusCircle, RefreshCw, Search, Trash2 } from "lucide-react";
@@ -51,7 +52,7 @@ export default function ActivitiesPage() {
   const searchParams = useSearchParams();
   const initialTab =
     searchParams?.get("tab") === "tasks" ? "tasks" : "activities";
-  const [activeTab, setActiveTab] = useState(initialTab);
+  const [, setActiveTab] = useState(initialTab);
 
   // Handle tab change and update URL
   const handleTabChange = (value: string) => {
@@ -103,13 +104,14 @@ interface CreateActivityDialogProps {
 function CreateActivityDialog({
   onActivityCreated,
 }: CreateActivityDialogProps) {
+  const { user } = useUser();
   const [isOpen, setIsOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     title: "",
     description: "",
     date: "",
-    villageId: "",
+    villageId: user?.village?.id || "",
     tasks: [],
   });
 
@@ -117,60 +119,53 @@ function CreateActivityDialog({
   const [currentTask, setCurrentTask] = useState({
     title: "",
     description: "",
-    isiboId: "",
+    isiboId: user?.isibo?.id || "",
   });
-  const [cells, setCells] = useState<Array<{ id: string; name: string }>>([]);
   const [villages, setVillages] = useState<Array<{ id: string; name: string }>>(
     []
   );
   const [isibos, setIsibos] = useState<Array<{ id: string; name: string }>>([]);
-  const [selectedCellId, setSelectedCellId] = useState("");
 
   useEffect(() => {
-    const fetchUserAndVillages = async () => {
+    const fetchLocations = async () => {
       try {
-        // First get the user profile
-        const profile = await getProfile();
-
-        // If user has a village, pre-select it
-        if (profile.village) {
-          setFormData((prev) => ({
-            ...prev,
-            villageId: profile.village!.id,
-          }));
-        }
-
-        // If user has an isibo, pre-select it for the current task
-        if (profile.isibo) {
-          setCurrentTask((prev) => ({
-            ...prev,
-            isiboId: profile.isibo!.id,
-          }));
-        }
-
-        // Fetch villages based on user's cell
-        if (profile.cell) {
-          const villagesResponse = await getVillages(profile.cell.id, 1, 100);
+        // If we have a user with a cell, fetch villages
+        if (user?.cell) {
+          const villagesResponse = await getVillages(user.cell.id, 1, 100);
           setVillages(villagesResponse.items);
 
           // If user has a village, fetch isibos for that village
-          if (profile.village) {
-            const isibosResponse = await getIsibos(profile.village.id, 1, 100);
+          if (user.village) {
+            const isibosResponse = await getIsibos(user.village.id, 1, 100);
             setIsibos(isibosResponse.items);
           }
         } else {
           // If user doesn't have a cell, show empty lists
           setVillages([]);
           setIsibos([]);
+          toast.error("You need to be assigned to a cell to create activities");
         }
       } catch (error) {
-        console.error("Failed to fetch user data or villages:", error);
-        toast.error("Failed to load villages. Please try again later.");
+        console.error("Failed to fetch villages or isibos:", error);
+        toast.error("Failed to load locations. Please try again later.");
       }
     };
 
-    fetchUserAndVillages();
-  }, []);
+    // Update form data when user changes
+    if (user) {
+      setFormData((prev) => ({
+        ...prev,
+        villageId: user.village?.id || "",
+      }));
+
+      setCurrentTask((prev) => ({
+        ...prev,
+        isiboId: user.isibo?.id || "",
+      }));
+
+      fetchLocations();
+    }
+  }, [user]);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
