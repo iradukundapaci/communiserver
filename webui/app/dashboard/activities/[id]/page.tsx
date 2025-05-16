@@ -25,7 +25,6 @@ import {
   getActivityById,
   updateActivity,
 } from "@/lib/api/activities";
-import { getCells } from "@/lib/api/cells";
 import { getVillages } from "@/lib/api/villages";
 import { ArrowLeft } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
@@ -43,11 +42,8 @@ export default function ActivityDetailPage() {
   const [formData, setFormData] = useState({
     title: "",
     description: "",
-    startDate: "",
-    endDate: "",
-    location: "",
+    date: "",
     status: ActivityStatus.PENDING,
-    cellId: "",
     villageId: "",
   });
   const [cells, setCells] = useState<Array<{ id: string; name: string }>>([]);
@@ -63,9 +59,8 @@ export default function ActivityDetailPage() {
         const activityData = await getActivityById(id);
         setActivity(activityData);
 
-        // Format dates for datetime-local input
-        const startDate = new Date(activityData.startDate);
-        const endDate = new Date(activityData.endDate);
+        // Format date for datetime-local input
+        const date = new Date(activityData.date);
 
         const formatDateForInput = (date: Date) => {
           return date.toISOString().slice(0, 16); // Format: YYYY-MM-DDThh:mm
@@ -74,17 +69,10 @@ export default function ActivityDetailPage() {
         setFormData({
           title: activityData.title,
           description: activityData.description,
-          startDate: formatDateForInput(startDate),
-          endDate: formatDateForInput(endDate),
-          location: activityData.location || "",
+          date: formatDateForInput(date),
           status: activityData.status,
-          cellId: activityData.cell?.id || "",
           villageId: activityData.village?.id || "",
         });
-
-        if (activityData.cell?.id) {
-          setSelectedCellId(activityData.cell.id);
-        }
       } catch (error: any) {
         if (error.message) {
           toast.error(error.message);
@@ -98,39 +86,29 @@ export default function ActivityDetailPage() {
       }
     };
 
-    const fetchCells = async () => {
+    const fetchVillages = async () => {
       try {
-        const response = await getCells(1, 100);
-        setCells(response.items);
+        // First get the user profile
+        const profile = await getProfile();
+
+        // Fetch villages based on user's cell
+        if (profile.cell) {
+          const response = await getVillages(profile.cell.id, 1, 100);
+          setVillages(response.items);
+        } else {
+          // If user doesn't have a cell, show an empty list
+          setVillages([]);
+          toast.error("You need to be assigned to a cell to edit activities");
+        }
       } catch (error) {
-        console.error("Failed to fetch cells:", error);
+        console.error("Failed to fetch villages:", error);
+        toast.error("Failed to load villages. Please try again later.");
       }
     };
 
     fetchActivity();
-    fetchCells();
-  }, [id, router]);
-
-  useEffect(() => {
-    const fetchVillages = async () => {
-      if (selectedCellId) {
-        try {
-          const response = await getVillages(selectedCellId, 1, 100);
-          setVillages(response.items);
-        } catch (error) {
-          console.error("Failed to fetch villages:", error);
-        }
-      } else {
-        setVillages([]);
-        setFormData((prev) => ({
-          ...prev,
-          villageId: "",
-        }));
-      }
-    };
-
     fetchVillages();
-  }, [selectedCellId]);
+  }, [id, router]);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -143,11 +121,6 @@ export default function ActivityDetailPage() {
   };
 
   const handleSelectChange = (name: string, value: string) => {
-    if (name === "cellId") {
-      // If "NONE" is selected, set selectedCellId to empty string
-      setSelectedCellId(value === "NONE" ? "" : value);
-    }
-
     // If "NONE" is selected, set the form value to empty string
     const formValue = value === "NONE" ? "" : value;
 
@@ -162,29 +135,33 @@ export default function ActivityDetailPage() {
     setIsSaving(true);
 
     try {
-      // Validate dates
-      if (!formData.startDate || !formData.endDate) {
-        toast.error("Start date and end date are required");
+      // Validate date
+      if (!formData.date) {
+        toast.error("Date is required");
         setIsSaving(false);
         return;
       }
 
-      // Validate dates
-      const startDate = new Date(formData.startDate);
-      const endDate = new Date(formData.endDate);
+      // Validate date
+      const date = new Date(formData.date);
 
-      // Check if dates are valid
-      if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+      // Check if date is valid
+      if (isNaN(date.getTime())) {
         toast.error("Invalid date format");
         setIsSaving(false);
         return;
       }
 
-      // Use the string dates directly
+      // Validate village
+      if (!formData.villageId) {
+        toast.error("Village is required");
+        setIsSaving(false);
+        return;
+      }
+
+      // Use the string date directly
       const activityData = {
         ...formData,
-        // Keep the organizer ID from the original activity
-        organizerId: activity?.organizer.id,
       };
 
       await updateActivity(id, activityData);
@@ -255,35 +232,14 @@ export default function ActivityDetailPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="startDate">Start Date</Label>
+              <Label htmlFor="date">Date</Label>
               <Input
-                id="startDate"
-                name="startDate"
+                id="date"
+                name="date"
                 type="datetime-local"
-                value={formData.startDate}
+                value={formData.date}
                 onChange={handleChange}
                 required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="endDate">End Date</Label>
-              <Input
-                id="endDate"
-                name="endDate"
-                type="datetime-local"
-                value={formData.endDate}
-                onChange={handleChange}
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="location">Location</Label>
-              <Input
-                id="location"
-                name="location"
-                value={formData.location}
-                onChange={handleChange}
-                placeholder="Enter activity location"
               />
             </div>
             <div className="space-y-2">
@@ -305,47 +261,25 @@ export default function ActivityDetailPage() {
               </Select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="cellId">Cell</Label>
+              <Label htmlFor="villageId">Village</Label>
               <Select
-                value={formData.cellId}
-                onValueChange={(value) => handleSelectChange("cellId", value)}
+                value={formData.villageId}
+                onValueChange={(value) =>
+                  handleSelectChange("villageId", value)
+                }
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Select cell" />
+                  <SelectValue placeholder="Select village" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="NONE">None</SelectItem>
-                  {cells.map((cell) => (
-                    <SelectItem key={cell.id} value={cell.id}>
-                      {cell.name}
+                  {villages.map((village) => (
+                    <SelectItem key={village.id} value={village.id}>
+                      {village.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
-            {selectedCellId && (
-              <div className="space-y-2">
-                <Label htmlFor="villageId">Village</Label>
-                <Select
-                  value={formData.villageId}
-                  onValueChange={(value) =>
-                    handleSelectChange("villageId", value)
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select village" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="NONE">None</SelectItem>
-                    {villages.map((village) => (
-                      <SelectItem key={village.id} value={village.id}>
-                        {village.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
           </CardContent>
           <CardFooter className="flex justify-end space-x-2">
             <Button

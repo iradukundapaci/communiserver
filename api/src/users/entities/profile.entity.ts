@@ -20,15 +20,15 @@ export class Profile extends AbstractEntity {
   @Column({ name: "is_cell_leader", default: false })
   isCellLeader: boolean;
 
-  @ManyToOne(() => Cell, (cell) => cell.profiles)
+  @ManyToOne(() => Cell, (cell) => cell.profiles, { eager: true })
   @JoinColumn({ name: "cell_id" })
   cell: Cell;
 
-  @ManyToOne(() => Village, (village) => village.profiles)
+  @ManyToOne(() => Village, (village) => village.profiles, { eager: true })
   @JoinColumn({ name: "village_id" })
   village: Village;
 
-  @ManyToOne(() => Isibo, (isibo) => isibo.members)
+  @ManyToOne(() => Isibo, (isibo) => isibo.members, { eager: true })
   @JoinColumn({ name: "isibo_id" })
   isibo: Isibo;
 

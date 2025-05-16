@@ -434,6 +434,8 @@ export class UsersService {
       phone: userProfile.phone,
       cell: userProfile.profile.cell,
       village: userProfile.profile.village,
+      isibo: userProfile.profile.isibo,
+      isIsiboLeader: userProfile.profile.isIsiboLeader,
       isVillageLeader: userProfile.profile.isVillageLeader,
       isCellLeader: userProfile.profile.isCellLeader,
     });

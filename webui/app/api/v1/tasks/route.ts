@@ -66,9 +66,9 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
 
-    // If assignedToId is an empty string, remove it from the request body
-    if (body.assignedToId === "") {
-      delete body.assignedToId;
+    // If isiboId is an empty string, remove it from the request body
+    if (body.isiboId === "") {
+      delete body.isiboId;
     }
 
     const response = await fetch(`${API_URL}/api/v1/tasks`, {

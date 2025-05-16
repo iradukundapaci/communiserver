@@ -9,7 +9,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -20,8 +19,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Activity, getActivities } from "@/lib/api/activities";
-import { Task, getTaskById, updateTask } from "@/lib/api/tasks";
+import { Activity, getActivities, TaskStatus } from "@/lib/api/activities";
+import { getIsibos } from "@/lib/api/isibos";
+import { getTaskById, Task, updateTask } from "@/lib/api/tasks";
 import { ArrowLeft } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import * as React from "react";
@@ -40,8 +40,10 @@ export default function TaskDetailPage() {
     title: "",
     description: "",
     activityId: "",
-    completed: false,
+    isiboId: "",
+    status: TaskStatus.PENDING,
   });
+  const [isibos, setIsibos] = useState<any[]>([]);
 
   useEffect(() => {
     const fetchTask = async () => {
@@ -54,7 +56,8 @@ export default function TaskDetailPage() {
           title: taskData.title,
           description: taskData.description,
           activityId: taskData.activity.id,
-          completed: taskData.completed,
+          isiboId: taskData.isibo?.id || "",
+          status: taskData.status,
         });
       } catch (error: any) {
         if (error.message) {
@@ -69,17 +72,31 @@ export default function TaskDetailPage() {
       }
     };
 
-    const fetchActivities = async () => {
+    const fetchData = async () => {
       try {
-        const response = await getActivities(1, 100);
-        setActivities(response.items);
+        // First get the user profile
+        const profile = await getProfile();
+
+        // Fetch activities
+        const activitiesResponse = await getActivities(1, 100);
+        setActivities(activitiesResponse.items);
+
+        // Fetch isibos based on user's village
+        if (profile.village) {
+          const isibosResponse = await getIsibos(profile.village.id, 1, 100);
+          setIsibos(isibosResponse.items);
+        } else {
+          // If user doesn't have a village, show an empty list
+          setIsibos([]);
+        }
       } catch (error) {
-        console.error("Failed to fetch activities:", error);
+        console.error("Failed to fetch data:", error);
+        toast.error("Failed to load data. Please try again later.");
       }
     };
 
     fetchTask();
-    fetchActivities();
+    fetchData();
   }, [id, router]);
 
   const handleChange = (
@@ -96,13 +113,6 @@ export default function TaskDetailPage() {
     setFormData((prev) => ({
       ...prev,
       [name]: value,
-    }));
-  };
-
-  const handleCheckboxChange = (checked: boolean) => {
-    setFormData((prev) => ({
-      ...prev,
-      completed: checked,
     }));
   };
 
@@ -200,13 +210,41 @@ export default function TaskDetailPage() {
                 </SelectContent>
               </Select>
             </div>
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="completed"
-                checked={formData.completed}
-                onCheckedChange={handleCheckboxChange}
-              />
-              <Label htmlFor="completed">Mark as completed</Label>
+            <div className="space-y-2">
+              <Label htmlFor="isiboId">Isibo</Label>
+              <Select
+                value={formData.isiboId}
+                onValueChange={(value) => handleSelectChange("isiboId", value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select isibo" />
+                </SelectTrigger>
+                <SelectContent>
+                  {isibos.map((isibo) => (
+                    <SelectItem key={isibo.id} value={isibo.id}>
+                      {isibo.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="status">Status</Label>
+              <Select
+                value={formData.status}
+                onValueChange={(value) => handleSelectChange("status", value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select status" />
+                </SelectTrigger>
+                <SelectContent>
+                  {Object.values(TaskStatus).map((status) => (
+                    <SelectItem key={status} value={status}>
+                      {status}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </CardContent>
           <CardFooter className="flex justify-end space-x-2">

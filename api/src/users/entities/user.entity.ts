@@ -1,6 +1,6 @@
 import { AbstractEntity } from "src/__shared__/entities/abstract.entity";
-import { Entity, Column, OneToOne, JoinColumn } from "typeorm";
 import { UserRole } from "src/__shared__/enums/user-role.enum";
+import { Column, Entity, JoinColumn, OneToOne } from "typeorm";
 import { Profile } from "./profile.entity";
 
 @Entity("users")
@@ -26,7 +26,10 @@ export class User extends AbstractEntity {
   @Column({ nullable: true, default: true })
   activated: boolean;
 
-  @OneToOne(() => Profile, (profile) => profile.user, { cascade: true })
+  @OneToOne(() => Profile, (profile) => profile.user, {
+    cascade: true,
+    eager: true,
+  })
   @JoinColumn()
   profile: Profile;
 

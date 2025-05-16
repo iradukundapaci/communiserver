@@ -36,7 +36,6 @@ import {
   deleteActivity,
   getActivities,
 } from "@/lib/api/activities";
-import { getCells } from "@/lib/api/cells";
 import { getProfile } from "@/lib/api/users";
 import { getVillages } from "@/lib/api/villages";
 import { Permission } from "@/lib/permissions";
@@ -109,66 +108,69 @@ function CreateActivityDialog({
   const [formData, setFormData] = useState({
     title: "",
     description: "",
-    startDate: "",
-    endDate: "",
-    location: "",
-    status: ActivityStatus.PENDING,
-    organizerId: "",
-    cellId: "",
+    date: "",
     villageId: "",
+    tasks: [],
+  });
+
+  // State for the current task being added
+  const [currentTask, setCurrentTask] = useState({
+    title: "",
+    description: "",
+    isiboId: "",
   });
   const [cells, setCells] = useState<Array<{ id: string; name: string }>>([]);
   const [villages, setVillages] = useState<Array<{ id: string; name: string }>>(
     []
   );
+  const [isibos, setIsibos] = useState<Array<{ id: string; name: string }>>([]);
   const [selectedCellId, setSelectedCellId] = useState("");
 
   useEffect(() => {
-    const fetchUserProfile = async () => {
+    const fetchUserAndVillages = async () => {
       try {
+        // First get the user profile
         const profile = await getProfile();
-        setFormData((prev) => ({
-          ...prev,
-          organizerId: profile.id,
-        }));
-      } catch (error) {
-        console.error("Failed to fetch user profile:", error);
-      }
-    };
 
-    const fetchCells = async () => {
-      try {
-        const response = await getCells(1, 100);
-        setCells(response.items);
-      } catch (error) {
-        console.error("Failed to fetch cells:", error);
-      }
-    };
-
-    fetchUserProfile();
-    fetchCells();
-  }, []);
-
-  useEffect(() => {
-    const fetchVillages = async () => {
-      if (selectedCellId) {
-        try {
-          const response = await getVillages(selectedCellId, 1, 100);
-          setVillages(response.items);
-        } catch (error) {
-          console.error("Failed to fetch villages:", error);
+        // If user has a village, pre-select it
+        if (profile.village) {
+          setFormData((prev) => ({
+            ...prev,
+            villageId: profile.village!.id,
+          }));
         }
-      } else {
-        setVillages([]);
-        setFormData((prev) => ({
-          ...prev,
-          villageId: "",
-        }));
+
+        // If user has an isibo, pre-select it for the current task
+        if (profile.isibo) {
+          setCurrentTask((prev) => ({
+            ...prev,
+            isiboId: profile.isibo!.id,
+          }));
+        }
+
+        // Fetch villages based on user's cell
+        if (profile.cell) {
+          const villagesResponse = await getVillages(profile.cell.id, 1, 100);
+          setVillages(villagesResponse.items);
+
+          // If user has a village, fetch isibos for that village
+          if (profile.village) {
+            const isibosResponse = await getIsibos(profile.village.id, 1, 100);
+            setIsibos(isibosResponse.items);
+          }
+        } else {
+          // If user doesn't have a cell, show empty lists
+          setVillages([]);
+          setIsibos([]);
+        }
+      } catch (error) {
+        console.error("Failed to fetch user data or villages:", error);
+        toast.error("Failed to load villages. Please try again later.");
       }
     };
 
-    fetchVillages();
-  }, [selectedCellId]);
+    fetchUserAndVillages();
+  }, []);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -181,11 +183,6 @@ function CreateActivityDialog({
   };
 
   const handleSelectChange = (name: string, value: string) => {
-    if (name === "cellId") {
-      // If "NONE" is selected, set selectedCellId to empty string
-      setSelectedCellId(value === "NONE" ? "" : value);
-    }
-
     // If "NONE" is selected, set the form value to empty string
     const formValue = value === "NONE" ? "" : value;
 
@@ -195,33 +192,104 @@ function CreateActivityDialog({
     }));
   };
 
+  // Handle changes to the current task form
+  const handleTaskChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    const { name, value } = e.target;
+    setCurrentTask((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  // Handle select changes for the current task
+  const handleTaskSelectChange = (name: string, value: string) => {
+    const formValue = value === "NONE" ? "" : value;
+    setCurrentTask((prev) => ({
+      ...prev,
+      [name]: formValue,
+    }));
+  };
+
+  // Add the current task to the tasks array
+  const addTask = () => {
+    // Validate task fields
+    if (!currentTask.title) {
+      toast.error("Task title is required");
+      return;
+    }
+
+    if (!currentTask.description) {
+      toast.error("Task description is required");
+      return;
+    }
+
+    if (!currentTask.isiboId) {
+      toast.error("Isibo is required for the task");
+      return;
+    }
+
+    // Add the task to the formData
+    setFormData((prev) => ({
+      ...prev,
+      tasks: [...prev.tasks, { ...currentTask }],
+    }));
+
+    // Reset the current task form
+    setCurrentTask({
+      title: "",
+      description: "",
+      isiboId: "",
+    });
+
+    toast.success("Task added to activity");
+  };
+
+  // Remove a task from the tasks array
+  const removeTask = (index: number) => {
+    setFormData((prev) => ({
+      ...prev,
+      tasks: prev.tasks.filter((_, i) => i !== index),
+    }));
+
+    toast.success("Task removed from activity");
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
 
     try {
-      // Validate dates
-      if (!formData.startDate || !formData.endDate) {
-        toast.error("Start date and end date are required");
+      // Validate date
+      if (!formData.date) {
+        toast.error("Date is required");
         setIsSubmitting(false);
         return;
       }
 
-      // Validate dates
-      const startDate = new Date(formData.startDate);
-      const endDate = new Date(formData.endDate);
+      // Validate date
+      const date = new Date(formData.date);
 
-      // Check if dates are valid
-      if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+      // Check if date is valid
+      if (isNaN(date.getTime())) {
         toast.error("Invalid date format");
         setIsSubmitting(false);
         return;
       }
 
-      // Use the string dates directly
+      // Validate village
+      if (!formData.villageId) {
+        toast.error("Village is required");
+        setIsSubmitting(false);
+        return;
+      }
+
+      // Use the string date directly
       const activityData = {
         ...formData,
-        // No need to convert to Date objects anymore
+        // If there are no tasks, don't include an empty array
+        tasks: formData.tasks.length > 0 ? formData.tasks : undefined,
       };
 
       await createActivity(activityData);
@@ -233,15 +301,17 @@ function CreateActivityDialog({
       setFormData({
         title: "",
         description: "",
-        startDate: "",
-        endDate: "",
-        location: "",
-        status: ActivityStatus.PENDING,
-        organizerId: formData.organizerId, // Keep the organizer ID
-        cellId: "",
+        date: "",
         villageId: "",
+        tasks: [],
       });
-      setSelectedCellId("");
+
+      // Reset current task
+      setCurrentTask({
+        title: "",
+        description: "",
+        isiboId: "",
+      });
     } catch (error: any) {
       if (error.message) {
         toast.error(error.message);
@@ -298,111 +368,137 @@ function CreateActivityDialog({
               />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="startDate" className="text-right">
-                Start Date
+              <Label htmlFor="date" className="text-right">
+                Date
               </Label>
               <Input
-                id="startDate"
-                name="startDate"
+                id="date"
+                name="date"
                 type="datetime-local"
-                value={formData.startDate}
+                value={formData.date}
                 onChange={handleChange}
                 className="col-span-3"
                 required
               />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="endDate" className="text-right">
-                End Date
-              </Label>
-              <Input
-                id="endDate"
-                name="endDate"
-                type="datetime-local"
-                value={formData.endDate}
-                onChange={handleChange}
-                className="col-span-3"
-                required
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="location" className="text-right">
-                Location
-              </Label>
-              <Input
-                id="location"
-                name="location"
-                value={formData.location}
-                onChange={handleChange}
-                className="col-span-3"
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="status" className="text-right">
-                Status
+              <Label htmlFor="villageId" className="text-right">
+                Village
               </Label>
               <Select
-                value={formData.status}
-                onValueChange={(value) => handleSelectChange("status", value)}
+                value={formData.villageId}
+                onValueChange={(value) =>
+                  handleSelectChange("villageId", value)
+                }
               >
                 <SelectTrigger className="col-span-3">
-                  <SelectValue placeholder="Select status" />
+                  <SelectValue placeholder="Select village" />
                 </SelectTrigger>
                 <SelectContent>
-                  {Object.values(ActivityStatus).map((status) => (
-                    <SelectItem key={status} value={status}>
-                      {status.charAt(0).toUpperCase() + status.slice(1)}
+                  {villages.map((village) => (
+                    <SelectItem key={village.id} value={village.id}>
+                      {village.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="cellId" className="text-right">
-                Cell
-              </Label>
-              <Select
-                value={formData.cellId}
-                onValueChange={(value) => handleSelectChange("cellId", value)}
-              >
-                <SelectTrigger className="col-span-3">
-                  <SelectValue placeholder="Select cell" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="NONE">None</SelectItem>
-                  {cells.map((cell) => (
-                    <SelectItem key={cell.id} value={cell.id}>
-                      {cell.name}
-                    </SelectItem>
+
+            <div className="border-t pt-4 mt-4">
+              <h4 className="font-medium mb-2">Tasks</h4>
+
+              {/* Task list */}
+              {formData.tasks.length > 0 ? (
+                <div className="space-y-2 mb-4">
+                  {formData.tasks.map((task, index) => (
+                    <div
+                      key={index}
+                      className="flex items-center justify-between p-2 border rounded-md"
+                    >
+                      <div>
+                        <p className="font-medium">{task.title}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {isibos.find((isibo) => isibo.id === task.isiboId)
+                            ?.name || "Unknown Isibo"}
+                        </p>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => removeTask(index)}
+                        type="button"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   ))}
-                </SelectContent>
-              </Select>
-            </div>
-            {selectedCellId && (
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="villageId" className="text-right">
-                  Village
-                </Label>
-                <Select
-                  value={formData.villageId}
-                  onValueChange={(value) =>
-                    handleSelectChange("villageId", value)
-                  }
-                >
-                  <SelectTrigger className="col-span-3">
-                    <SelectValue placeholder="Select village" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="NONE">None</SelectItem>
-                    {villages.map((village) => (
-                      <SelectItem key={village.id} value={village.id}>
-                        {village.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground mb-4">
+                  No tasks added yet. Add tasks below.
+                </p>
+              )}
+
+              {/* Add task form */}
+              <div className="space-y-4 border p-4 rounded-md">
+                <h5 className="font-medium">Add a Task</h5>
+
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="taskTitle" className="text-right">
+                    Title
+                  </Label>
+                  <Input
+                    id="taskTitle"
+                    name="title"
+                    value={currentTask.title}
+                    onChange={handleTaskChange}
+                    className="col-span-3"
+                  />
+                </div>
+
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="taskDescription" className="text-right">
+                    Description
+                  </Label>
+                  <Textarea
+                    id="taskDescription"
+                    name="description"
+                    value={currentTask.description}
+                    onChange={handleTaskChange}
+                    className="col-span-3"
+                  />
+                </div>
+
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="isiboId" className="text-right">
+                    Isibo
+                  </Label>
+                  <Select
+                    value={currentTask.isiboId}
+                    onValueChange={(value) =>
+                      handleTaskSelectChange("isiboId", value)
+                    }
+                  >
+                    <SelectTrigger className="col-span-3">
+                      <SelectValue placeholder="Select isibo" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {isibos.map((isibo) => (
+                        <SelectItem key={isibo.id} value={isibo.id}>
+                          {isibo.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="flex justify-end">
+                  <Button type="button" variant="secondary" onClick={addTask}>
+                    Add Task
+                  </Button>
+                </div>
               </div>
-            )}
+            </div>
           </div>
           <DialogFooter>
             <Button type="submit" disabled={isSubmitting}>
@@ -510,21 +606,14 @@ function ActivitiesTab() {
 
   const getStatusBadgeClass = (status: ActivityStatus) => {
     switch (status) {
-      case ActivityStatus.ACTIVE:
-      case ActivityStatus.ONGOING:
+      case ActivityStatus.IN_PROGRESS:
         return "bg-green-100 text-green-800";
       case ActivityStatus.COMPLETED:
         return "bg-blue-100 text-blue-800";
       case ActivityStatus.CANCELLED:
         return "bg-red-100 text-red-800";
       case ActivityStatus.PENDING:
-      case ActivityStatus.UPCOMING:
         return "bg-yellow-100 text-yellow-800";
-      case ActivityStatus.POSTPONED:
-      case ActivityStatus.RESCHEDULED:
-        return "bg-orange-100 text-orange-800";
-      case ActivityStatus.INACTIVE:
-        return "bg-gray-100 text-gray-800";
       default:
         return "bg-gray-100 text-gray-800";
     }
@@ -586,19 +675,13 @@ function ActivitiesTab() {
                     Title
                   </th>
                   <th className="h-10 px-4 text-left align-middle font-medium text-muted-foreground">
-                    Start Date
-                  </th>
-                  <th className="h-10 px-4 text-left align-middle font-medium text-muted-foreground">
-                    End Date
-                  </th>
-                  <th className="h-10 px-4 text-left align-middle font-medium text-muted-foreground">
-                    Location
+                    Date
                   </th>
                   <th className="h-10 px-4 text-left align-middle font-medium text-muted-foreground">
                     Status
                   </th>
                   <th className="h-10 px-4 text-left align-middle font-medium text-muted-foreground">
-                    Organizer
+                    Village
                   </th>
                   <th className="h-10 px-4 text-left align-middle font-medium text-muted-foreground">
                     Actions
@@ -609,7 +692,7 @@ function ActivitiesTab() {
                 {isLoading && activities.length === 0 ? (
                   <tr>
                     <td
-                      colSpan={7}
+                      colSpan={5}
                       className="p-4 text-center text-muted-foreground"
                     >
                       <div className="flex justify-center py-8">
@@ -620,7 +703,7 @@ function ActivitiesTab() {
                 ) : activities.length === 0 ? (
                   <tr>
                     <td
-                      colSpan={7}
+                      colSpan={5}
                       className="p-4 text-center text-muted-foreground"
                     >
                       No activities found
@@ -633,13 +716,7 @@ function ActivitiesTab() {
                         {activity.title}
                       </td>
                       <td className="p-4 whitespace-nowrap">
-                        {format(new Date(activity.startDate), "PPP")}
-                      </td>
-                      <td className="p-4 whitespace-nowrap">
-                        {format(new Date(activity.endDate), "PPP")}
-                      </td>
-                      <td className="p-4 whitespace-nowrap">
-                        {activity.location || "-"}
+                        {format(new Date(activity.date), "PPP")}
                       </td>
                       <td className="p-4 whitespace-nowrap">
                         <span
@@ -651,7 +728,7 @@ function ActivitiesTab() {
                         </span>
                       </td>
                       <td className="p-4 whitespace-nowrap">
-                        {activity.organizer.names}
+                        {activity.village?.name || "-"}
                       </td>
                       <td className="p-4 whitespace-nowrap">
                         <div className="flex items-center gap-2">

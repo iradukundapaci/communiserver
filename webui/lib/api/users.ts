@@ -24,6 +24,21 @@ export interface User {
   phone: string;
   role: string;
   activated: boolean;
+  cell?: {
+    id: string;
+    name: string;
+  };
+  village?: {
+    id: string;
+    name: string;
+  };
+  isibo?: {
+    id: string;
+    name: string;
+  };
+  isIsiboLeader?: boolean;
+  isVillageLeader?: boolean;
+  isCellLeader?: boolean;
 }
 
 /**

@@ -3,33 +3,18 @@ import { getAuthTokens } from "./auth";
 
 // Types
 export enum ActivityStatus {
-  ACTIVE = "active",
-  INACTIVE = "inactive",
-  COMPLETED = "completed",
-  CANCELLED = "cancelled",
-  ONGOING = "ongoing",
-  UPCOMING = "upcoming",
-  RESCHEDULED = "rescheduled",
-  POSTPONED = "postponed",
-  PENDING = "pending",
+  PENDING = "PENDING",
+  IN_PROGRESS = "IN_PROGRESS",
+  COMPLETED = "COMPLETED",
+  CANCELLED = "CANCELLED",
 }
 
 export interface Activity {
   id: string;
   title: string;
   description: string;
-  startDate: Date;
-  endDate: Date;
-  location?: string;
+  date: Date;
   status: ActivityStatus;
-  organizer: {
-    id: string;
-    names: string;
-  };
-  cell?: {
-    id: string;
-    name: string;
-  };
   village?: {
     id: string;
     name: string;
@@ -37,16 +22,23 @@ export interface Activity {
   tasks?: Task[];
 }
 
+export enum TaskStatus {
+  PENDING = "PENDING",
+  IN_PROGRESS = "IN_PROGRESS",
+  COMPLETED = "COMPLETED",
+  CANCELLED = "CANCELLED",
+}
+
 export interface Task {
   id: string;
   title: string;
   description: string;
-  completed: boolean;
+  status: TaskStatus;
   activity: {
     id: string;
     title: string;
   };
-  assignedTo?: {
+  isibo?: {
     id: string;
     names: string;
   };
@@ -55,39 +47,33 @@ export interface Task {
 export interface CreateActivityInput {
   title: string;
   description: string;
-  startDate: string;
-  endDate: string;
-  location?: string;
-  status?: ActivityStatus;
-  organizerId: string;
-  cellId?: string;
-  villageId?: string;
+  date: string;
+  villageId: string;
+  tasks?: CreateTaskInput[];
 }
 
 export interface UpdateActivityInput {
   title?: string;
   description?: string;
-  startDate?: string;
-  endDate?: string;
-  location?: string;
+  date?: string;
   status?: ActivityStatus;
-  organizerId?: string;
-  cellId?: string;
   villageId?: string;
+  tasks?: UpdateTaskInput[];
 }
 
 export interface CreateTaskInput {
   title: string;
   description: string;
   activityId: string;
-  assignedToId?: string;
+  isiboId: string;
 }
 
 export interface UpdateTaskInput {
+  id?: string;
   title?: string;
   description?: string;
-  completed?: boolean;
-  assignedToId?: string;
+  status?: TaskStatus;
+  isiboId?: string;
 }
 
 export interface PaginatedResponse<T> {

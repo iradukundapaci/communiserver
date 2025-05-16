@@ -28,7 +28,9 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Activity, getActivities } from "@/lib/api/activities";
+import { getIsibos } from "@/lib/api/isibos";
 import { Task, createTask, deleteTask, getTasks } from "@/lib/api/tasks";
+import { getProfile } from "@/lib/api/users";
 import { Pencil, PlusCircle, RefreshCw, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import * as React from "react";
@@ -46,21 +48,44 @@ function CreateTaskDialog({ onTaskCreated }: CreateTaskDialogProps) {
     title: "",
     description: "",
     activityId: "",
-    // Remove assignedToId from initial state since we're not using it in the form
+    isiboId: "",
   });
   const [activities, setActivities] = useState<Activity[]>([]);
+  const [isibos, setIsibos] = useState<any[]>([]);
 
   useEffect(() => {
-    const fetchActivities = async () => {
+    const fetchData = async () => {
       try {
-        const response = await getActivities(1, 100);
-        setActivities(response.items);
+        // First get the user profile
+        const profile = await getProfile();
+
+        // Fetch activities
+        const activitiesResponse = await getActivities(1, 100);
+        setActivities(activitiesResponse.items);
+
+        // If user has an isibo, pre-select it
+        if (profile.isibo) {
+          setFormData((prev) => ({
+            ...prev,
+            isiboId: profile.isibo!.id,
+          }));
+        }
+
+        // Fetch isibos based on user's village
+        if (profile.village) {
+          const isibosResponse = await getIsibos(profile.village.id, 1, 100);
+          setIsibos(isibosResponse.items);
+        } else {
+          // If user doesn't have a village, show an empty list
+          setIsibos([]);
+        }
       } catch (error) {
-        console.error("Failed to fetch activities:", error);
+        console.error("Failed to fetch data:", error);
+        toast.error("Failed to load data. Please try again later.");
       }
     };
 
-    fetchActivities();
+    fetchData();
   }, []);
 
   const handleChange = (
@@ -85,6 +110,19 @@ function CreateTaskDialog({ onTaskCreated }: CreateTaskDialogProps) {
     setIsSubmitting(true);
 
     try {
+      // Validate required fields
+      if (!formData.activityId) {
+        toast.error("Activity is required");
+        setIsSubmitting(false);
+        return;
+      }
+
+      if (!formData.isiboId) {
+        toast.error("Isibo is required");
+        setIsSubmitting(false);
+        return;
+      }
+
       await createTask(formData);
       toast.success("Task created successfully");
       setIsOpen(false);
@@ -95,6 +133,7 @@ function CreateTaskDialog({ onTaskCreated }: CreateTaskDialogProps) {
         title: "",
         description: "",
         activityId: "",
+        isiboId: "",
       });
     } catch (error: any) {
       if (error.message) {
@@ -168,6 +207,26 @@ function CreateTaskDialog({ onTaskCreated }: CreateTaskDialogProps) {
                   {activities.map((activity) => (
                     <SelectItem key={activity.id} value={activity.id}>
                       {activity.title}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="isiboId" className="text-right">
+                Isibo
+              </Label>
+              <Select
+                value={formData.isiboId}
+                onValueChange={(value) => handleSelectChange("isiboId", value)}
+              >
+                <SelectTrigger className="col-span-3">
+                  <SelectValue placeholder="Select isibo" />
+                </SelectTrigger>
+                <SelectContent>
+                  {isibos.map((isibo) => (
+                    <SelectItem key={isibo.id} value={isibo.id}>
+                      {isibo.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -366,7 +425,7 @@ export default function TasksTab() {
                     Activity
                   </th>
                   <th className="h-10 px-4 text-left align-middle font-medium text-muted-foreground">
-                    Assigned To
+                    Isibo
                   </th>
                   <th className="h-10 px-4 text-left align-middle font-medium text-muted-foreground">
                     Status
@@ -408,17 +467,21 @@ export default function TasksTab() {
                         {task.activity.title}
                       </td>
                       <td className="p-4 whitespace-nowrap">
-                        {task.assignedTo ? task.assignedTo.names : "-"}
+                        {task.isibo ? task.isibo.names : "-"}
                       </td>
                       <td className="p-4 whitespace-nowrap">
                         <span
                           className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                            task.completed
+                            task.status === "COMPLETED"
                               ? "bg-green-100 text-green-800"
+                              : task.status === "IN_PROGRESS"
+                              ? "bg-blue-100 text-blue-800"
+                              : task.status === "CANCELLED"
+                              ? "bg-red-100 text-red-800"
                               : "bg-yellow-100 text-yellow-800"
                           }`}
                         >
-                          {task.completed ? "Completed" : "Pending"}
+                          {task.status}
                         </span>
                       </td>
                       <td className="p-4 whitespace-nowrap">
