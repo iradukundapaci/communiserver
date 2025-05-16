@@ -1,59 +1,47 @@
 "use client";
 
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useAuth } from "@/contexts/auth-context";
-import { getUserProfile, updateUserProfile, changePassword } from "@/lib/api/user";
-import { useState, useEffect } from "react";
+import { changePassword, updateUserProfile } from "@/lib/api/user";
+import { useUser } from "@/lib/contexts/user-context";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 export default function ProfilePage() {
-  const { user } = useAuth();
-  const [isLoading, setIsLoading] = useState(true);
-  const [profile, setProfile] = useState({
-    names: "",
-    email: "",
-    phone: "",
-    role: "",
-    cell: "",
-    village: "",
-    isVillageLeader: false,
-    isCellLeader: false,
-  });
-  
+  const { user, refreshUser } = useUser();
+  const [isLoading, setIsLoading] = useState(false);
+
   const [formData, setFormData] = useState({
-    names: "",
-    email: "",
-    phone: "",
+    names: user?.names || "",
+    email: user?.email || "",
+    phone: user?.phone || "",
   });
-  
+
   const [passwordData, setPasswordData] = useState({
     newPassword: "",
     confirmPassword: "",
   });
 
+  // Update form data when user changes
   useEffect(() => {
-    const fetchProfile = async () => {
-      try {
-        const profileData = await getUserProfile();
-        setProfile(profileData);
-        setFormData({
-          names: profileData.names,
-          email: profileData.email,
-          phone: profileData.phone,
-        });
-        setIsLoading(false);
-      } catch (error) {
-        toast.error("Failed to load profile");
-        setIsLoading(false);
-      }
-    };
-
-    fetchProfile();
-  }, []);
+    if (user) {
+      setFormData({
+        names: user.names || "",
+        email: user.email || "",
+        phone: user.phone || "",
+      });
+    }
+  }, [user]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -73,14 +61,14 @@ export default function ProfilePage() {
 
   const handleProfileUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     try {
       setIsLoading(true);
-      const updatedProfile = await updateUserProfile(formData);
-      setProfile(updatedProfile);
+      await updateUserProfile(formData);
+      await refreshUser(); // Refresh the user context
       toast.success("Profile updated successfully");
-    } catch (error) {
-      toast.error("Failed to update profile");
+    } catch (error: any) {
+      toast.error(error?.message || "Failed to update profile");
     } finally {
       setIsLoading(false);
     }
@@ -88,17 +76,17 @@ export default function ProfilePage() {
 
   const handlePasswordUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (passwordData.newPassword !== passwordData.confirmPassword) {
       toast.error("Passwords do not match");
       return;
     }
-    
+
     if (passwordData.newPassword.length < 8) {
       toast.error("Password must be at least 8 characters long");
       return;
     }
-    
+
     try {
       setIsLoading(true);
       await changePassword(passwordData.newPassword);
@@ -107,14 +95,14 @@ export default function ProfilePage() {
         confirmPassword: "",
       });
       toast.success("Password changed successfully");
-    } catch (error) {
-      toast.error("Failed to change password");
+    } catch (error: any) {
+      toast.error(error?.message || "Failed to change password");
     } finally {
       setIsLoading(false);
     }
   };
 
-  if (isLoading) {
+  if (!user) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
@@ -125,13 +113,13 @@ export default function ProfilePage() {
   return (
     <div className="container mx-auto py-10">
       <h1 className="text-3xl font-bold mb-6">My Profile</h1>
-      
+
       <Tabs defaultValue="profile" className="w-full">
         <TabsList className="grid w-full max-w-md grid-cols-2">
           <TabsTrigger value="profile">Profile</TabsTrigger>
           <TabsTrigger value="security">Security</TabsTrigger>
         </TabsList>
-        
+
         <TabsContent value="profile">
           <Card>
             <CardHeader>
@@ -152,7 +140,7 @@ export default function ProfilePage() {
                       onChange={handleInputChange}
                     />
                   </div>
-                  
+
                   <div className="space-y-2">
                     <Label htmlFor="email">Email</Label>
                     <Input
@@ -163,7 +151,7 @@ export default function ProfilePage() {
                       onChange={handleInputChange}
                     />
                   </div>
-                  
+
                   <div className="space-y-2">
                     <Label htmlFor="phone">Phone Number</Label>
                     <Input
@@ -173,35 +161,77 @@ export default function ProfilePage() {
                       onChange={handleInputChange}
                     />
                   </div>
-                  
+
                   <div className="space-y-2">
                     <Label htmlFor="role">Role</Label>
-                    <Input
-                      id="role"
-                      value={profile.role}
-                      disabled
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="cell">Cell</Label>
-                    <Input
-                      id="cell"
-                      value={profile.cell || "Not specified"}
-                      disabled
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="village">Village</Label>
-                    <Input
-                      id="village"
-                      value={profile.village || "Not specified"}
-                      disabled
-                    />
+                    <Input id="role" value={user.role} disabled />
                   </div>
                 </div>
-                
+
+                <div className="mt-6">
+                  <h3 className="text-lg font-medium mb-4">
+                    Administrative Area
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="cell">Cell</Label>
+                      <div className="flex items-center gap-2">
+                        <Input
+                          id="cell"
+                          value={user.cell?.name || "Not assigned"}
+                          disabled
+                        />
+                        {user.isCellLeader && (
+                          <Badge
+                            variant="outline"
+                            className="bg-blue-500 text-white"
+                          >
+                            Cell Leader
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="village">Village</Label>
+                      <div className="flex items-center gap-2">
+                        <Input
+                          id="village"
+                          value={user.village?.name || "Not assigned"}
+                          disabled
+                        />
+                        {user.isVillageLeader && (
+                          <Badge
+                            variant="outline"
+                            className="bg-green-500 text-white"
+                          >
+                            Village Leader
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="isibo">Isibo</Label>
+                      <div className="flex items-center gap-2">
+                        <Input
+                          id="isibo"
+                          value={user.isibo?.name || "Not assigned"}
+                          disabled
+                        />
+                        {user.isIsiboLeader && (
+                          <Badge
+                            variant="outline"
+                            className="bg-purple-500 text-white"
+                          >
+                            Isibo Leader
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
                 <div className="flex justify-end">
                   <Button type="submit" disabled={isLoading}>
                     {isLoading ? "Updating..." : "Update Profile"}
@@ -211,7 +241,7 @@ export default function ProfilePage() {
             </CardContent>
           </Card>
         </TabsContent>
-        
+
         <TabsContent value="security">
           <Card>
             <CardHeader>
@@ -232,7 +262,7 @@ export default function ProfilePage() {
                     onChange={handlePasswordChange}
                   />
                 </div>
-                
+
                 <div className="space-y-2">
                   <Label htmlFor="confirmPassword">Confirm Password</Label>
                   <Input
@@ -243,7 +273,7 @@ export default function ProfilePage() {
                     onChange={handlePasswordChange}
                   />
                 </div>
-                
+
                 <div className="flex justify-end">
                   <Button type="submit" disabled={isLoading}>
                     {isLoading ? "Updating..." : "Change Password"}
