@@ -247,7 +247,7 @@ export default function CreateHousePage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="space-y-2">
+              <div className="space-y-2 max-w-md">
                 <Label htmlFor="code">House Code</Label>
                 <Input
                   id="code"
@@ -256,10 +256,11 @@ export default function CreateHousePage() {
                   onChange={handleInputChange}
                   placeholder="Enter house code"
                   required
+                  className="w-full"
                 />
               </div>
 
-              <div className="space-y-2">
+              <div className="space-y-2 max-w-md">
                 <Label htmlFor="street">Street (Optional)</Label>
                 <Input
                   id="street"
@@ -267,17 +268,18 @@ export default function CreateHousePage() {
                   value={formData.street}
                   onChange={handleInputChange}
                   placeholder="Enter street name"
+                  className="w-full"
                 />
               </div>
 
-              <div className="space-y-2">
+              <div className="space-y-2 max-w-xs">
                 <Label htmlFor="cellId">Cell</Label>
                 <Select
                   value={selectedCellId}
                   onValueChange={handleCellChange}
                   disabled={isCellsLoading}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className="w-full">
                     <SelectValue placeholder="Select a cell" />
                   </SelectTrigger>
                   <SelectContent>
@@ -290,14 +292,14 @@ export default function CreateHousePage() {
                 </Select>
               </div>
 
-              <div className="space-y-2">
+              <div className="space-y-2 max-w-xs">
                 <Label htmlFor="villageId">Village</Label>
                 <Select
                   value={selectedVillageId}
                   onValueChange={handleVillageChange}
                   disabled={isVillagesLoading || villages.length === 0}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className="w-full">
                     <SelectValue placeholder="Select a village" />
                   </SelectTrigger>
                   <SelectContent>
@@ -310,14 +312,14 @@ export default function CreateHousePage() {
                 </Select>
               </div>
 
-              <div className="space-y-2">
+              <div className="space-y-2 max-w-xs">
                 <Label htmlFor="isiboId">Isibo</Label>
                 <Select
                   value={formData.isiboId}
                   onValueChange={handleIsiboChange}
                   disabled={isIsibosLoading || isibos.length === 0}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className="w-full">
                     <SelectValue placeholder="Select an isibo" />
                   </SelectTrigger>
                   <SelectContent>

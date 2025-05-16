@@ -133,15 +133,21 @@ export default function CellsPage() {
         <CardContent>
           <form
             onSubmit={handleSearch}
-            className="flex items-center gap-2 mb-4"
+            className="flex items-center gap-2 mb-4 w-1/3"
           >
-            <Input
-              placeholder="Search cells..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="max-w-sm"
-            />
-            <Button type="submit">Search</Button>
+            <div className="flex-1">
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Search cells..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full"
+                />
+                <Button type="submit" className="shrink-0">
+                  Search
+                </Button>
+              </div>
+            </div>
           </form>
 
           {isLoading ? (

@@ -60,20 +60,6 @@ export class IsibosService {
       throw new NotFoundException("Village not found");
     }
 
-    // Check if user is the village leader, cell leader, or admin
-    const isVillageLeader = village.profiles.some(
-      (profile) => profile.isVillageLeader && profile.user.id === user.id,
-    );
-    const isCellLeader = village.cell.profiles.some(
-      (profile) => profile.isCellLeader && profile.user.id === user.id,
-    );
-
-    if (!isVillageLeader && !isCellLeader && user.role !== UserRole.ADMIN) {
-      throw new ForbiddenException(
-        "You can only create isibos in your own village",
-      );
-    }
-
     // Validate leaderId if provided
     let leader = null;
     if (createIsiboDto.leaderId) {
@@ -122,26 +108,6 @@ export class IsibosService {
 
     if (!isibo) {
       throw new NotFoundException("Isibo not found");
-    }
-
-    // Check if user is the isibo leader, village leader, cell leader, or admin
-    const isIsiboLeader = isibo.leader && isibo.leader.user.id === user.id;
-    const isVillageLeader = isibo.village.profiles.some(
-      (profile) => profile.isVillageLeader && profile.user.id === user.id,
-    );
-    const isCellLeader = isibo.village.cell.profiles.some(
-      (profile) => profile.isCellLeader && profile.user.id === user.id,
-    );
-
-    if (
-      !isIsiboLeader &&
-      !isVillageLeader &&
-      !isCellLeader &&
-      user.role !== UserRole.ADMIN
-    ) {
-      throw new ForbiddenException(
-        "You can only update isibos you lead or are in your village",
-      );
     }
 
     // If updating isibo name, validate uniqueness within the village
@@ -221,26 +187,6 @@ export class IsibosService {
       throw new NotFoundException("Isibo not found");
     }
 
-    // Check if user is the isibo leader, village leader, cell leader, or admin
-    const isIsiboLeader = isibo.leader && isibo.leader.user.id === user.id;
-    const isVillageLeader = isibo.village.profiles.some(
-      (profile) => profile.isVillageLeader && profile.user.id === user.id,
-    );
-    const isCellLeader = isibo.village.cell.profiles.some(
-      (profile) => profile.isCellLeader && profile.user.id === user.id,
-    );
-
-    if (
-      !isIsiboLeader &&
-      !isVillageLeader &&
-      !isCellLeader &&
-      user.role !== UserRole.ADMIN
-    ) {
-      throw new ForbiddenException(
-        "You can only delete isibos you lead or are in your village",
-      );
-    }
-
     // If there's a leader, remove the isibo leader flag
     if (isibo.leader) {
       isibo.leader.isIsiboLeader = false;
@@ -304,10 +250,12 @@ export class IsibosService {
 
     // Check if user is the village leader, cell leader, or admin
     const isVillageLeader = isibo.village.profiles.some(
-      (profile) => profile.isVillageLeader && profile.user.id === user.id,
+      (profile) =>
+        profile.isVillageLeader && profile.user && profile.user.id === user.id,
     );
     const isCellLeader = isibo.village.cell.profiles.some(
-      (profile) => profile.isCellLeader && profile.user.id === user.id,
+      (profile) =>
+        profile.isCellLeader && profile.user && profile.user.id === user.id,
     );
 
     if (!isVillageLeader && !isCellLeader && user.role !== UserRole.ADMIN) {
@@ -360,12 +308,15 @@ export class IsibosService {
 
     // Check if user is the village leader, cell leader, or admin
     const isVillageLeader = isibo.village.profiles.some(
-      (profile) => profile.isVillageLeader && profile.user.id === user.id,
+      (profile) =>
+        profile.isVillageLeader && profile.user && profile.user.id === user.id,
     );
     const isCellLeader = isibo.village.cell.profiles.some(
-      (profile) => profile.isCellLeader && profile.user.id === user.id,
+      (profile) =>
+        profile.isCellLeader && profile.user && profile.user.id === user.id,
     );
-    const isIsiboLeader = isibo.leader && isibo.leader.user.id === user.id;
+    const isIsiboLeader =
+      isibo.leader && isibo.leader.user && isibo.leader.user.id === user.id;
 
     if (
       !isVillageLeader &&
@@ -384,6 +335,10 @@ export class IsibosService {
     }
 
     // Get the leader user
+    if (!isibo.leader || !isibo.leader.user) {
+      throw new NotFoundException("Isibo leader user not found");
+    }
+
     const leaderUser = isibo.leader.user;
 
     // Update the user's role back to CITIZEN

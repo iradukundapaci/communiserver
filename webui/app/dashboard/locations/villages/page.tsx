@@ -35,6 +35,7 @@ import {
 } from "@/components/ui/table";
 import { Cell, getCells } from "@/lib/api/cells";
 import { Village, deleteVillage, getVillages } from "@/lib/api/villages";
+import { useUser } from "@/lib/contexts/user-context";
 import { Permission } from "@/lib/permissions";
 import { Pencil, PlusCircle, Trash2, UserMinus, UserPlus } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -43,6 +44,7 @@ import { toast } from "sonner";
 
 export default function VillagesPage() {
   const router = useRouter();
+  const { user } = useUser();
   const [villages, setVillages] = useState<Village[]>([]);
   const [cells, setCells] = useState<Cell[]>([]);
   const [selectedCellId, setSelectedCellId] = useState<string>("");
@@ -70,8 +72,12 @@ export default function VillagesPage() {
       const response = await getCells(1, 100); // Get all cells
       setCells(response.items || []);
 
-      // Select the first cell by default
-      if (response.items && response.items.length > 0) {
+      // If user is a cell leader, pre-select their cell
+      if (user?.role === "CELL_LEADER" && user?.cell?.id) {
+        setSelectedCellId(user.cell.id);
+      }
+      // Otherwise, select the first cell by default
+      else if (response.items && response.items.length > 0) {
         setSelectedCellId(response.items[0].id);
       }
     } catch (error) {
@@ -187,7 +193,10 @@ export default function VillagesPage() {
                 <Select
                   value={selectedCellId}
                   onValueChange={handleCellChange}
-                  disabled={isCellsLoading}
+                  disabled={
+                    isCellsLoading ||
+                    (user?.role === "CELL_LEADER" && user?.cell?.id)
+                  }
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select a cell" />
@@ -202,7 +211,7 @@ export default function VillagesPage() {
                 </Select>
               </div>
 
-              <div className="w-full sm:w-2/3">
+              <div className="w-full sm:w-1/3">
                 <form
                   onSubmit={handleSearch}
                   className="flex items-center gap-2"
@@ -211,14 +220,17 @@ export default function VillagesPage() {
                     <label className="text-sm font-medium mb-2 block">
                       Search
                     </label>
-                    <Input
-                      placeholder="Search villages..."
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                    />
-                  </div>
-                  <div className="mt-auto">
-                    <Button type="submit">Search</Button>
+                    <div className="flex gap-2">
+                      <Input
+                        placeholder="Search villages..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="w-full"
+                      />
+                      <Button type="submit" className="shrink-0">
+                        Search
+                      </Button>
+                    </div>
                   </div>
                 </form>
               </div>

@@ -171,7 +171,7 @@ export default function CreateIsiboPage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="space-y-2">
+              <div className="space-y-2 max-w-md">
                 <Label htmlFor="name">Isibo Name</Label>
                 <Input
                   id="name"
@@ -180,17 +180,18 @@ export default function CreateIsiboPage() {
                   onChange={handleInputChange}
                   placeholder="Enter isibo name"
                   required
+                  className="w-full"
                 />
               </div>
 
-              <div className="space-y-2">
+              <div className="space-y-2 max-w-xs">
                 <Label htmlFor="cellId">Cell</Label>
                 <Select
                   value={selectedCellId}
                   onValueChange={handleCellChange}
                   disabled={isCellsLoading}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className="w-full">
                     <SelectValue placeholder="Select a cell" />
                   </SelectTrigger>
                   <SelectContent>
@@ -203,14 +204,14 @@ export default function CreateIsiboPage() {
                 </Select>
               </div>
 
-              <div className="space-y-2">
+              <div className="space-y-2 max-w-xs">
                 <Label htmlFor="villageId">Village</Label>
                 <Select
                   value={formData.villageId}
                   onValueChange={handleVillageChange}
                   disabled={isVillagesLoading || villages.length === 0}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className="w-full">
                     <SelectValue placeholder="Select a village" />
                   </SelectTrigger>
                   <SelectContent>

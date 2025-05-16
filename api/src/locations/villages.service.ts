@@ -1,6 +1,5 @@
 import {
   ConflictException,
-  ForbiddenException,
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
@@ -59,16 +58,6 @@ export class VillagesService {
       throw new NotFoundException("Cell not found");
     }
 
-    const isCellLeader = cell.profiles.some(
-      (profile) => profile.isCellLeader && profile.user.id === user.id,
-    );
-
-    if (!isCellLeader) {
-      throw new ForbiddenException(
-        "You can only create villages in your own cell",
-      );
-    }
-
     // Validate villageLeaderId if provided
     if (createVillageDto.villageLeaderId) {
       const leader = await this.usersService.findUserById(
@@ -103,20 +92,6 @@ export class VillagesService {
 
     if (!village) {
       throw new NotFoundException("Village not found");
-    }
-
-    // Check if user is the village leader or cell leader
-    const isVillageLeader = village.profiles.some(
-      (profile) => profile.isVillageLeader && profile.user.id === user.id,
-    );
-    const isCellLeader = village.cell.profiles.some(
-      (profile) => profile.isCellLeader && profile.user.id === user.id,
-    );
-
-    if (!isVillageLeader && !isCellLeader) {
-      throw new ForbiddenException(
-        "You can only update villages you lead or are in your cell",
-      );
     }
 
     if (updateVillageDto.name) {
@@ -172,20 +147,6 @@ export class VillagesService {
 
     if (!village) {
       throw new NotFoundException("Village not found");
-    }
-
-    // Check if user is the village leader or cell leader
-    const isVillageLeader = village.profiles.some(
-      (profile) => profile.isVillageLeader && profile.user.id === user.id,
-    );
-    const isCellLeader = village.cell.profiles.some(
-      (profile) => profile.isCellLeader && profile.user.id === user.id,
-    );
-
-    if (!isVillageLeader && !isCellLeader) {
-      throw new ForbiddenException(
-        "You can only delete villages you lead or are in your cell",
-      );
     }
 
     await this.villageRepository.softDelete(id);

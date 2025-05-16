@@ -42,6 +42,7 @@ import {
 } from "@/lib/api/houses";
 import { Isibo, getIsibos } from "@/lib/api/isibos";
 import { Village, getVillages } from "@/lib/api/villages";
+import { useUser } from "@/lib/contexts/user-context";
 import { Permission } from "@/lib/permissions";
 import { Pencil, PlusCircle, Trash2, UserMinus, UserPlus } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -50,6 +51,7 @@ import { toast } from "sonner";
 
 export default function HousesPage() {
   const router = useRouter();
+  const { user } = useUser();
   const [houses, setHouses] = useState<House[]>([]);
   const [isibos, setIsibos] = useState<Isibo[]>([]);
   const [villages, setVillages] = useState<Village[]>([]);
@@ -95,8 +97,12 @@ export default function HousesPage() {
       const response = await getCells(1, 100); // Get all cells
       setCells(response.items || []);
 
-      // Select the first cell by default
-      if (response.items && response.items.length > 0) {
+      // Pre-select cell based on user role
+      if (user?.cell?.id) {
+        // For all roles with a cell, pre-select their cell
+        setSelectedCellId(user.cell.id);
+      } else if (response.items && response.items.length > 0) {
+        // Otherwise, select the first cell by default
         setSelectedCellId(response.items[0].id);
       }
     } catch (error: any) {
@@ -119,8 +125,15 @@ export default function HousesPage() {
       const response = await getVillages(selectedCellId, 1, 100); // Get all villages for the selected cell
       setVillages(response.items || []);
 
-      // Select the first village by default
-      if (response.items && response.items.length > 0) {
+      // Pre-select village based on user role
+      if (
+        user?.village?.id &&
+        response.items.some((village) => village.id === user.village?.id)
+      ) {
+        // For village leaders and isibo leaders, pre-select their village
+        setSelectedVillageId(user.village.id);
+      } else if (response.items && response.items.length > 0) {
+        // Otherwise, select the first village by default
         setSelectedVillageId(response.items[0].id);
       } else {
         setSelectedVillageId("");
@@ -153,8 +166,15 @@ export default function HousesPage() {
       const response = await getIsibos(selectedVillageId, 1, 100); // Get all isibos for the selected village
       setIsibos(response.items || []);
 
-      // Select the first isibo by default
-      if (response.items && response.items.length > 0) {
+      // Pre-select isibo based on user role
+      if (
+        user?.isibo?.id &&
+        response.items.some((isibo) => isibo.id === user.isibo?.id)
+      ) {
+        // For isibo leaders, pre-select their isibo
+        setSelectedIsiboId(user.isibo.id);
+      } else if (response.items && response.items.length > 0) {
+        // Otherwise, select the first isibo by default
         setSelectedIsiboId(response.items[0].id);
       } else {
         setSelectedIsiboId("");
@@ -307,7 +327,7 @@ export default function HousesPage() {
                 <Select
                   value={selectedCellId}
                   onValueChange={handleCellChange}
-                  disabled={isCellsLoading}
+                  disabled={isCellsLoading || Boolean(user?.cell?.id)}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select a cell" />
@@ -329,7 +349,11 @@ export default function HousesPage() {
                 <Select
                   value={selectedVillageId}
                   onValueChange={handleVillageChange}
-                  disabled={isVillagesLoading || villages.length === 0}
+                  disabled={
+                    isVillagesLoading ||
+                    villages.length === 0 ||
+                    Boolean(user?.village?.id)
+                  }
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select a village" />
@@ -351,7 +375,11 @@ export default function HousesPage() {
                 <Select
                   value={selectedIsiboId}
                   onValueChange={handleIsiboChange}
-                  disabled={isIsibosLoading || isibos.length === 0}
+                  disabled={
+                    isIsibosLoading ||
+                    isibos.length === 0 ||
+                    Boolean(user?.isibo?.id)
+                  }
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select an isibo" />
@@ -375,14 +403,17 @@ export default function HousesPage() {
                     <label className="text-sm font-medium mb-2 block">
                       Search
                     </label>
-                    <Input
-                      placeholder="Search houses..."
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                    />
-                  </div>
-                  <div className="mt-auto">
-                    <Button type="submit">Search</Button>
+                    <div className="flex gap-2">
+                      <Input
+                        placeholder="Search houses..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="w-full"
+                      />
+                      <Button type="submit" className="shrink-0">
+                        Search
+                      </Button>
+                    </div>
                   </div>
                 </form>
               </div>

@@ -22,6 +22,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Activity, getActivities, TaskStatus } from "@/lib/api/activities";
 import { getIsibos } from "@/lib/api/isibos";
 import { getTaskById, Task, updateTask } from "@/lib/api/tasks";
+import { useUser } from "@/lib/contexts/user-context";
 import { ArrowLeft } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import * as React from "react";

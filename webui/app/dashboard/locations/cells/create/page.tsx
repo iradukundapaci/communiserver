@@ -1,15 +1,22 @@
 "use client";
 
+import { PermissionRoute } from "@/components/permission-route";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { PermissionRoute } from "@/components/permission-route";
-import { Permission } from "@/lib/permissions";
 import { createCell } from "@/lib/api/cells";
+import { Permission } from "@/lib/permissions";
 import { ArrowLeft } from "lucide-react";
-import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { toast } from "sonner";
 
 export default function CreateCellPage() {
@@ -29,14 +36,14 @@ export default function CreateCellPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!formData.name.trim()) {
       toast.error("Cell name is required");
       return;
     }
-    
+
     setIsLoading(true);
-    
+
     try {
       await createCell(formData);
       toast.success("Cell created successfully");
@@ -62,7 +69,7 @@ export default function CreateCellPage() {
           </Button>
           <h1 className="text-3xl font-bold">Create Cell</h1>
         </div>
-        
+
         <Card>
           <form onSubmit={handleSubmit}>
             <CardHeader>
@@ -72,7 +79,7 @@ export default function CreateCellPage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="space-y-2">
+              <div className="space-y-2 max-w-md">
                 <Label htmlFor="name">Cell Name</Label>
                 <Input
                   id="name"
@@ -81,6 +88,7 @@ export default function CreateCellPage() {
                   onChange={handleInputChange}
                   placeholder="Enter cell name"
                   required
+                  className="w-full"
                 />
               </div>
             </CardContent>

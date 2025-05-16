@@ -639,15 +639,13 @@ function ActivitiesTab() {
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="flex justify-between items-center gap-4">
-          <form
-            onSubmit={handleSearch}
-            className="flex items-center gap-2 w-1/4"
-          >
-            <div className="flex-1">
+          <form onSubmit={handleSearch} className="flex items-center gap-2">
+            <div className="w-56">
               <Input
                 placeholder="Search"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full"
               />
             </div>
             <Button type="submit" disabled={isSearching}>

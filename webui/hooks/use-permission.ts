@@ -1,6 +1,7 @@
 "use client";
 
 import { useAuth } from "@/contexts/auth-context";
+import { useUser } from "@/lib/contexts/user-context";
 import { Permission, hasPermission } from "@/lib/permissions";
 
 /**
@@ -9,12 +10,16 @@ import { Permission, hasPermission } from "@/lib/permissions";
  * @returns Boolean indicating if the user has the permission
  */
 export function usePermission(permission: Permission): boolean {
-  const { user } = useAuth();
-  
+  const { user: authUser } = useAuth();
+  const { user: contextUser } = useUser();
+
+  // Use the user from context if available, otherwise fall back to auth user
+  const user = contextUser || authUser;
+
   if (!user || !user.role) {
     return false;
   }
-  
+
   return hasPermission(user.role, permission);
 }
 
@@ -24,13 +29,17 @@ export function usePermission(permission: Permission): boolean {
  * @returns Boolean indicating if the user has any of the permissions
  */
 export function useHasAnyPermission(permissions: Permission[]): boolean {
-  const { user } = useAuth();
-  
+  const { user: authUser } = useAuth();
+  const { user: contextUser } = useUser();
+
+  // Use the user from context if available, otherwise fall back to auth user
+  const user = contextUser || authUser;
+
   if (!user || !user.role) {
     return false;
   }
-  
-  return permissions.some(permission => hasPermission(user.role, permission));
+
+  return permissions.some((permission) => hasPermission(user.role, permission));
 }
 
 /**
@@ -39,11 +48,17 @@ export function useHasAnyPermission(permissions: Permission[]): boolean {
  * @returns Boolean indicating if the user has all of the permissions
  */
 export function useHasAllPermissions(permissions: Permission[]): boolean {
-  const { user } = useAuth();
-  
+  const { user: authUser } = useAuth();
+  const { user: contextUser } = useUser();
+
+  // Use the user from context if available, otherwise fall back to auth user
+  const user = contextUser || authUser;
+
   if (!user || !user.role) {
     return false;
   }
-  
-  return permissions.every(permission => hasPermission(user.role, permission));
+
+  return permissions.every((permission) =>
+    hasPermission(user.role, permission)
+  );
 }

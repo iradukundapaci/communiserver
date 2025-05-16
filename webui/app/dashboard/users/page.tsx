@@ -21,13 +21,11 @@ import { getUsers } from "@/lib/api/users";
 import { Permission } from "@/lib/permissions";
 import { UserRole } from "@/lib/user-roles";
 import { RefreshCw, Search } from "lucide-react";
-import { useRouter } from "next/navigation";
 import * as React from "react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 export default function UsersPage() {
-  const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedRole, setSelectedRole] = useState<string>("");
   const [users, setUsers] = useState<
@@ -155,16 +153,17 @@ export default function UsersPage() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex justify-between items-center gap-4">
-              <div className="flex-1 flex gap-4">
+              <div className="flex gap-4">
                 <form
                   onSubmit={handleSearch}
-                  className="flex items-center gap-2 flex-1"
+                  className="flex items-center gap-2"
                 >
-                  <div className="flex-1">
+                  <div className="w-64">
                     <Input
                       placeholder="Search by name or email"
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
+                      className="w-full"
                     />
                   </div>
                   <Button type="submit" disabled={isSearching}>

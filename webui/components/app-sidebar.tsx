@@ -36,12 +36,12 @@ const data = {
     },
     {
       title: "Locations",
-      url: "/dashboard/locations/cells",
+      url: "/dashboard/locations",
       icon: IconBuilding,
     },
     {
-      title: "Leaders",
-      url: "/dashboard/leaders",
+      title: "Users",
+      url: "/dashboard/users",
       icon: IconUsers,
     },
     {

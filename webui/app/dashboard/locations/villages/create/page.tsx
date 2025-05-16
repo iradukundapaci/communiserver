@@ -1,17 +1,30 @@
 "use client";
 
+import { PermissionRoute } from "@/components/permission-route";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { PermissionRoute } from "@/components/permission-route";
-import { Permission } from "@/lib/permissions";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Cell, getCells } from "@/lib/api/cells";
 import { createVillage } from "@/lib/api/villages";
-import { getCells, Cell } from "@/lib/api/cells";
+import { Permission } from "@/lib/permissions";
 import { ArrowLeft } from "lucide-react";
-import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 export default function CreateVillagePage() {
@@ -33,10 +46,10 @@ export default function CreateVillagePage() {
       setIsCellsLoading(true);
       const response = await getCells(1, 100); // Get all cells
       setCells(response.items || []);
-      
+
       // Select the first cell by default
       if (response.items && response.items.length > 0) {
-        setFormData(prev => ({
+        setFormData((prev) => ({
           ...prev,
           cellId: response.items[0].id,
         }));
@@ -66,19 +79,19 @@ export default function CreateVillagePage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!formData.name.trim()) {
       toast.error("Village name is required");
       return;
     }
-    
+
     if (!formData.cellId) {
       toast.error("Please select a cell");
       return;
     }
-    
+
     setIsLoading(true);
-    
+
     try {
       await createVillage(formData);
       toast.success("Village created successfully");
@@ -104,7 +117,7 @@ export default function CreateVillagePage() {
           </Button>
           <h1 className="text-3xl font-bold">Create Village</h1>
         </div>
-        
+
         <Card>
           <form onSubmit={handleSubmit}>
             <CardHeader>
@@ -114,7 +127,7 @@ export default function CreateVillagePage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="space-y-2">
+              <div className="space-y-2 max-w-md">
                 <Label htmlFor="name">Village Name</Label>
                 <Input
                   id="name"
@@ -123,17 +136,18 @@ export default function CreateVillagePage() {
                   onChange={handleInputChange}
                   placeholder="Enter village name"
                   required
+                  className="w-full"
                 />
               </div>
-              
-              <div className="space-y-2">
+
+              <div className="space-y-2 max-w-xs">
                 <Label htmlFor="cellId">Cell</Label>
                 <Select
                   value={formData.cellId}
                   onValueChange={handleCellChange}
                   disabled={isCellsLoading}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className="w-full">
                     <SelectValue placeholder="Select a cell" />
                   </SelectTrigger>
                   <SelectContent>

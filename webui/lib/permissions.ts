@@ -113,6 +113,7 @@ export const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     Permission.DELETE_ISIBO,
     Permission.CREATE_ISIBO_LEADER,
     Permission.VIEW_ALL_ISIBOS,
+    Permission.VIEW_ALL_HOUSES, // Added to allow village leaders to view houses
     Permission.CREATE_ACTIVITY,
     Permission.UPDATE_ACTIVITY,
     Permission.ADD_ACTIVITY_REPORT,

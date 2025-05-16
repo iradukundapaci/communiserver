@@ -26,6 +26,7 @@ import {
   updateActivity,
 } from "@/lib/api/activities";
 import { getVillages } from "@/lib/api/villages";
+import { useUser } from "@/lib/contexts/user-context";
 import { ArrowLeft } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import * as React from "react";

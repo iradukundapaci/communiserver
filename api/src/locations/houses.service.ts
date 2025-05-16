@@ -61,26 +61,6 @@ export class HousesService {
       throw new NotFoundException("Isibo not found");
     }
 
-    // Check if user is the isibo leader, village leader, cell leader, or admin
-    const isIsiboLeader = isibo.leader && isibo.leader.user.id === user.id;
-    const isVillageLeader = isibo.village.profiles.some(
-      (profile) => profile.isVillageLeader && profile.user.id === user.id,
-    );
-    const isCellLeader = isibo.village.cell.profiles.some(
-      (profile) => profile.isCellLeader && profile.user.id === user.id,
-    );
-
-    if (
-      !isIsiboLeader &&
-      !isVillageLeader &&
-      !isCellLeader &&
-      user.role !== UserRole.ADMIN
-    ) {
-      throw new ForbiddenException(
-        "You can only create houses in your own isibo",
-      );
-    }
-
     // Validate representativeId if provided
     let representative = null;
     if (createHouseDto.representativeId) {
@@ -126,35 +106,6 @@ export class HousesService {
 
     if (!house) {
       throw new NotFoundException("House not found");
-    }
-
-    // Check if user is the isibo leader, village leader, cell leader, or admin
-    const isIsiboLeader =
-      house.isibo.leader && house.isibo.leader.user.id === user.id;
-    const isVillageLeader = house.isibo.village.profiles.some(
-      (profile) => profile.isVillageLeader && profile.user.id === user.id,
-    );
-    const isCellLeader = house.isibo.village.cell.profiles.some(
-      (profile) => profile.isCellLeader && profile.user.id === user.id,
-    );
-    const isRepresentative =
-      house.representative && house.representative.user.id === user.id;
-
-    if (
-      !isIsiboLeader &&
-      !isVillageLeader &&
-      !isCellLeader &&
-      !isRepresentative &&
-      user.role !== UserRole.ADMIN
-    ) {
-      throw new ForbiddenException(
-        "You can only update houses you represent or are in your isibo",
-      );
-    }
-
-    // If updating house code, validate uniqueness within the isibo
-    if (updateHouseDto.code && updateHouseDto.code !== house.code) {
-      await this.validateHouseCode(house.isibo.id, updateHouseDto.code);
     }
 
     // If updating isiboId, validate it
@@ -358,31 +309,6 @@ export class HousesService {
     if (!house) {
       throw new NotFoundException("House not found");
     }
-
-    // Check if user is the isibo leader, village leader, cell leader, or admin
-    const isIsiboLeader =
-      house.isibo.leader && house.isibo.leader.user.id === user.id;
-    const isVillageLeader = house.isibo.village.profiles.some(
-      (profile) => profile.isVillageLeader && profile.user.id === user.id,
-    );
-    const isCellLeader = house.isibo.village.cell.profiles.some(
-      (profile) => profile.isCellLeader && profile.user.id === user.id,
-    );
-    const isRepresentative =
-      house.representative && house.representative.user.id === user.id;
-
-    if (
-      !isIsiboLeader &&
-      !isVillageLeader &&
-      !isCellLeader &&
-      !isRepresentative &&
-      user.role !== UserRole.ADMIN
-    ) {
-      throw new ForbiddenException(
-        "You can only remove representatives from houses in your isibo, village, or cell",
-      );
-    }
-
     // Check if house has a representative
     if (!house.hasLeader) {
       throw new NotFoundException("This house does not have a representative");
