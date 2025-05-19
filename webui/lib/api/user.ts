@@ -19,6 +19,8 @@ export interface UpdateProfileInput {
   names?: string;
   email?: string;
   phone?: string;
+  isiboId?: string;
+  houseId?: string;
 }
 
 interface ApiResponse<T> {
@@ -33,28 +35,28 @@ interface ApiResponse<T> {
 export async function getUserProfile(): Promise<UserProfile> {
   try {
     const tokens = getAuthTokens();
-    
+
     if (!tokens) {
-      throw new Error('Not authenticated');
+      throw new Error("Not authenticated");
     }
-    
-    const response = await fetch('/api/v1/users/me', {
-      method: 'GET',
+
+    const response = await fetch("/api/v1/users/me", {
+      method: "GET",
       headers: {
-        'Authorization': `Bearer ${tokens.accessToken}`,
-        'Content-Type': 'application/json',
+        Authorization: `Bearer ${tokens.accessToken}`,
+        "Content-Type": "application/json",
       },
     });
 
     if (!response.ok) {
       const errorData = await response.json();
-      throw new Error(errorData.message || 'Failed to fetch profile');
+      throw new Error(errorData.message || "Failed to fetch profile");
     }
 
     const data: ApiResponse<UserProfile> = await response.json();
     return data.payload;
   } catch (error) {
-    console.error('Get profile error:', error);
+    console.error("Get profile error:", error);
     throw error;
   }
 }
@@ -64,32 +66,34 @@ export async function getUserProfile(): Promise<UserProfile> {
  * @param profileData Profile data to update
  * @returns Promise with updated user profile
  */
-export async function updateUserProfile(profileData: UpdateProfileInput): Promise<UserProfile> {
+export async function updateUserProfile(
+  profileData: UpdateProfileInput
+): Promise<UserProfile> {
   try {
     const tokens = getAuthTokens();
-    
+
     if (!tokens) {
-      throw new Error('Not authenticated');
+      throw new Error("Not authenticated");
     }
-    
-    const response = await fetch('/api/v1/users', {
-      method: 'PATCH',
+
+    const response = await fetch("/api/v1/users", {
+      method: "PATCH",
       headers: {
-        'Authorization': `Bearer ${tokens.accessToken}`,
-        'Content-Type': 'application/json',
+        Authorization: `Bearer ${tokens.accessToken}`,
+        "Content-Type": "application/json",
       },
       body: JSON.stringify(profileData),
     });
 
     if (!response.ok) {
       const errorData = await response.json();
-      throw new Error(errorData.message || 'Failed to update profile');
+      throw new Error(errorData.message || "Failed to update profile");
     }
 
     const data: ApiResponse<UserProfile> = await response.json();
     return data.payload;
   } catch (error) {
-    console.error('Update profile error:', error);
+    console.error("Update profile error:", error);
     throw error;
   }
 }
@@ -102,30 +106,30 @@ export async function updateUserProfile(profileData: UpdateProfileInput): Promis
 export async function changePassword(newPassword: string): Promise<string> {
   try {
     const tokens = getAuthTokens();
-    const userId = 'me'; // Use 'me' to refer to the current user
-    
+    const userId = "me"; // Use 'me' to refer to the current user
+
     if (!tokens) {
-      throw new Error('Not authenticated');
+      throw new Error("Not authenticated");
     }
-    
+
     const response = await fetch(`/api/v1/users/${userId}/change-password`, {
-      method: 'PATCH',
+      method: "PATCH",
       headers: {
-        'Authorization': `Bearer ${tokens.accessToken}`,
-        'Content-Type': 'application/json',
+        Authorization: `Bearer ${tokens.accessToken}`,
+        "Content-Type": "application/json",
       },
       body: JSON.stringify({ newPassword }),
     });
 
     if (!response.ok) {
       const errorData = await response.json();
-      throw new Error(errorData.message || 'Failed to change password');
+      throw new Error(errorData.message || "Failed to change password");
     }
 
     const data: ApiResponse<null> = await response.json();
     return data.message;
   } catch (error) {
-    console.error('Change password error:', error);
+    console.error("Change password error:", error);
     throw error;
   }
 }

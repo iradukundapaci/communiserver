@@ -1,4 +1,4 @@
-import { IsString, IsEmail, IsOptional } from "class-validator";
+import { IsEmail, IsOptional, IsString } from "class-validator";
 
 export namespace UpdateProfileDto {
   export class Input {
@@ -13,13 +13,24 @@ export namespace UpdateProfileDto {
     @IsString()
     @IsOptional()
     phone?: string;
+
+    @IsString()
+    @IsOptional()
+    isiboId?: string;
+
+    @IsString()
+    @IsOptional()
+    houseId?: string;
   }
   export class Output {
     id: string;
     names: string;
     email: string;
     phoneNumber: string;
+    isiboId: string;
+    houseId: string;
     isVillageLeader: boolean;
     isCellLeader: boolean;
+    isIsiboLeader: boolean;
   }
 }

@@ -32,7 +32,7 @@ export class Profile extends AbstractEntity {
   @JoinColumn({ name: "isibo_id" })
   isibo: Isibo;
 
-  @ManyToOne(() => House, (house) => house.members)
+  @ManyToOne(() => House, (house) => house.members, { eager: true })
   @JoinColumn({ name: "house_id" })
   house: House;
 
@@ -46,6 +46,7 @@ export class Profile extends AbstractEntity {
     isIsiboLeader: boolean = false,
     cell: Cell,
     village: Village,
+    isibo?: Isibo,
     house?: House,
   ) {
     super();
@@ -55,6 +56,10 @@ export class Profile extends AbstractEntity {
     this.isIsiboLeader = isIsiboLeader;
     this.cell = cell;
     this.village = village;
+    if (isibo) {
+      this.isibo = isibo;
+    }
+
     if (house) {
       this.house = house;
     }

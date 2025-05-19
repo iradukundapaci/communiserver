@@ -106,7 +106,9 @@ function CreateLeaderModal({
           setIsOpen(false);
           window.location.href = "/dashboard/locations/villages";
         } catch (assignError) {
-          toast.error("Leader created but could not be assigned to the village");
+          toast.error(
+            "Leader created but could not be assigned to the village"
+          );
           console.error("Assignment error:", assignError);
         }
       } else {
@@ -195,10 +197,7 @@ function CreateLeaderModal({
             </div>
           </div>
           <DialogFooter>
-            <Button
-              type="submit"
-              disabled={isCreating}
-            >
+            <Button type="submit" disabled={isCreating}>
               {isCreating ? "Creating..." : "Create Leader"}
             </Button>
           </DialogFooter>
@@ -216,7 +215,11 @@ export default function AssignLeaderPage({
   const router = useRouter();
   const { id } = React.use(params);
 
-  const [village, setVillage] = useState<{ id: string; name: string; cellId?: string }>({
+  const [village, setVillage] = useState<{
+    id: string;
+    name: string;
+    cellId?: string;
+  }>({
     id: "",
     name: "",
   });
@@ -253,7 +256,7 @@ export default function AssignLeaderPage({
 
         // Filter users with appropriate role on the client side
         const filteredByRole = response.items.filter(
-          (user) => user.role === UserRole.VILLAGE_LEADER
+          (user) => user.role === UserRole.CITIZEN
         );
 
         setUsers(filteredByRole);
@@ -289,7 +292,7 @@ export default function AssignLeaderPage({
 
       // Filter users with appropriate role on the client side
       const filteredByRole = response.items.filter(
-        (user) => user.role === UserRole.VILLAGE_LEADER
+        (user) => user.role === UserRole.CITIZEN
       );
 
       setUsers(filteredByRole);
@@ -349,7 +352,7 @@ export default function AssignLeaderPage({
 
       // Filter users with appropriate role
       const filteredByRole = response.items.filter(
-        (user) => user.role === UserRole.VILLAGE_LEADER
+        (user) => user.role === UserRole.CITIZEN
       );
 
       // Append new users to existing users

@@ -36,6 +36,11 @@ export interface User {
     id: string;
     name: string;
   };
+  house?: {
+    id: string;
+    code: string;
+    street?: string;
+  };
   isIsiboLeader?: boolean;
   isVillageLeader?: boolean;
   isCellLeader?: boolean;

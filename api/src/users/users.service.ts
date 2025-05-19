@@ -149,6 +149,7 @@ export class UsersService {
     role: UserRole,
     cell: any,
     village: any,
+    isibo: any,
     isVillageLeader: boolean,
     isCellLeader: boolean,
     isIsiboLeader: boolean,
@@ -168,6 +169,7 @@ export class UsersService {
       names: dto.names,
       cell,
       village,
+      isibo,
       isVillageLeader,
       isCellLeader,
       isIsiboLeader,
@@ -206,6 +208,7 @@ export class UsersService {
           UserRole.CELL_LEADER,
           cell,
           village,
+          null,
           false,
           true,
           false,
@@ -248,6 +251,7 @@ export class UsersService {
           UserRole.VILLAGE_LEADER,
           cell,
           village,
+          null,
           true,
           false,
           false,
@@ -293,6 +297,7 @@ export class UsersService {
           UserRole.ISIBO_LEADER,
           cell,
           village,
+          isibo,
           false,
           false,
           true,
@@ -430,6 +435,7 @@ export class UsersService {
       cell: userProfile.profile.cell,
       village: userProfile.profile.village,
       isibo: userProfile.profile.isibo,
+      house: userProfile.profile.house,
       isIsiboLeader: userProfile.profile.isIsiboLeader,
       isVillageLeader: userProfile.profile.isVillageLeader,
       isCellLeader: userProfile.profile.isCellLeader,
@@ -438,7 +444,7 @@ export class UsersService {
 
   async updateProfile(
     userId: string,
-    { names, email, phone }: UpdateProfileDto.Input,
+    { names, email, phone, isiboId, houseId }: UpdateProfileDto.Input,
   ): Promise<UpdateProfileDto.Output> {
     const user = await this.findUserById(userId);
 
@@ -456,6 +462,8 @@ export class UsersService {
 
     user.profile.names = names ?? user.profile.names;
     user.phone = phone ?? user.phone;
+    user.profile.isibo = isiboId ? ({ id: isiboId } as any) : null;
+    user.profile.house = houseId ? ({ id: houseId } as any) : null;
 
     if (isEmailChanged) {
       user.email = email!;
@@ -479,6 +487,9 @@ export class UsersService {
       names: user.profile.names,
       email: user.email,
       phoneNumber: user.phone,
+      isiboId: user.profile.isibo?.id,
+      houseId: user.profile.house?.id,
+      isIsiboLeader: user.profile.isIsiboLeader,
       isVillageLeader: user.profile.isVillageLeader,
       isCellLeader: user.profile.isCellLeader,
     };

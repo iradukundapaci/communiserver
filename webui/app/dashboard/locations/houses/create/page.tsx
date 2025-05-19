@@ -67,18 +67,38 @@ export default function CreateHousePage() {
   const fetchCells = async () => {
     try {
       setIsCellsLoading(true);
+
+      // If user has a cell assigned, use it directly without fetching all cells
+      if (user?.cell?.id) {
+        // For all roles with a cell, pre-select their cell
+        setSelectedCellId(user.cell.id);
+
+        // If the user is a location leader, we don't need to fetch all cells
+        if (
+          user.role === "CELL_LEADER" ||
+          user.role === "VILLAGE_LEADER" ||
+          user.role === "ISIBO_LEADER"
+        ) {
+          // Just add the user's cell to the cells array
+          setCells([
+            {
+              id: user.cell.id,
+              name: user.cell.name,
+              hasLeader: false, // These values don't matter for the dropdown
+              leaderId: null,
+            } as Cell,
+          ]);
+          setIsCellsLoading(false);
+          return;
+        }
+      }
+
+      // Otherwise fetch cells from the database
       const response = await getCells(1, 100); // Get all cells
       setCells(response.items || []);
 
-      // If user is a village leader or isibo leader, pre-select their cell
-      if (
-        (user?.role === "VILLAGE_LEADER" || user?.role === "ISIBO_LEADER") &&
-        user?.cell?.id
-      ) {
-        setSelectedCellId(user.cell.id);
-      }
-      // Otherwise, select the first cell by default
-      else if (response.items && response.items.length > 0) {
+      // If user doesn't have a cell, select the first one by default
+      if (!user?.cell?.id && response.items && response.items.length > 0) {
         setSelectedCellId(response.items[0].id);
       }
     } catch (error: any) {
@@ -98,21 +118,40 @@ export default function CreateHousePage() {
 
     try {
       setIsVillagesLoading(true);
+
+      // If user has a village assigned and we're in the correct cell, use it directly
+      if (user?.village?.id && user?.cell?.id === selectedCellId) {
+        // For village leaders and isibo leaders, pre-select their village
+        setSelectedVillageId(user.village.id);
+
+        // If the user is a location leader, we don't need to fetch all villages
+        if (user.role === "VILLAGE_LEADER" || user.role === "ISIBO_LEADER") {
+          // Just add the user's village to the villages array
+          setVillages([
+            {
+              id: user.village.id,
+              name: user.village.name,
+              hasLeader: false, // These values don't matter for the dropdown
+              leaderId: null,
+            } as Village,
+          ]);
+          setIsVillagesLoading(false);
+          return;
+        }
+      }
+
+      // Otherwise fetch villages from the database
       const response = await getVillages(selectedCellId, 1, 100); // Get all villages for the selected cell
       setVillages(response.items || []);
 
-      // If user is a village leader, pre-select their village
+      // If user has a village in this cell, pre-select it
       if (
-        user?.role === "VILLAGE_LEADER" &&
         user?.village?.id &&
         response.items.some((village) => village.id === user.village?.id)
       ) {
         setSelectedVillageId(user.village.id);
-      }
-      // For isibo leaders, we don't have direct access to their village ID in the user object
-      // This would need to be added to the user profile API response
-      // Otherwise, select the first village by default
-      else if (response.items && response.items.length > 0) {
+      } else if (response.items && response.items.length > 0) {
+        // Otherwise, select the first village by default
         setSelectedVillageId(response.items[0].id);
       } else {
         setSelectedVillageId("");
@@ -146,22 +185,46 @@ export default function CreateHousePage() {
 
     try {
       setIsIsibosLoading(true);
+
+      // If user has an isibo assigned and we're in the correct village, use it directly
+      if (user?.isibo?.id && user?.village?.id === selectedVillageId) {
+        // For isibo leaders, pre-select their isibo
+        setFormData((prev) => ({
+          ...prev,
+          isiboId: user.isibo.id,
+        }));
+
+        // If the user is an isibo leader, we don't need to fetch all isibos
+        if (user.role === "ISIBO_LEADER") {
+          // Just add the user's isibo to the isibos array
+          setIsibos([
+            {
+              id: user.isibo.id,
+              name: user.isibo.name,
+              hasLeader: false, // These values don't matter for the dropdown
+              leaderId: null,
+            } as Isibo,
+          ]);
+          setIsIsibosLoading(false);
+          return;
+        }
+      }
+
+      // Otherwise fetch isibos from the database
       const response = await getIsibos(selectedVillageId, 1, 100); // Get all isibos for the selected village
       setIsibos(response.items || []);
 
-      // If user is an isibo leader, pre-select their isibo
+      // If user has an isibo in this village, pre-select it
       if (
-        user?.role === "ISIBO_LEADER" &&
         user?.isibo?.id &&
         response.items.some((isibo) => isibo.id === user.isibo?.id)
       ) {
         setFormData((prev) => ({
           ...prev,
-          isiboId: user.isibo?.id || "",
+          isiboId: user.isibo.id,
         }));
-      }
-      // Otherwise, select the first isibo by default
-      else if (response.items && response.items.length > 0) {
+      } else if (response.items && response.items.length > 0) {
+        // Otherwise, select the first isibo by default
         setFormData((prev) => ({
           ...prev,
           isiboId: response.items[0].id,
@@ -303,69 +366,6 @@ export default function CreateHousePage() {
               </div>
 
               <div className="space-y-2 max-w-xs">
-                <Label htmlFor="cellId">Cell</Label>
-                <Select
-                  value={selectedCellId}
-                  onValueChange={handleCellChange}
-                  disabled={
-                    isCellsLoading ||
-                    (user?.role === "VILLAGE_LEADER" &&
-                      Boolean(user?.cell?.id)) ||
-                    (user?.role === "ISIBO_LEADER" && Boolean(user?.cell?.id))
-                  }
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select a cell" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {cells.map((cell) => (
-                      <SelectItem key={cell.id} value={cell.id}>
-                        {cell.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {(user?.role === "VILLAGE_LEADER" ||
-                  user?.role === "ISIBO_LEADER") &&
-                  user?.cell?.id && (
-                    <p className="text-sm text-muted-foreground mt-1">
-                      Cell is locked to your assigned cell
-                    </p>
-                  )}
-              </div>
-
-              <div className="space-y-2 max-w-xs">
-                <Label htmlFor="villageId">Village</Label>
-                <Select
-                  value={selectedVillageId}
-                  onValueChange={handleVillageChange}
-                  disabled={
-                    isVillagesLoading ||
-                    villages.length === 0 ||
-                    (user?.role === "VILLAGE_LEADER" &&
-                      Boolean(user?.village?.id))
-                    // For isibo leaders, we would need village ID in the user profile
-                  }
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select a village" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {villages.map((village) => (
-                      <SelectItem key={village.id} value={village.id}>
-                        {village.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {user?.role === "VILLAGE_LEADER" && user?.village?.id && (
-                  <p className="text-sm text-muted-foreground mt-1">
-                    Village is locked to your assigned village
-                  </p>
-                )}
-              </div>
-
-              <div className="space-y-2 max-w-xs">
                 <Label htmlFor="isiboId">Isibo</Label>
                 <Select
                   value={formData.isiboId}
@@ -373,7 +373,7 @@ export default function CreateHousePage() {
                   disabled={
                     isIsibosLoading ||
                     isibos.length === 0 ||
-                    (user?.role === "ISIBO_LEADER" && Boolean(user?.isibo?.id))
+                    Boolean(user?.isibo?.id)
                   }
                 >
                   <SelectTrigger className="w-full">
@@ -387,7 +387,7 @@ export default function CreateHousePage() {
                     ))}
                   </SelectContent>
                 </Select>
-                {user?.role === "ISIBO_LEADER" && user?.isibo?.id && (
+                {user?.isibo?.id && (
                   <p className="text-sm text-muted-foreground mt-1">
                     Isibo is locked to your assigned isibo
                   </p>

@@ -8,16 +8,23 @@ export namespace FetchProfileDto {
     activated: boolean;
     role: UserRole;
     phone: string;
-    cell: location;
-    village: location;
-    isibo: location;
+    cell: Location;
+    village: Location;
+    isibo: Location;
+    house: House;
     isIsiboLeader: boolean;
     isVillageLeader: boolean;
     isCellLeader: boolean;
   }
 
-  class location {
+  class Location {
     id: string;
     name: string;
+  }
+
+  class House {
+    id: string;
+    code: string;
+    street?: string;
   }
 }
