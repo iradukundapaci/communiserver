@@ -96,6 +96,10 @@ export const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     Permission.DELETE_VILLAGE,
     Permission.VIEW_ALL_VILLAGES,
     Permission.VIEW_LEADERS,
+
+    // Additional permissions to view lower-level locations
+    Permission.VIEW_ALL_ISIBOS, // Allow cell leaders to view isibos
+    Permission.VIEW_ALL_HOUSES, // Allow cell leaders to view houses
   ],
 
   [UserRole.VILLAGE_LEADER]: [
@@ -113,8 +117,7 @@ export const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     Permission.DELETE_ISIBO,
     Permission.CREATE_ISIBO_LEADER,
     Permission.VIEW_ALL_ISIBOS,
-    Permission.VIEW_ALL_HOUSES, // Added to allow village leaders to view houses
-    Permission.CREATE_HOUSE,
+    Permission.VIEW_ALL_HOUSES,
     Permission.CREATE_ACTIVITY,
     Permission.UPDATE_ACTIVITY,
     Permission.ADD_ACTIVITY_REPORT,

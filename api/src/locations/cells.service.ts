@@ -150,6 +150,12 @@ export class CellsService {
       });
     }
 
+    if (dto.hasLeader !== undefined) {
+      queryBuilder.andWhere("cell.hasLeader = :hasLeader", {
+        hasLeader: dto.hasLeader,
+      });
+    }
+
     return paginate(queryBuilder, {
       page: dto.page,
       limit: dto.size,
@@ -207,7 +213,7 @@ export class CellsService {
   async removeCellLeader(cellId: string): Promise<Cell> {
     const cell = await this.cellRepository.findOne({
       where: { id: cellId },
-      relations: ["profiles"],
+      relations: ["profiles", "profiles.user"],
     });
 
     if (!cell) {
@@ -223,6 +229,11 @@ export class CellsService {
     const cellLeader = cell.profiles.find((profile) => profile.isCellLeader);
     if (!cellLeader) {
       throw new NotFoundException("Cell leader profile not found");
+    }
+
+    // Check if the profile has a user
+    if (!cellLeader.user) {
+      throw new NotFoundException("Cell leader user not found");
     }
 
     // Get the user

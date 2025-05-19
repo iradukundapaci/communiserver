@@ -4,13 +4,10 @@ import {
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
-import { ConfigService } from "@nestjs/config";
 import { InjectEntityManager, InjectRepository } from "@nestjs/typeorm";
 import { plainToInstance } from "class-transformer";
 import { UserRole } from "src/__shared__/enums/user-role.enum";
-import { IAppConfig } from "src/__shared__/interfaces/app-config.interface";
 import { PasswordEncryption } from "src/__shared__/utils/password-encrytion.util";
-import { SesService } from "src/notifications/ses.service";
 import { VerificationService } from "src/verification/verification.service";
 import { EntityManager, Not, Repository } from "typeorm";
 import { CreateCellLeaderDTO } from "./dto/create-cell-leader.dto";
@@ -33,8 +30,6 @@ export class UsersService {
     private readonly verificationService: VerificationService,
     @InjectEntityManager()
     private readonly entityManager: EntityManager,
-    private readonly configService: ConfigService<IAppConfig>,
-    private readonly sesService: SesService,
   ) {}
 
   private generateRandomPassword(): string {

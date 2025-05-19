@@ -23,6 +23,7 @@ import { Cell, getCells } from "@/lib/api/cells";
 import { createHouse } from "@/lib/api/houses";
 import { getIsibos, Isibo } from "@/lib/api/isibos";
 import { getVillages, Village } from "@/lib/api/villages";
+import { useUser } from "@/lib/contexts/user-context";
 import { Permission } from "@/lib/permissions";
 import { ArrowLeft } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -31,6 +32,7 @@ import { toast } from "sonner";
 
 export default function CreateHousePage() {
   const router = useRouter();
+  const { user } = useUser();
   const [formData, setFormData] = useState({
     code: "",
     street: "",
@@ -68,8 +70,15 @@ export default function CreateHousePage() {
       const response = await getCells(1, 100); // Get all cells
       setCells(response.items || []);
 
-      // Select the first cell by default
-      if (response.items && response.items.length > 0) {
+      // If user is a village leader or isibo leader, pre-select their cell
+      if (
+        (user?.role === "VILLAGE_LEADER" || user?.role === "ISIBO_LEADER") &&
+        user?.cell?.id
+      ) {
+        setSelectedCellId(user.cell.id);
+      }
+      // Otherwise, select the first cell by default
+      else if (response.items && response.items.length > 0) {
         setSelectedCellId(response.items[0].id);
       }
     } catch (error: any) {
@@ -92,8 +101,18 @@ export default function CreateHousePage() {
       const response = await getVillages(selectedCellId, 1, 100); // Get all villages for the selected cell
       setVillages(response.items || []);
 
-      // Select the first village by default
-      if (response.items && response.items.length > 0) {
+      // If user is a village leader, pre-select their village
+      if (
+        user?.role === "VILLAGE_LEADER" &&
+        user?.village?.id &&
+        response.items.some((village) => village.id === user.village?.id)
+      ) {
+        setSelectedVillageId(user.village.id);
+      }
+      // For isibo leaders, we don't have direct access to their village ID in the user object
+      // This would need to be added to the user profile API response
+      // Otherwise, select the first village by default
+      else if (response.items && response.items.length > 0) {
         setSelectedVillageId(response.items[0].id);
       } else {
         setSelectedVillageId("");
@@ -130,8 +149,19 @@ export default function CreateHousePage() {
       const response = await getIsibos(selectedVillageId, 1, 100); // Get all isibos for the selected village
       setIsibos(response.items || []);
 
-      // Select the first isibo by default
-      if (response.items && response.items.length > 0) {
+      // If user is an isibo leader, pre-select their isibo
+      if (
+        user?.role === "ISIBO_LEADER" &&
+        user?.isibo?.id &&
+        response.items.some((isibo) => isibo.id === user.isibo?.id)
+      ) {
+        setFormData((prev) => ({
+          ...prev,
+          isiboId: user.isibo?.id || "",
+        }));
+      }
+      // Otherwise, select the first isibo by default
+      else if (response.items && response.items.length > 0) {
         setFormData((prev) => ({
           ...prev,
           isiboId: response.items[0].id,
@@ -277,7 +307,12 @@ export default function CreateHousePage() {
                 <Select
                   value={selectedCellId}
                   onValueChange={handleCellChange}
-                  disabled={isCellsLoading}
+                  disabled={
+                    isCellsLoading ||
+                    (user?.role === "VILLAGE_LEADER" &&
+                      Boolean(user?.cell?.id)) ||
+                    (user?.role === "ISIBO_LEADER" && Boolean(user?.cell?.id))
+                  }
                 >
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder="Select a cell" />
@@ -290,6 +325,13 @@ export default function CreateHousePage() {
                     ))}
                   </SelectContent>
                 </Select>
+                {(user?.role === "VILLAGE_LEADER" ||
+                  user?.role === "ISIBO_LEADER") &&
+                  user?.cell?.id && (
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Cell is locked to your assigned cell
+                    </p>
+                  )}
               </div>
 
               <div className="space-y-2 max-w-xs">
@@ -297,7 +339,13 @@ export default function CreateHousePage() {
                 <Select
                   value={selectedVillageId}
                   onValueChange={handleVillageChange}
-                  disabled={isVillagesLoading || villages.length === 0}
+                  disabled={
+                    isVillagesLoading ||
+                    villages.length === 0 ||
+                    (user?.role === "VILLAGE_LEADER" &&
+                      Boolean(user?.village?.id))
+                    // For isibo leaders, we would need village ID in the user profile
+                  }
                 >
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder="Select a village" />
@@ -310,6 +358,11 @@ export default function CreateHousePage() {
                     ))}
                   </SelectContent>
                 </Select>
+                {user?.role === "VILLAGE_LEADER" && user?.village?.id && (
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Village is locked to your assigned village
+                  </p>
+                )}
               </div>
 
               <div className="space-y-2 max-w-xs">
@@ -317,7 +370,11 @@ export default function CreateHousePage() {
                 <Select
                   value={formData.isiboId}
                   onValueChange={handleIsiboChange}
-                  disabled={isIsibosLoading || isibos.length === 0}
+                  disabled={
+                    isIsibosLoading ||
+                    isibos.length === 0 ||
+                    (user?.role === "ISIBO_LEADER" && Boolean(user?.isibo?.id))
+                  }
                 >
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder="Select an isibo" />
@@ -330,6 +387,11 @@ export default function CreateHousePage() {
                     ))}
                   </SelectContent>
                 </Select>
+                {user?.role === "ISIBO_LEADER" && user?.isibo?.id && (
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Isibo is locked to your assigned isibo
+                  </p>
+                )}
               </div>
             </CardContent>
             <CardFooter className="flex justify-end space-x-2">

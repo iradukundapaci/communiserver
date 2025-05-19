@@ -22,6 +22,7 @@ import {
 import { Cell, getCells } from "@/lib/api/cells";
 import { createIsibo } from "@/lib/api/isibos";
 import { getVillages, Village } from "@/lib/api/villages";
+import { useUser } from "@/lib/contexts/user-context";
 import { Permission } from "@/lib/permissions";
 import { ArrowLeft } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -30,6 +31,7 @@ import { toast } from "sonner";
 
 export default function CreateIsiboPage() {
   const router = useRouter();
+  const { user } = useUser();
   const [formData, setFormData] = useState({
     name: "",
     villageId: "",
@@ -57,8 +59,12 @@ export default function CreateIsiboPage() {
       const response = await getCells(1, 100); // Get all cells
       setCells(response.items || []);
 
-      // Select the first cell by default
-      if (response.items && response.items.length > 0) {
+      // If user is a village leader, pre-select their cell
+      if (user?.role === "VILLAGE_LEADER" && user?.cell?.id) {
+        setSelectedCellId(user.cell.id);
+      }
+      // Otherwise, select the first cell by default
+      else if (response.items && response.items.length > 0) {
         setSelectedCellId(response.items[0].id);
       }
     } catch (error) {
@@ -77,8 +83,19 @@ export default function CreateIsiboPage() {
       const response = await getVillages(selectedCellId, 1, 100); // Get all villages for the selected cell
       setVillages(response.items || []);
 
-      // Select the first village by default
-      if (response.items && response.items.length > 0) {
+      // If user is a village leader, pre-select their village
+      if (
+        user?.role === "VILLAGE_LEADER" &&
+        user?.village?.id &&
+        response.items.some((village) => village.id === user.village?.id)
+      ) {
+        setFormData((prev) => ({
+          ...prev,
+          villageId: user?.village?.id || "",
+        }));
+      }
+      // Otherwise, select the first village by default
+      else if (response.items && response.items.length > 0) {
         setFormData((prev) => ({
           ...prev,
           villageId: response.items[0].id,
@@ -189,7 +206,10 @@ export default function CreateIsiboPage() {
                 <Select
                   value={selectedCellId}
                   onValueChange={handleCellChange}
-                  disabled={isCellsLoading}
+                  disabled={
+                    isCellsLoading ||
+                    (user?.role === "VILLAGE_LEADER" && Boolean(user?.cell?.id))
+                  }
                 >
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder="Select a cell" />
@@ -202,6 +222,11 @@ export default function CreateIsiboPage() {
                     ))}
                   </SelectContent>
                 </Select>
+                {user?.role === "VILLAGE_LEADER" && user?.cell?.id && (
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Cell is locked to your assigned cell
+                  </p>
+                )}
               </div>
 
               <div className="space-y-2 max-w-xs">
@@ -209,7 +234,12 @@ export default function CreateIsiboPage() {
                 <Select
                   value={formData.villageId}
                   onValueChange={handleVillageChange}
-                  disabled={isVillagesLoading || villages.length === 0}
+                  disabled={
+                    isVillagesLoading ||
+                    villages.length === 0 ||
+                    (user?.role === "VILLAGE_LEADER" &&
+                      Boolean(user?.village?.id))
+                  }
                 >
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder="Select a village" />
@@ -222,6 +252,11 @@ export default function CreateIsiboPage() {
                     ))}
                   </SelectContent>
                 </Select>
+                {user?.role === "VILLAGE_LEADER" && user?.village?.id && (
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Village is locked to your assigned village
+                  </p>
+                )}
               </div>
             </CardContent>
             <CardFooter className="flex justify-end space-x-2">

@@ -220,6 +220,7 @@ export class VillagesService {
   async removeVillageLeader(villageId: string): Promise<Village> {
     const village = await this.villageRepository.findOne({
       where: { id: villageId },
+      relations: ["profiles", "profiles.user"],
     });
 
     if (!village) {
@@ -231,8 +232,23 @@ export class VillagesService {
       throw new NotFoundException("This village does not have a leader");
     }
 
+    // Find the village leader from the profiles
+    const villageLeaderProfile = village.profiles.find(
+      (profile) => profile.isVillageLeader,
+    );
+    if (!villageLeaderProfile) {
+      throw new NotFoundException("Village leader profile not found");
+    }
+
+    // Check if the profile has a user
+    if (!villageLeaderProfile.user) {
+      throw new NotFoundException("Village leader user not found");
+    }
+
     // Find the village leader
-    const villageLeader = await this.usersService.findVillageLeader(villageId);
+    const villageLeader = await this.usersService.findUserById(
+      villageLeaderProfile.user.id,
+    );
     if (!villageLeader) {
       throw new NotFoundException("Village leader user not found");
     }

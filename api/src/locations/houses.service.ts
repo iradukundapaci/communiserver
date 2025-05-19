@@ -1,6 +1,5 @@
 import {
   ConflictException,
-  ForbiddenException,
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
@@ -8,7 +7,6 @@ import { InjectRepository } from "@nestjs/typeorm";
 import { paginate } from "nestjs-typeorm-paginate";
 import { UserRole } from "src/__shared__/enums/user-role.enum";
 import { Repository } from "typeorm";
-import { User } from "../users/entities/user.entity";
 import { UsersService } from "../users/users.service";
 import { CreateHouseDto } from "./dto/create-house.dto";
 import { FetchHouseDto } from "./dto/fetch-house.dto";
@@ -41,10 +39,7 @@ export class HousesService {
     }
   }
 
-  async createHouse(
-    createHouseDto: CreateHouseDto.Input,
-    user: User,
-  ): Promise<House> {
+  async createHouse(createHouseDto: CreateHouseDto.Input): Promise<House> {
     // Validate isiboId
     const isibo = await this.isiboRepository.findOne({
       where: { id: createHouseDto.isiboId },
@@ -89,7 +84,6 @@ export class HousesService {
   async updateHouse(
     id: string,
     updateHouseDto: UpdateHouseDto.Input,
-    user: User,
   ): Promise<House> {
     const house = await this.houseRepository.findOne({
       where: { id },
@@ -148,7 +142,7 @@ export class HousesService {
     return this.houseRepository.save(house);
   }
 
-  async deleteHouse(id: string, user: User): Promise<void> {
+  async deleteHouse(id: string): Promise<void> {
     const house = await this.houseRepository.findOne({
       where: { id },
       relations: [
@@ -164,30 +158,6 @@ export class HousesService {
 
     if (!house) {
       throw new NotFoundException("House not found");
-    }
-
-    // Check if user is the isibo leader, village leader, cell leader, or admin
-    const isIsiboLeader =
-      house.isibo.leader && house.isibo.leader.user.id === user.id;
-    const isVillageLeader = house.isibo.village.profiles.some(
-      (profile) => profile.isVillageLeader && profile.user.id === user.id,
-    );
-    const isCellLeader = house.isibo.village.cell.profiles.some(
-      (profile) => profile.isCellLeader && profile.user.id === user.id,
-    );
-    const isRepresentative =
-      house.representative && house.representative.user.id === user.id;
-
-    if (
-      !isIsiboLeader &&
-      !isVillageLeader &&
-      !isCellLeader &&
-      !isRepresentative &&
-      user.role !== UserRole.ADMIN
-    ) {
-      throw new ForbiddenException(
-        "You can only delete houses you represent or are in your isibo",
-      );
     }
 
     await this.houseRepository.softDelete(id);
@@ -225,11 +195,7 @@ export class HousesService {
     return house;
   }
 
-  async assignHouseRepresentative(
-    id: string,
-    userId: string,
-    user: User,
-  ): Promise<House> {
+  async assignHouseRepresentative(id: string, userId: string): Promise<House> {
     const house = await this.houseRepository.findOne({
       where: { id },
       relations: [
@@ -245,27 +211,6 @@ export class HousesService {
 
     if (!house) {
       throw new NotFoundException("House not found");
-    }
-
-    // Check if user is the isibo leader, village leader, cell leader, or admin
-    const isIsiboLeader =
-      house.isibo.leader && house.isibo.leader.user.id === user.id;
-    const isVillageLeader = house.isibo.village.profiles.some(
-      (profile) => profile.isVillageLeader && profile.user.id === user.id,
-    );
-    const isCellLeader = house.isibo.village.cell.profiles.some(
-      (profile) => profile.isCellLeader && profile.user.id === user.id,
-    );
-
-    if (
-      !isIsiboLeader &&
-      !isVillageLeader &&
-      !isCellLeader &&
-      user.role !== UserRole.ADMIN
-    ) {
-      throw new ForbiddenException(
-        "You can only assign representatives to houses in your isibo, village, or cell",
-      );
     }
 
     // Check if house already has a representative
@@ -291,7 +236,7 @@ export class HousesService {
     return this.houseRepository.save(house);
   }
 
-  async removeHouseRepresentative(id: string, user: User): Promise<House> {
+  async removeHouseRepresentative(id: string): Promise<House> {
     const house = await this.houseRepository.findOne({
       where: { id },
       relations: [

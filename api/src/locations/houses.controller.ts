@@ -20,10 +20,8 @@ import {
   IsIsiboLeader,
 } from "src/auth/decorators/authorize.decorator";
 import { GenericResponse } from "../__shared__/dto/generic-response.dto";
-import { GetUser } from "../auth/decorators/get-user.decorator";
 import { JwtGuard } from "../auth/guards/jwt.guard";
 import { RolesGuard } from "../auth/guards/roles.guard";
-import { User } from "../users/entities/user.entity";
 import { AssignHouseRepresentativeDto } from "./dto/assign-house-representative.dto";
 import { CreateHouseDto } from "./dto/create-house.dto";
 import { FetchHouseDto } from "./dto/fetch-house.dto";
@@ -50,9 +48,8 @@ export class HousesController {
   )
   async createHouse(
     @Body() createHouseDto: CreateHouseDto.Input,
-    @GetUser() user: User,
   ): Promise<GenericResponse<House>> {
-    const house = await this.housesService.createHouse(createHouseDto, user);
+    const house = await this.housesService.createHouse(createHouseDto);
     return new GenericResponse("House created successfully", house);
   }
 
@@ -69,13 +66,8 @@ export class HousesController {
   async updateHouse(
     @Param("id") id: string,
     @Body() updateHouseDto: UpdateHouseDto.Input,
-    @GetUser() user: User,
   ): Promise<GenericResponse<House>> {
-    const house = await this.housesService.updateHouse(
-      id,
-      updateHouseDto,
-      user,
-    );
+    const house = await this.housesService.updateHouse(id, updateHouseDto);
     return new GenericResponse("House updated successfully", house);
   }
 
@@ -83,11 +75,8 @@ export class HousesController {
   @IsAdminOrIsiboLeader()
   @OkResponse()
   @ErrorResponses(UnauthorizedResponse, ForbiddenResponse, NotFoundResponse)
-  async deleteHouse(
-    @Param("id") id: string,
-    @GetUser() user: User,
-  ): Promise<GenericResponse> {
-    await this.housesService.deleteHouse(id, user);
+  async deleteHouse(@Param("id") id: string): Promise<GenericResponse> {
+    await this.housesService.deleteHouse(id);
     return new GenericResponse("House deleted successfully");
   }
 
@@ -125,12 +114,10 @@ export class HousesController {
   async assignHouseRepresentative(
     @Param("id") id: string,
     @Body() assignHouseRepresentativeDto: AssignHouseRepresentativeDto.Input,
-    @GetUser() user: User,
   ): Promise<GenericResponse<House>> {
     const house = await this.housesService.assignHouseRepresentative(
       id,
       assignHouseRepresentativeDto.userId,
-      user,
     );
     return new GenericResponse(
       "House representative assigned successfully",
@@ -152,9 +139,8 @@ export class HousesController {
   )
   async removeHouseRepresentative(
     @Param("id") id: string,
-    @GetUser() user: User,
   ): Promise<GenericResponse<House>> {
-    const house = await this.housesService.removeHouseRepresentative(id, user);
+    const house = await this.housesService.removeHouseRepresentative(id);
     return new GenericResponse(
       "House representative removed successfully",
       house,

@@ -20,10 +20,8 @@ import {
   IsVillageLeader,
 } from "src/auth/decorators/authorize.decorator";
 import { GenericResponse } from "../__shared__/dto/generic-response.dto";
-import { GetUser } from "../auth/decorators/get-user.decorator";
 import { JwtGuard } from "../auth/guards/jwt.guard";
 import { RolesGuard } from "../auth/guards/roles.guard";
-import { User } from "../users/entities/user.entity";
 import { AssignIsiboLeaderDto } from "./dto/assign-isibo-leader.dto";
 import { CreateIsiboDto } from "./dto/create-isibo.dto";
 import { FetchIsiboDto } from "./dto/fetch-isibo.dto";
@@ -50,9 +48,8 @@ export class IsibosController {
   )
   async createIsibo(
     @Body() createIsiboDto: CreateIsiboDto.Input,
-    @GetUser() user: User,
   ): Promise<GenericResponse<Isibo>> {
-    const isibo = await this.isibosService.createIsibo(createIsiboDto, user);
+    const isibo = await this.isibosService.createIsibo(createIsiboDto);
     return new GenericResponse("Isibo created successfully", isibo);
   }
 
@@ -69,13 +66,8 @@ export class IsibosController {
   async updateIsibo(
     @Param("id") id: string,
     @Body() updateIsiboDto: UpdateIsiboDto.Input,
-    @GetUser() user: User,
   ): Promise<GenericResponse<Isibo>> {
-    const isibo = await this.isibosService.updateIsibo(
-      id,
-      updateIsiboDto,
-      user,
-    );
+    const isibo = await this.isibosService.updateIsibo(id, updateIsiboDto);
     return new GenericResponse("Isibo updated successfully", isibo);
   }
 
@@ -83,11 +75,8 @@ export class IsibosController {
   @IsAdminOrVillageLeader()
   @OkResponse()
   @ErrorResponses(UnauthorizedResponse, ForbiddenResponse, NotFoundResponse)
-  async deleteIsibo(
-    @Param("id") id: string,
-    @GetUser() user: User,
-  ): Promise<GenericResponse> {
-    await this.isibosService.deleteIsibo(id, user);
+  async deleteIsibo(@Param("id") id: string): Promise<GenericResponse> {
+    await this.isibosService.deleteIsibo(id);
     return new GenericResponse("Isibo deleted successfully");
   }
 
@@ -122,12 +111,10 @@ export class IsibosController {
   async assignIsiboLeader(
     @Param("id") id: string,
     @Body() assignIsiboLeaderDto: AssignIsiboLeaderDto.Input,
-    @GetUser() user: User,
   ): Promise<GenericResponse<Isibo>> {
     const isibo = await this.isibosService.assignIsiboLeader(
       id,
       assignIsiboLeaderDto.userId,
-      user,
     );
     return new GenericResponse("Isibo leader assigned successfully", isibo);
   }
@@ -143,9 +130,8 @@ export class IsibosController {
   )
   async removeIsiboLeader(
     @Param("id") id: string,
-    @GetUser() user: User,
   ): Promise<GenericResponse<Isibo>> {
-    const isibo = await this.isibosService.removeIsiboLeader(id, user);
+    const isibo = await this.isibosService.removeIsiboLeader(id);
     return new GenericResponse("Isibo leader removed successfully", isibo);
   }
 }

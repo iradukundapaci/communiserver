@@ -6,6 +6,9 @@ export namespace FetchCellDto {
   export class Input extends PaginationDto {
     @IsOptional()
     q?: string;
+
+    @IsOptional()
+    hasLeader?: boolean;
   }
 
   export class Output {

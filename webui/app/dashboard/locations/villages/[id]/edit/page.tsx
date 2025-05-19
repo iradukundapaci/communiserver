@@ -34,6 +34,7 @@ export default function EditVillagePage({
   params: Promise<{ id: string }>;
 }) {
   const router = useRouter();
+  const { user } = useUser();
   const { id } = React.use(params);
 
   const [formData, setFormData] = useState({
@@ -63,6 +64,18 @@ export default function EditVillagePage({
     try {
       setIsLoading(true);
       const village = await getVillageById(id);
+
+      // Verify that the cell leader can edit this village
+      if (
+        user?.role === "CELL_LEADER" &&
+        user?.cell?.id &&
+        village.cell?.id !== user.cell.id
+      ) {
+        toast.error("You can only edit villages in your assigned cell");
+        router.push("/dashboard/locations/villages");
+        return;
+      }
+
       setFormData({
         name: village.name,
         cellId: village.cell?.id || "",
@@ -70,6 +83,7 @@ export default function EditVillagePage({
     } catch (error) {
       toast.error("Failed to fetch village");
       console.error(error);
+      router.push("/dashboard/locations/villages");
     } finally {
       setIsLoading(false);
     }
@@ -174,9 +188,15 @@ export default function EditVillagePage({
                     ))}
                   </SelectContent>
                 </Select>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Cell cannot be changed when editing a village
-                </p>
+                {user?.role === "CELL_LEADER" && user?.cell?.id ? (
+                  <p className="text-sm text-muted-foreground mt-1">
+                    This village belongs to your assigned cell
+                  </p>
+                ) : (
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Cell cannot be changed when editing a village
+                  </p>
+                )}
               </div>
             </CardContent>
             <CardFooter className="flex justify-end space-x-2">

@@ -1,5 +1,6 @@
 "use client";
 
+import { ConfirmationDialog } from "@/components/confirmation-dialog";
 import { PermissionGate } from "@/components/permission-gate";
 import { Button } from "@/components/ui/button";
 import {
@@ -69,6 +70,13 @@ export default function HousesPage() {
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [, setTotalItems] = useState(0);
 
+  // Confirmation dialog state
+  const [
+    isRemoveRepresentativeDialogOpen,
+    setIsRemoveRepresentativeDialogOpen,
+  ] = useState(false);
+  const [selectedHouseId, setSelectedHouseId] = useState<string>("");
+
   useEffect(() => {
     fetchCells();
   }, []);
@@ -94,15 +102,39 @@ export default function HousesPage() {
   const fetchCells = async () => {
     try {
       setIsCellsLoading(true);
-      const response = await getCells(1, 100); // Get all cells
-      setCells(response.items || []);
 
-      // Pre-select cell based on user role
+      // If user has a cell assigned, use it directly without fetching all cells
       if (user?.cell?.id) {
         // For all roles with a cell, pre-select their cell
         setSelectedCellId(user.cell.id);
-      } else if (response.items && response.items.length > 0) {
-        // Otherwise, select the first cell by default
+
+        // If the user is a location leader, we don't need to fetch all cells
+        if (
+          user.role === "CELL_LEADER" ||
+          user.role === "VILLAGE_LEADER" ||
+          user.role === "ISIBO_LEADER"
+        ) {
+          // Just add the user's cell to the cells array
+          // Create a proper Cell object with the required properties
+          setCells([
+            {
+              id: user.cell.id,
+              name: user.cell.name,
+              hasLeader: false, // These values don't matter for the dropdown
+              leaderId: null,
+            } as Cell,
+          ]);
+          setIsCellsLoading(false);
+          return;
+        }
+      }
+
+      // Otherwise fetch cells from the database
+      const response = await getCells(1, 100); // Get all cells
+      setCells(response.items || []);
+
+      // If user doesn't have a cell, select the first one by default
+      if (!user?.cell?.id && response.items && response.items.length > 0) {
         setSelectedCellId(response.items[0].id);
       }
     } catch (error: any) {
@@ -122,15 +154,37 @@ export default function HousesPage() {
 
     try {
       setIsVillagesLoading(true);
+
+      // If user has a village assigned and we're in the correct cell, use it directly
+      if (user?.village?.id && user?.cell?.id === selectedCellId) {
+        // For village leaders and isibo leaders, pre-select their village
+        setSelectedVillageId(user.village.id);
+
+        // If the user is a location leader, we don't need to fetch all villages
+        if (user.role === "VILLAGE_LEADER" || user.role === "ISIBO_LEADER") {
+          // Just add the user's village to the villages array
+          setVillages([
+            {
+              id: user.village.id,
+              name: user.village.name,
+              hasLeader: false, // These values don't matter for the dropdown
+              leaderId: null,
+            } as Village,
+          ]);
+          setIsVillagesLoading(false);
+          return;
+        }
+      }
+
+      // Otherwise fetch villages from the database
       const response = await getVillages(selectedCellId, 1, 100); // Get all villages for the selected cell
       setVillages(response.items || []);
 
-      // Pre-select village based on user role
+      // If user has a village in this cell, pre-select it
       if (
         user?.village?.id &&
         response.items.some((village) => village.id === user.village?.id)
       ) {
-        // For village leaders and isibo leaders, pre-select their village
         setSelectedVillageId(user.village.id);
       } else if (response.items && response.items.length > 0) {
         // Otherwise, select the first village by default
@@ -163,15 +217,37 @@ export default function HousesPage() {
 
     try {
       setIsIsibosLoading(true);
+
+      // If user has an isibo assigned and we're in the correct village, use it directly
+      if (user?.isibo?.id && user?.village?.id === selectedVillageId) {
+        // For isibo leaders, pre-select their isibo
+        setSelectedIsiboId(user.isibo.id);
+
+        // If the user is an isibo leader, we don't need to fetch all isibos
+        if (user.role === "ISIBO_LEADER") {
+          // Just add the user's isibo to the isibos array
+          setIsibos([
+            {
+              id: user.isibo.id,
+              name: user.isibo.name,
+              hasLeader: false, // These values don't matter for the dropdown
+              leaderId: null,
+            } as Isibo,
+          ]);
+          setIsIsibosLoading(false);
+          return;
+        }
+      }
+
+      // Otherwise fetch isibos from the database
       const response = await getIsibos(selectedVillageId, 1, 100); // Get all isibos for the selected village
       setIsibos(response.items || []);
 
-      // Pre-select isibo based on user role
+      // If user has an isibo in this village, pre-select it
       if (
         user?.isibo?.id &&
         response.items.some((isibo) => isibo.id === user.isibo?.id)
       ) {
-        // For isibo leaders, pre-select their isibo
         setSelectedIsiboId(user.isibo.id);
       } else if (response.items && response.items.length > 0) {
         // Otherwise, select the first isibo by default
@@ -254,24 +330,24 @@ export default function HousesPage() {
     router.push(`/dashboard/locations/houses/${id}/assign-representative`);
   };
 
-  const handleRemoveRepresentative = async (id: string) => {
-    if (
-      window.confirm(
-        "Are you sure you want to remove the representative from this house?"
-      )
-    ) {
-      try {
-        await removeHouseRepresentative(id);
-        toast.success("House representative removed successfully");
-        fetchHouses();
-      } catch (error: any) {
-        if (error.message) {
-          toast.error(error.message);
-        } else {
-          toast.error("Failed to remove house representative");
-        }
-        console.error(error);
+  const handleRemoveRepresentative = (id: string) => {
+    setSelectedHouseId(id);
+    setIsRemoveRepresentativeDialogOpen(true);
+  };
+
+  const confirmRemoveRepresentative = async () => {
+    try {
+      await removeHouseRepresentative(selectedHouseId);
+      toast.success("House representative removed successfully");
+      fetchHouses();
+      setIsRemoveRepresentativeDialogOpen(false);
+    } catch (error: any) {
+      if (error.message) {
+        toast.error(error.message);
+      } else {
+        toast.error("Failed to remove house representative");
       }
+      console.error(error);
     }
   };
 
@@ -297,6 +373,17 @@ export default function HousesPage() {
 
   return (
     <div className="flex flex-col gap-4">
+      {/* Confirmation Dialog for removing representative */}
+      <ConfirmationDialog
+        isOpen={isRemoveRepresentativeDialogOpen}
+        onOpenChange={setIsRemoveRepresentativeDialogOpen}
+        onConfirm={confirmRemoveRepresentative}
+        title="Remove House Representative"
+        description="Are you sure you want to remove the representative from this house? This action cannot be undone."
+        confirmText="Remove Representative"
+        confirmVariant="destructive"
+      />
+
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold">Houses Management</h1>
 

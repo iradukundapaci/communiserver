@@ -1,5 +1,6 @@
 "use client";
 
+import { ConfirmationDialog } from "@/components/confirmation-dialog";
 import { PermissionGate } from "@/components/permission-gate";
 import { Button } from "@/components/ui/button";
 import {
@@ -42,6 +43,11 @@ export default function CellsPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [totalItems, setTotalItems] = useState(0);
+
+  // Confirmation dialog state
+  const [isRemoveLeaderDialogOpen, setIsRemoveLeaderDialogOpen] =
+    useState(false);
+  const [selectedCellId, setSelectedCellId] = useState<string>("");
 
   useEffect(() => {
     fetchCells();
@@ -91,25 +97,36 @@ export default function CellsPage() {
     router.push(`/dashboard/locations/cells/${id}/assign-leader`);
   };
 
-  const handleRemoveLeader = async (id: string) => {
-    if (
-      window.confirm(
-        "Are you sure you want to remove the leader from this cell?"
-      )
-    ) {
-      try {
-        await removeCellLeader(id);
-        toast.success("Cell leader removed successfully");
-        fetchCells();
-      } catch (error) {
-        toast.error("Failed to remove cell leader");
-        console.error(error);
-      }
+  const handleRemoveLeader = (id: string) => {
+    setSelectedCellId(id);
+    setIsRemoveLeaderDialogOpen(true);
+  };
+
+  const confirmRemoveLeader = async () => {
+    try {
+      await removeCellLeader(selectedCellId);
+      toast.success("Cell leader removed successfully");
+      fetchCells();
+      setIsRemoveLeaderDialogOpen(false);
+    } catch (error) {
+      toast.error("Failed to remove cell leader");
+      console.error(error);
     }
   };
 
   return (
     <div className="flex flex-col gap-4">
+      {/* Confirmation Dialog for removing leader */}
+      <ConfirmationDialog
+        isOpen={isRemoveLeaderDialogOpen}
+        onOpenChange={setIsRemoveLeaderDialogOpen}
+        onConfirm={confirmRemoveLeader}
+        title="Remove Cell Leader"
+        description="Are you sure you want to remove the leader from this cell? This action cannot be undone."
+        confirmText="Remove Leader"
+        confirmVariant="destructive"
+      />
+
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold">Cells Management</h1>
 

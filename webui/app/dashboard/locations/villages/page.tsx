@@ -1,5 +1,6 @@
 "use client";
 
+import { ConfirmationDialog } from "@/components/confirmation-dialog";
 import { PermissionGate } from "@/components/permission-gate";
 import { Button } from "@/components/ui/button";
 import {
@@ -34,7 +35,12 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Cell, getCells } from "@/lib/api/cells";
-import { Village, deleteVillage, getVillages } from "@/lib/api/villages";
+import {
+  Village,
+  deleteVillage,
+  getVillages,
+  removeVillageLeader,
+} from "@/lib/api/villages";
 import { useUser } from "@/lib/contexts/user-context";
 import { Permission } from "@/lib/permissions";
 import { Pencil, PlusCircle, Trash2, UserMinus, UserPlus } from "lucide-react";
@@ -54,7 +60,11 @@ export default function VillagesPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
-  const [totalItems, setTotalItems] = useState(0);
+
+  // Confirmation dialog state
+  const [isRemoveLeaderDialogOpen, setIsRemoveLeaderDialogOpen] =
+    useState(false);
+  const [selectedVillageId, setSelectedVillageId] = useState<string>("");
 
   useEffect(() => {
     fetchCells();
@@ -69,19 +79,46 @@ export default function VillagesPage() {
   const fetchCells = async () => {
     try {
       setIsCellsLoading(true);
+
+      // If user has a cell assigned, use it directly without fetching all cells
+      if (user?.cell?.id) {
+        // For all roles with a cell, pre-select their cell
+        setSelectedCellId(user.cell.id);
+
+        // If the user is a location leader, we don't need to fetch all cells
+        if (
+          user.role === "CELL_LEADER" ||
+          user.role === "VILLAGE_LEADER" ||
+          user.role === "ISIBO_LEADER"
+        ) {
+          // Just add the user's cell to the cells array
+          setCells([
+            {
+              id: user.cell.id,
+              name: user.cell.name,
+              hasLeader: false, // These values don't matter for the dropdown
+              leaderId: null,
+            } as Cell,
+          ]);
+          setIsCellsLoading(false);
+          return;
+        }
+      }
+
+      // Otherwise fetch cells from the database
       const response = await getCells(1, 100); // Get all cells
       setCells(response.items || []);
 
-      // If user is a cell leader, pre-select their cell
-      if (user?.role === "CELL_LEADER" && user?.cell?.id) {
-        setSelectedCellId(user.cell.id);
-      }
-      // Otherwise, select the first cell by default
-      else if (response.items && response.items.length > 0) {
+      // If user doesn't have a cell, select the first one by default
+      if (!user?.cell?.id && response.items && response.items.length > 0) {
         setSelectedCellId(response.items[0].id);
       }
-    } catch (error) {
-      toast.error("Failed to fetch cells");
+    } catch (error: any) {
+      if (error.message) {
+        toast.error(error.message);
+      } else {
+        toast.error("Failed to fetch cells");
+      }
       console.error(error);
     } finally {
       setIsCellsLoading(false);
@@ -101,7 +138,6 @@ export default function VillagesPage() {
       );
       setVillages(response.items || []);
       setTotalPages(response.meta?.totalPages || 1);
-      setTotalItems(response.meta?.totalItems || 0);
       setItemsPerPage(response.meta?.itemsPerPage || 10);
     } catch (error) {
       toast.error("Failed to fetch villages");
@@ -139,20 +175,20 @@ export default function VillagesPage() {
     router.push(`/dashboard/locations/villages/${id}/assign-leader`);
   };
 
-  const handleRemoveLeader = async (id: string) => {
-    if (
-      window.confirm(
-        "Are you sure you want to remove the leader from this village?"
-      )
-    ) {
-      try {
-        await removeVillageLeader(id);
-        toast.success("Village leader removed successfully");
-        fetchVillages();
-      } catch (error) {
-        toast.error("Failed to remove village leader");
-        console.error(error);
-      }
+  const handleRemoveLeader = (id: string) => {
+    setSelectedVillageId(id);
+    setIsRemoveLeaderDialogOpen(true);
+  };
+
+  const confirmRemoveLeader = async () => {
+    try {
+      await removeVillageLeader(selectedVillageId);
+      toast.success("Village leader removed successfully");
+      fetchVillages();
+      setIsRemoveLeaderDialogOpen(false);
+    } catch (error) {
+      toast.error("Failed to remove village leader");
+      console.error(error);
     }
   };
 
@@ -163,6 +199,17 @@ export default function VillagesPage() {
 
   return (
     <div className="flex flex-col gap-4">
+      {/* Confirmation Dialog for removing leader */}
+      <ConfirmationDialog
+        isOpen={isRemoveLeaderDialogOpen}
+        onOpenChange={setIsRemoveLeaderDialogOpen}
+        onConfirm={confirmRemoveLeader}
+        title="Remove Village Leader"
+        description="Are you sure you want to remove the leader from this village? This action cannot be undone."
+        confirmText="Remove Leader"
+        confirmVariant="destructive"
+      />
+
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold">Villages Management</h1>
 
@@ -193,10 +240,7 @@ export default function VillagesPage() {
                 <Select
                   value={selectedCellId}
                   onValueChange={handleCellChange}
-                  disabled={
-                    isCellsLoading ||
-                    (user?.role === "CELL_LEADER" && user?.cell?.id)
-                  }
+                  disabled={isCellsLoading || Boolean(user?.cell?.id)}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select a cell" />
@@ -422,7 +466,4 @@ export default function VillagesPage() {
       </Card>
     </div>
   );
-}
-function removeVillageLeader(id: string) {
-  throw new Error("Function not implemented.");
 }

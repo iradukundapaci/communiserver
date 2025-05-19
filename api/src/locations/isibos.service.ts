@@ -1,6 +1,5 @@
 import {
   ConflictException,
-  ForbiddenException,
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
@@ -8,7 +7,6 @@ import { InjectRepository } from "@nestjs/typeorm";
 import { paginate } from "nestjs-typeorm-paginate";
 import { UserRole } from "src/__shared__/enums/user-role.enum";
 import { Repository } from "typeorm";
-import { User } from "../users/entities/user.entity";
 import { UsersService } from "../users/users.service";
 import { CreateIsiboDto } from "./dto/create-isibo.dto";
 import { FetchIsiboDto } from "./dto/fetch-isibo.dto";
@@ -46,10 +44,7 @@ export class IsibosService {
     }
   }
 
-  async createIsibo(
-    createIsiboDto: CreateIsiboDto.Input,
-    user: User,
-  ): Promise<Isibo> {
+  async createIsibo(createIsiboDto: CreateIsiboDto.Input): Promise<Isibo> {
     // Validate villageId
     const village = await this.villageRepository.findOne({
       where: { id: createIsiboDto.villageId },
@@ -93,7 +88,6 @@ export class IsibosService {
   async updateIsibo(
     id: string,
     updateIsiboDto: UpdateIsiboDto.Input,
-    user: User,
   ): Promise<Isibo> {
     const isibo = await this.isiboRepository.findOne({
       where: { id },
@@ -171,7 +165,7 @@ export class IsibosService {
     return this.isiboRepository.save(isibo);
   }
 
-  async deleteIsibo(id: string, user: User): Promise<void> {
+  async deleteIsibo(id: string): Promise<void> {
     const isibo = await this.isiboRepository.findOne({
       where: { id },
       relations: [
@@ -228,11 +222,7 @@ export class IsibosService {
     return isibo;
   }
 
-  async assignIsiboLeader(
-    id: string,
-    userId: string,
-    user: User,
-  ): Promise<Isibo> {
+  async assignIsiboLeader(id: string, userId: string): Promise<Isibo> {
     const isibo = await this.isiboRepository.findOne({
       where: { id },
       relations: [
@@ -246,22 +236,6 @@ export class IsibosService {
 
     if (!isibo) {
       throw new NotFoundException("Isibo not found");
-    }
-
-    // Check if user is the village leader, cell leader, or admin
-    const isVillageLeader = isibo.village.profiles.some(
-      (profile) =>
-        profile.isVillageLeader && profile.user && profile.user.id === user.id,
-    );
-    const isCellLeader = isibo.village.cell.profiles.some(
-      (profile) =>
-        profile.isCellLeader && profile.user && profile.user.id === user.id,
-    );
-
-    if (!isVillageLeader && !isCellLeader && user.role !== UserRole.ADMIN) {
-      throw new ForbiddenException(
-        "You can only assign leaders to isibos in your village or cell",
-      );
     }
 
     // Check if isibo already has a leader
@@ -289,7 +263,7 @@ export class IsibosService {
     return this.isiboRepository.save(isibo);
   }
 
-  async removeIsiboLeader(id: string, user: User): Promise<Isibo> {
+  async removeIsiboLeader(id: string): Promise<Isibo> {
     const isibo = await this.isiboRepository.findOne({
       where: { id },
       relations: [
@@ -304,29 +278,6 @@ export class IsibosService {
 
     if (!isibo) {
       throw new NotFoundException("Isibo not found");
-    }
-
-    // Check if user is the village leader, cell leader, or admin
-    const isVillageLeader = isibo.village.profiles.some(
-      (profile) =>
-        profile.isVillageLeader && profile.user && profile.user.id === user.id,
-    );
-    const isCellLeader = isibo.village.cell.profiles.some(
-      (profile) =>
-        profile.isCellLeader && profile.user && profile.user.id === user.id,
-    );
-    const isIsiboLeader =
-      isibo.leader && isibo.leader.user && isibo.leader.user.id === user.id;
-
-    if (
-      !isVillageLeader &&
-      !isCellLeader &&
-      !isIsiboLeader &&
-      user.role !== UserRole.ADMIN
-    ) {
-      throw new ForbiddenException(
-        "You can only remove leaders from isibos in your village or cell",
-      );
     }
 
     // Check if isibo has a leader

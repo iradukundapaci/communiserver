@@ -282,7 +282,7 @@ export default function AssignLeaderPage({
 
         // Filter users with appropriate role on the client side
         const filteredByRole = response.items.filter(
-          (user) => user.role === UserRole.ISIBO_LEADER
+          (user) => user.role === UserRole.CITIZEN
         );
 
         setUsers(filteredByRole);
@@ -318,7 +318,7 @@ export default function AssignLeaderPage({
 
       // Filter users with appropriate role on the client side
       const filteredByRole = response.items.filter(
-        (user) => user.role === UserRole.ISIBO_LEADER
+        (user) => user.role === UserRole.CITIZEN
       );
 
       setUsers(filteredByRole);
@@ -378,7 +378,7 @@ export default function AssignLeaderPage({
 
       // Filter users with appropriate role
       const filteredByRole = response.items.filter(
-        (user) => user.role === UserRole.ISIBO_LEADER
+        (user) => user.role === UserRole.CITIZEN
       );
 
       // Append new users to existing users

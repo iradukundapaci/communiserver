@@ -29,6 +29,7 @@ import { toast } from "sonner";
 
 export default function CreateVillagePage() {
   const router = useRouter();
+  const { user } = useUser();
   const [formData, setFormData] = useState({
     name: "",
     cellId: "",
@@ -47,8 +48,15 @@ export default function CreateVillagePage() {
       const response = await getCells(1, 100); // Get all cells
       setCells(response.items || []);
 
-      // Select the first cell by default
-      if (response.items && response.items.length > 0) {
+      // If user is a cell leader, pre-select their cell
+      if (user?.role === "CELL_LEADER" && user?.cell?.id) {
+        setFormData((prev) => ({
+          ...prev,
+          cellId: user.cell.id,
+        }));
+      }
+      // Otherwise, select the first cell by default
+      else if (response.items && response.items.length > 0) {
         setFormData((prev) => ({
           ...prev,
           cellId: response.items[0].id,
@@ -145,7 +153,10 @@ export default function CreateVillagePage() {
                 <Select
                   value={formData.cellId}
                   onValueChange={handleCellChange}
-                  disabled={isCellsLoading}
+                  disabled={
+                    isCellsLoading ||
+                    (user?.role === "CELL_LEADER" && Boolean(user?.cell?.id))
+                  }
                 >
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder="Select a cell" />
@@ -158,6 +169,11 @@ export default function CreateVillagePage() {
                     ))}
                   </SelectContent>
                 </Select>
+                {user?.role === "CELL_LEADER" && user?.cell?.id && (
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Cell is locked to your assigned cell
+                  </p>
+                )}
               </div>
             </CardContent>
             <CardFooter className="flex justify-end space-x-2">

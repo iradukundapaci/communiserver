@@ -1,5 +1,6 @@
 "use client";
 
+import { ConfirmationDialog } from "@/components/confirmation-dialog";
 import { PermissionGate } from "@/components/permission-gate";
 import { Button } from "@/components/ui/button";
 import {
@@ -63,7 +64,11 @@ export default function IsibosPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
-  const [totalItems, setTotalItems] = useState(0);
+
+  // Confirmation dialog state
+  const [isRemoveLeaderDialogOpen, setIsRemoveLeaderDialogOpen] =
+    useState(false);
+  const [selectedIsiboId, setSelectedIsiboId] = useState<string>("");
 
   useEffect(() => {
     fetchCells();
@@ -84,19 +89,46 @@ export default function IsibosPage() {
   const fetchCells = async () => {
     try {
       setIsCellsLoading(true);
+
+      // If user has a cell assigned, use it directly without fetching all cells
+      if (user?.cell?.id) {
+        // For all roles with a cell, pre-select their cell
+        setSelectedCellId(user.cell.id);
+
+        // If the user is a location leader, we don't need to fetch all cells
+        if (
+          user.role === "CELL_LEADER" ||
+          user.role === "VILLAGE_LEADER" ||
+          user.role === "ISIBO_LEADER"
+        ) {
+          // Just add the user's cell to the cells array
+          setCells([
+            {
+              id: user.cell.id,
+              name: user.cell.name,
+              hasLeader: false, // These values don't matter for the dropdown
+              leaderId: null,
+            } as Cell,
+          ]);
+          setIsCellsLoading(false);
+          return;
+        }
+      }
+
+      // Otherwise fetch cells from the database
       const response = await getCells(1, 100); // Get all cells
       setCells(response.items || []);
 
-      // If user is a village leader, pre-select their cell
-      if (user?.role === "VILLAGE_LEADER" && user?.cell?.id) {
-        setSelectedCellId(user.cell.id);
-      }
-      // Otherwise, select the first cell by default
-      else if (response.items && response.items.length > 0) {
+      // If user doesn't have a cell, select the first one by default
+      if (!user?.cell?.id && response.items && response.items.length > 0) {
         setSelectedCellId(response.items[0].id);
       }
-    } catch (error) {
-      toast.error("Failed to fetch cells");
+    } catch (error: any) {
+      if (error.message) {
+        toast.error(error.message);
+      } else {
+        toast.error("Failed to fetch cells");
+      }
       console.error(error);
     } finally {
       setIsCellsLoading(false);
@@ -108,28 +140,57 @@ export default function IsibosPage() {
 
     try {
       setIsVillagesLoading(true);
+
+      // If user has a village assigned and we're in the correct cell, use it directly
+      if (user?.village?.id && user?.cell?.id === selectedCellId) {
+        // For village leaders and isibo leaders, pre-select their village
+        setSelectedVillageId(user.village.id);
+
+        // If the user is a location leader, we don't need to fetch all villages
+        if (user.role === "VILLAGE_LEADER" || user.role === "ISIBO_LEADER") {
+          // Just add the user's village to the villages array
+          setVillages([
+            {
+              id: user.village.id,
+              name: user.village.name,
+              hasLeader: false, // These values don't matter for the dropdown
+              leaderId: null,
+            } as Village,
+          ]);
+          setIsVillagesLoading(false);
+          return;
+        }
+      }
+
+      // Otherwise fetch villages from the database
       const response = await getVillages(selectedCellId, 1, 100); // Get all villages for the selected cell
       setVillages(response.items || []);
 
-      // If user is a village leader, pre-select their village
+      // If user has a village in this cell, pre-select it
       if (
-        user?.role === "VILLAGE_LEADER" &&
         user?.village?.id &&
         response.items.some((village) => village.id === user.village?.id)
       ) {
         setSelectedVillageId(user.village.id);
-      }
-      // Otherwise, select the first village by default
-      else if (response.items && response.items.length > 0) {
+      } else if (response.items && response.items.length > 0) {
+        // Otherwise, select the first village by default
         setSelectedVillageId(response.items[0].id);
       } else {
         setSelectedVillageId("");
+        setSelectedIsiboId("");
+        setIsibos([]);
       }
-    } catch (error) {
-      toast.error("Failed to fetch villages");
+    } catch (error: any) {
+      if (error.message) {
+        toast.error(error.message);
+      } else {
+        toast.error("Failed to fetch villages");
+      }
       console.error(error);
       setVillages([]);
       setSelectedVillageId("");
+      setSelectedIsiboId("");
+      setIsibos([]);
     } finally {
       setIsVillagesLoading(false);
     }
@@ -148,7 +209,6 @@ export default function IsibosPage() {
       );
       setIsibos(response.items || []);
       setTotalPages(response.meta?.totalPages || 1);
-      setTotalItems(response.meta?.totalItems || 0);
       setItemsPerPage(response.meta?.itemsPerPage || 10);
     } catch (error: any) {
       // Display a more specific error message if available
@@ -191,20 +251,20 @@ export default function IsibosPage() {
     router.push(`/dashboard/locations/isibos/${id}/assign-leader`);
   };
 
-  const handleRemoveLeader = async (id: string) => {
-    if (
-      window.confirm(
-        "Are you sure you want to remove the leader from this isibo?"
-      )
-    ) {
-      try {
-        await removeIsiboLeader(id);
-        toast.success("Isibo leader removed successfully");
-        fetchIsibos();
-      } catch (error) {
-        toast.error("Failed to remove isibo leader");
-        console.error(error);
-      }
+  const handleRemoveLeader = (id: string) => {
+    setSelectedIsiboId(id);
+    setIsRemoveLeaderDialogOpen(true);
+  };
+
+  const confirmRemoveLeader = async () => {
+    try {
+      await removeIsiboLeader(selectedIsiboId);
+      toast.success("Isibo leader removed successfully");
+      fetchIsibos();
+      setIsRemoveLeaderDialogOpen(false);
+    } catch (error) {
+      toast.error("Failed to remove isibo leader");
+      console.error(error);
     }
   };
 
@@ -221,6 +281,17 @@ export default function IsibosPage() {
 
   return (
     <div className="flex flex-col gap-4">
+      {/* Confirmation Dialog for removing leader */}
+      <ConfirmationDialog
+        isOpen={isRemoveLeaderDialogOpen}
+        onOpenChange={setIsRemoveLeaderDialogOpen}
+        onConfirm={confirmRemoveLeader}
+        title="Remove Isibo Leader"
+        description="Are you sure you want to remove the leader from this isibo? This action cannot be undone."
+        confirmText="Remove Leader"
+        confirmVariant="destructive"
+      />
+
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold">Isibos Management</h1>
 
@@ -251,10 +322,7 @@ export default function IsibosPage() {
                 <Select
                   value={selectedCellId}
                   onValueChange={handleCellChange}
-                  disabled={
-                    isCellsLoading ||
-                    (user?.role === "VILLAGE_LEADER" && Boolean(user?.cell?.id))
-                  }
+                  disabled={isCellsLoading || Boolean(user?.cell?.id)}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select a cell" />
@@ -279,8 +347,7 @@ export default function IsibosPage() {
                   disabled={
                     isVillagesLoading ||
                     villages.length === 0 ||
-                    (user?.role === "VILLAGE_LEADER" &&
-                      Boolean(user?.village?.id))
+                    Boolean(user?.village?.id)
                   }
                 >
                   <SelectTrigger>

@@ -35,6 +35,7 @@ export default function EditIsiboPage({
   params: Promise<{ id: string }>;
 }) {
   const router = useRouter();
+  const { user } = useUser();
   const { id } = React.use(params);
 
   const [formData, setFormData] = useState({
@@ -99,11 +100,16 @@ export default function EditIsiboPage({
       // If the isibo has a village, set the cell ID
       if (isibo.village?.id) {
         try {
-          // Find the cell that contains this village
-          // For now, we'll use the first cell since we don't have a direct way to get the cell ID
-          const cellsResponse = await getCells(1, 100);
-          if (cellsResponse.items && cellsResponse.items.length > 0) {
-            setSelectedCellId(cellsResponse.items[0].id);
+          // For village leaders, use their cell ID
+          if (user?.role === "VILLAGE_LEADER" && user?.cell?.id) {
+            setSelectedCellId(user.cell.id);
+          } else {
+            // For other users, find the cell that contains this village
+            // For now, we'll use the first cell since we don't have a direct way to get the cell ID
+            const cellsResponse = await getCells(1, 100);
+            if (cellsResponse.items && cellsResponse.items.length > 0) {
+              setSelectedCellId(cellsResponse.items[0].id);
+            }
           }
         } catch (cellError) {
           console.error("Failed to fetch cells:", cellError);
