@@ -20,10 +20,8 @@ import {
   IsAuthorized,
 } from "src/auth/decorators/authorize.decorator";
 import { GenericResponse } from "../__shared__/dto/generic-response.dto";
-import { GetUser } from "../auth/decorators/get-user.decorator";
 import { JwtGuard } from "../auth/guards/jwt.guard";
 import { RolesGuard } from "../auth/guards/roles.guard";
-import { User } from "../users/entities/user.entity";
 import { AssignVillageLeaderDto } from "./dto/assign-village-leader.dto";
 import { CreateVillageDto } from "./dto/create-village.dto";
 import { FetchVillageDto } from "./dto/fetch-village.dto";
@@ -50,12 +48,8 @@ export class VillagesController {
   )
   async createVillage(
     @Body() createVillageDto: CreateVillageDto.Input,
-    @GetUser() user: User,
   ): Promise<GenericResponse<Village>> {
-    const village = await this.villagesService.createVillage(
-      createVillageDto,
-      user,
-    );
+    const village = await this.villagesService.createVillage(createVillageDto);
     return new GenericResponse("Village created successfully", village);
   }
 
@@ -72,12 +66,10 @@ export class VillagesController {
   async updateVillage(
     @Param("id") id: string,
     @Body() updateVillageDto: UpdateVillageDto.Input,
-    @GetUser() user: User,
   ): Promise<GenericResponse<Village>> {
     const village = await this.villagesService.updateVillage(
       id,
       updateVillageDto,
-      user,
     );
     return new GenericResponse("Village updated successfully", village);
   }
@@ -86,11 +78,8 @@ export class VillagesController {
   @IsAdmin()
   @OkResponse()
   @ErrorResponses(UnauthorizedResponse, ForbiddenResponse, NotFoundResponse)
-  async deleteVillage(
-    @Param("id") id: string,
-    @GetUser() user: User,
-  ): Promise<GenericResponse> {
-    await this.villagesService.deleteVillage(id, user);
+  async deleteVillage(@Param("id") id: string): Promise<GenericResponse> {
+    await this.villagesService.deleteVillage(id);
     return new GenericResponse("Village deleted successfully");
   }
 

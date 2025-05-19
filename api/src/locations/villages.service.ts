@@ -7,7 +7,6 @@ import { InjectRepository } from "@nestjs/typeorm";
 import { paginate } from "nestjs-typeorm-paginate";
 import { UserRole } from "src/__shared__/enums/user-role.enum";
 import { Repository } from "typeorm";
-import { User } from "../users/entities/user.entity";
 import { UsersService } from "../users/users.service";
 import { CreateVillageDto } from "./dto/create-village.dto";
 import { FetchVillageDto } from "./dto/fetch-village.dto";
@@ -47,7 +46,6 @@ export class VillagesService {
 
   async createVillage(
     createVillageDto: CreateVillageDto.Input,
-    user: User,
   ): Promise<Village> {
     const cell = await this.cellRepository.findOne({
       where: { id: createVillageDto.cellId },
@@ -83,7 +81,6 @@ export class VillagesService {
   async updateVillage(
     id: string,
     updateVillageDto: UpdateVillageDto.Input,
-    user: User,
   ): Promise<Village> {
     const village = await this.villageRepository.findOne({
       where: { id },
@@ -139,7 +136,7 @@ export class VillagesService {
     return this.villageRepository.save(village);
   }
 
-  async deleteVillage(id: string, user: User): Promise<void> {
+  async deleteVillage(id: string): Promise<void> {
     const village = await this.villageRepository.findOne({
       where: { id },
       relations: ["profiles", "cell", "cell.profiles"],
