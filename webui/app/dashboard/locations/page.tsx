@@ -25,7 +25,7 @@ export default function LocationsRedirect() {
         redirectPath += "isibos";
         break;
       case "ISIBO_LEADER":
-        redirectPath += "isibos";
+        redirectPath = "/dashboard/isibo/edit";
         break;
       default:
         // If no appropriate tab, redirect to dashboard

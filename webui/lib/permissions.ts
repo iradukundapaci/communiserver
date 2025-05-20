@@ -118,6 +118,7 @@ export const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
 
     // Isibo leader specific permissions
     Permission.VIEW_ISIBO,
+    Permission.UPDATE_ISIBO,
     Permission.VIEW_ISIBO_ANALYTICS,
     Permission.ADD_CITIZENS,
     Permission.VIEW_VILLAGE_ACTIVITY,
@@ -125,11 +126,7 @@ export const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     Permission.TAKE_ATTENDANCE,
   ],
 
-  [UserRole.CITIZEN]: [
-    // Global permissions
-    Permission.VIEW_NOTIFICATIONS,
-    Permission.VIEW_PROFILE,
-  ],
+  [UserRole.CITIZEN]: [Permission.VIEW_NOTIFICATIONS, Permission.VIEW_PROFILE],
 };
 
 // Helper function to check if a role has a specific permission

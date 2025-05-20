@@ -36,8 +36,13 @@ export default function LocationsLayout({
 
     // If we're at the root locations path, redirect to the appropriate tab
     if (pathname === "/dashboard/locations") {
-      const defaultTab = getDefaultTabForRole(user.role);
-      router.replace(`/dashboard/locations/${defaultTab}`);
+      // For isibo leaders, redirect to the dedicated isibo edit page
+      if (user.role === "ISIBO_LEADER") {
+        router.replace("/dashboard/isibo/edit");
+      } else {
+        const defaultTab = getDefaultTabForRole(user.role);
+        router.replace(`/dashboard/locations/${defaultTab}`);
+      }
     }
   }, [user, pathname, router]);
 
@@ -57,7 +62,12 @@ export default function LocationsLayout({
         router.push("/dashboard/locations/villages");
         break;
       case "isibos":
-        router.push("/dashboard/locations/isibos");
+        // For isibo leaders, redirect to the dedicated isibo edit page
+        if (user?.role === "ISIBO_LEADER") {
+          router.push("/dashboard/isibo/edit");
+        } else {
+          router.push("/dashboard/locations/isibos");
+        }
         break;
     }
   };

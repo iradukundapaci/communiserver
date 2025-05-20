@@ -20,10 +20,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Cell, getCells } from "@/lib/api/cells";
-import { getIsiboById, updateIsibo } from "@/lib/api/isibos";
+import { Citizen, getIsiboById, updateIsibo } from "@/lib/api/isibos";
 import { getVillages, Village } from "@/lib/api/villages";
+import { useUser } from "@/lib/contexts/user-context";
 import { Permission } from "@/lib/permissions";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Plus, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import * as React from "react";
 import { useEffect, useState } from "react";
@@ -41,6 +42,7 @@ export default function EditIsiboPage({
   const [formData, setFormData] = useState({
     name: "",
     villageId: "",
+    members: [] as Citizen[],
   });
   const [villages, setVillages] = useState<Village[]>([]);
   const [cells, setCells] = useState<Cell[]>([]);
@@ -91,10 +93,17 @@ export default function EditIsiboPage({
       setIsLoading(true);
       const isibo = await getIsiboById(id);
 
+      // Check if the isibo has members property
+      if (!isibo.members) {
+        // If members property is missing, initialize it as an empty array
+        isibo.members = [];
+      }
+
       // Set the form data
       setFormData({
         name: isibo.name,
         villageId: isibo.village?.id || "",
+        members: isibo.members || [],
       });
 
       // If the isibo has a village, set the cell ID
@@ -117,8 +126,12 @@ export default function EditIsiboPage({
         }
       }
     } catch (error: any) {
-      // Display a more specific error message if available
-      if (error.message) {
+      // Check if the error is related to the houses property
+      if (error.message && error.message.includes("houses")) {
+        toast.error(
+          "The backend needs to be updated to remove house references. Please contact the administrator."
+        );
+      } else if (error.message) {
         toast.error(error.message);
       } else {
         toast.error("Failed to fetch isibo");
@@ -146,6 +159,52 @@ export default function EditIsiboPage({
     }));
   };
 
+  // New member state
+  const [newMember, setNewMember] = useState<Citizen>({
+    names: "",
+    email: "",
+    phone: "",
+  });
+
+  // Handle new member input changes
+  const handleMemberInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setNewMember((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  // Add a new member
+  const handleAddMember = () => {
+    // Validate member data
+    if (!newMember.names.trim()) {
+      toast.error("Member name is required");
+      return;
+    }
+
+    // Add member to the list
+    setFormData((prev) => ({
+      ...prev,
+      members: [...prev.members, { ...newMember }],
+    }));
+
+    // Reset the form
+    setNewMember({
+      names: "",
+      email: "",
+      phone: "",
+    });
+  };
+
+  // Remove a member
+  const handleRemoveMember = (index: number) => {
+    setFormData((prev) => ({
+      ...prev,
+      members: prev.members.filter((_, i) => i !== index),
+    }));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -154,11 +213,19 @@ export default function EditIsiboPage({
       return;
     }
 
+    if (formData.members.length === 0) {
+      toast.error("Please add at least one member to the isibo");
+      return;
+    }
+
     setIsSaving(true);
 
     try {
-      // Only send the name when updating the isibo
-      await updateIsibo(id, { name: formData.name });
+      // Send the name and members when updating the isibo
+      await updateIsibo(id, {
+        name: formData.name,
+        members: formData.members,
+      });
       toast.success("Isibo updated successfully");
       router.push("/dashboard/locations/isibos");
     } catch (error) {
@@ -173,6 +240,175 @@ export default function EditIsiboPage({
     return (
       <div className="flex justify-center py-8">
         <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  // Check if the user is an isibo leader and this is their isibo
+  const isUserOwnIsibo =
+    user?.role === "ISIBO_LEADER" && user?.isibo?.id === id;
+
+  // If this is the user's own isibo, we don't need to check permissions
+  if (isUserOwnIsibo) {
+    return (
+      <div className="flex flex-col gap-4">
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => router.push("/dashboard/locations/isibos")}
+          >
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+          <h1 className="text-3xl font-bold">Edit Isibo</h1>
+        </div>
+
+        <Card>
+          <form onSubmit={handleSubmit}>
+            <CardHeader>
+              <CardTitle>Isibo Information</CardTitle>
+              <CardDescription>
+                Update the details for this isibo
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="name">Isibo Name</Label>
+                <Input
+                  id="name"
+                  name="name"
+                  value={formData.name}
+                  onChange={handleInputChange}
+                  placeholder="Enter isibo name"
+                  required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="villageId">Village</Label>
+                <Select
+                  value={formData.villageId}
+                  onValueChange={handleVillageChange}
+                  disabled={true} /* Always disabled in edit mode */
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a village" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {villages.map((village) => (
+                      <SelectItem key={village.id} value={village.id}>
+                        {village.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-4 mt-6">
+                <div>
+                  <h3 className="text-lg font-medium mb-2">Isibo Members</h3>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Add members to this isibo. At least one member is required.
+                  </p>
+                </div>
+
+                {/* Members list */}
+                {formData.members.length > 0 && (
+                  <div className="border rounded-md p-4 mb-4">
+                    <h4 className="font-medium mb-2">
+                      Added Members ({formData.members.length})
+                    </h4>
+                    <div className="space-y-2">
+                      {formData.members.map((member, index) => (
+                        <div
+                          key={index}
+                          className="flex items-center justify-between border-b pb-2"
+                        >
+                          <div>
+                            <p className="font-medium">{member.names}</p>
+                            <div className="text-sm text-muted-foreground">
+                              {member.email && <p>Email: {member.email}</p>}
+                              {member.phone && <p>Phone: {member.phone}</p>}
+                            </div>
+                          </div>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleRemoveMember(index)}
+                          >
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Add new member form */}
+                <div className="border rounded-md p-4">
+                  <h4 className="font-medium mb-2">Add New Member</h4>
+                  <div className="space-y-3">
+                    <div>
+                      <Label htmlFor="memberName">Name*</Label>
+                      <Input
+                        id="memberName"
+                        name="names"
+                        value={newMember.names}
+                        onChange={handleMemberInputChange}
+                        placeholder="Enter member name"
+                        className="max-w-md"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="memberEmail">Email</Label>
+                      <Input
+                        id="memberEmail"
+                        name="email"
+                        type="email"
+                        value={newMember.email}
+                        onChange={handleMemberInputChange}
+                        placeholder="Enter member email"
+                        className="max-w-md"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="memberPhone">Phone</Label>
+                      <Input
+                        id="memberPhone"
+                        name="phone"
+                        value={newMember.phone}
+                        onChange={handleMemberInputChange}
+                        placeholder="Enter member phone"
+                        className="max-w-md"
+                      />
+                    </div>
+                    <Button
+                      type="button"
+                      onClick={handleAddMember}
+                      className="mt-2"
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Member
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+            <CardFooter className="flex justify-end space-x-2">
+              <Button
+                variant="outline"
+                onClick={() => router.push("/dashboard/locations/isibos")}
+                disabled={isSaving}
+              >
+                Cancel
+              </Button>
+              <Button type="submit" disabled={isSaving}>
+                {isSaving ? "Saving..." : "Save Changes"}
+              </Button>
+            </CardFooter>
+          </form>
+        </Card>
       </div>
     );
   }
@@ -233,6 +469,97 @@ export default function EditIsiboPage({
                 <p className="text-sm text-muted-foreground mt-1">
                   Village cannot be changed when editing an isibo
                 </p>
+              </div>
+
+              <div className="space-y-4 mt-6">
+                <div>
+                  <h3 className="text-lg font-medium mb-2">Isibo Members</h3>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Add members to this isibo. At least one member is required.
+                  </p>
+                </div>
+
+                {/* Members list */}
+                {formData.members.length > 0 && (
+                  <div className="border rounded-md p-4 mb-4">
+                    <h4 className="font-medium mb-2">
+                      Added Members ({formData.members.length})
+                    </h4>
+                    <div className="space-y-2">
+                      {formData.members.map((member, index) => (
+                        <div
+                          key={index}
+                          className="flex items-center justify-between border-b pb-2"
+                        >
+                          <div>
+                            <p className="font-medium">{member.names}</p>
+                            <div className="text-sm text-muted-foreground">
+                              {member.email && <p>Email: {member.email}</p>}
+                              {member.phone && <p>Phone: {member.phone}</p>}
+                            </div>
+                          </div>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleRemoveMember(index)}
+                          >
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Add new member form */}
+                <div className="border rounded-md p-4">
+                  <h4 className="font-medium mb-2">Add New Member</h4>
+                  <div className="space-y-3">
+                    <div>
+                      <Label htmlFor="memberName">Name*</Label>
+                      <Input
+                        id="memberName"
+                        name="names"
+                        value={newMember.names}
+                        onChange={handleMemberInputChange}
+                        placeholder="Enter member name"
+                        className="max-w-md"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="memberEmail">Email</Label>
+                      <Input
+                        id="memberEmail"
+                        name="email"
+                        type="email"
+                        value={newMember.email}
+                        onChange={handleMemberInputChange}
+                        placeholder="Enter member email"
+                        className="max-w-md"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="memberPhone">Phone</Label>
+                      <Input
+                        id="memberPhone"
+                        name="phone"
+                        value={newMember.phone}
+                        onChange={handleMemberInputChange}
+                        placeholder="Enter member phone"
+                        className="max-w-md"
+                      />
+                    </div>
+                    <Button
+                      type="button"
+                      onClick={handleAddMember}
+                      className="mt-2"
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Member
+                    </Button>
+                  </div>
+                </div>
               </div>
             </CardContent>
             <CardFooter className="flex justify-end space-x-2">

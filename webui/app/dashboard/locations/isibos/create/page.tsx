@@ -20,11 +20,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Cell, getCells } from "@/lib/api/cells";
-import { createIsibo } from "@/lib/api/isibos";
+import { Citizen, createIsibo } from "@/lib/api/isibos";
 import { getVillages, Village } from "@/lib/api/villages";
 import { useUser } from "@/lib/contexts/user-context";
 import { Permission } from "@/lib/permissions";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Plus, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -35,6 +35,7 @@ export default function CreateIsiboPage() {
   const [formData, setFormData] = useState({
     name: "",
     villageId: "",
+    members: [] as Citizen[],
   });
   const [villages, setVillages] = useState<Village[]>([]);
   const [cells, setCells] = useState<Cell[]>([]);
@@ -138,6 +139,52 @@ export default function CreateIsiboPage() {
     }));
   };
 
+  // New member state
+  const [newMember, setNewMember] = useState<Citizen>({
+    names: "",
+    email: "",
+    phone: "",
+  });
+
+  // Handle new member input changes
+  const handleMemberInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setNewMember((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  // Add a new member
+  const handleAddMember = () => {
+    // Validate member data
+    if (!newMember.names.trim()) {
+      toast.error("Member name is required");
+      return;
+    }
+
+    // Add member to the list
+    setFormData((prev) => ({
+      ...prev,
+      members: [...prev.members, { ...newMember }],
+    }));
+
+    // Reset the form
+    setNewMember({
+      names: "",
+      email: "",
+      phone: "",
+    });
+  };
+
+  // Remove a member
+  const handleRemoveMember = (index: number) => {
+    setFormData((prev) => ({
+      ...prev,
+      members: prev.members.filter((_, i) => i !== index),
+    }));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -148,6 +195,11 @@ export default function CreateIsiboPage() {
 
     if (!formData.villageId) {
       toast.error("Please select a village");
+      return;
+    }
+
+    if (formData.members.length === 0) {
+      toast.error("Please add at least one member to the isibo");
       return;
     }
 
@@ -257,6 +309,97 @@ export default function CreateIsiboPage() {
                     Village is locked to your assigned village
                   </p>
                 )}
+              </div>
+
+              <div className="space-y-4 mt-6">
+                <div>
+                  <h3 className="text-lg font-medium mb-2">Isibo Members</h3>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Add members to this isibo. At least one member is required.
+                  </p>
+                </div>
+
+                {/* Members list */}
+                {formData.members.length > 0 && (
+                  <div className="border rounded-md p-4 mb-4">
+                    <h4 className="font-medium mb-2">
+                      Added Members ({formData.members.length})
+                    </h4>
+                    <div className="space-y-2">
+                      {formData.members.map((member, index) => (
+                        <div
+                          key={index}
+                          className="flex items-center justify-between border-b pb-2"
+                        >
+                          <div>
+                            <p className="font-medium">{member.names}</p>
+                            <div className="text-sm text-muted-foreground">
+                              {member.email && <p>Email: {member.email}</p>}
+                              {member.phone && <p>Phone: {member.phone}</p>}
+                            </div>
+                          </div>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleRemoveMember(index)}
+                          >
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Add new member form */}
+                <div className="border rounded-md p-4">
+                  <h4 className="font-medium mb-2">Add New Member</h4>
+                  <div className="space-y-3">
+                    <div>
+                      <Label htmlFor="memberName">Name*</Label>
+                      <Input
+                        id="memberName"
+                        name="names"
+                        value={newMember.names}
+                        onChange={handleMemberInputChange}
+                        placeholder="Enter member name"
+                        className="max-w-md"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="memberEmail">Email</Label>
+                      <Input
+                        id="memberEmail"
+                        name="email"
+                        type="email"
+                        value={newMember.email}
+                        onChange={handleMemberInputChange}
+                        placeholder="Enter member email"
+                        className="max-w-md"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="memberPhone">Phone</Label>
+                      <Input
+                        id="memberPhone"
+                        name="phone"
+                        value={newMember.phone}
+                        onChange={handleMemberInputChange}
+                        placeholder="Enter member phone"
+                        className="max-w-md"
+                      />
+                    </div>
+                    <Button
+                      type="button"
+                      onClick={handleAddMember}
+                      className="mt-2"
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Member
+                    </Button>
+                  </div>
+                </div>
               </div>
             </CardContent>
             <CardFooter className="flex justify-end space-x-2">

@@ -145,7 +145,6 @@ export class UsersService {
   private async createLeaderUser(
     manager: EntityManager,
     dto: { email: string; phone: string; names: string },
-    role: UserRole,
     cell: any,
     village: any,
     isibo: any,
@@ -160,7 +159,7 @@ export class UsersService {
       email: dto.email,
       phone: dto.phone,
       password: hashedPassword,
-      role,
+      role: UserRole.CITIZEN,
     });
 
     user.verifiedAt = new Date();
@@ -204,7 +203,6 @@ export class UsersService {
         await this.createLeaderUser(
           manager,
           { email, phone, names },
-          UserRole.CELL_LEADER,
           cell,
           village,
           null,
@@ -247,7 +245,6 @@ export class UsersService {
         await this.createLeaderUser(
           manager,
           { email, phone, names },
-          UserRole.VILLAGE_LEADER,
           cell,
           village,
           null,
@@ -293,7 +290,6 @@ export class UsersService {
         const user = await this.createLeaderUser(
           manager,
           { email, phone, names },
-          UserRole.ISIBO_LEADER,
           cell,
           village,
           isibo,
