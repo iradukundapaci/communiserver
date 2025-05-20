@@ -71,6 +71,8 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     fetchUserProfile();
   }, []);
 
+  // We're removing the pathname-based refresh to avoid infinite loops
+
   return (
     <UserContext.Provider
       value={{

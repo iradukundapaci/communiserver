@@ -16,6 +16,7 @@ import {
 } from "src/__shared__/decorators";
 import {
   IsAdminOrVillageLeader,
+  IsAdminOrVillageLeaderOrIsiboLeader,
   IsAuthorized,
   IsVillageLeader,
 } from "src/auth/decorators/authorize.decorator";
@@ -54,7 +55,7 @@ export class IsibosController {
   }
 
   @PatchOperation(":id", "Update an isibo")
-  @IsAdminOrVillageLeader()
+  @IsAdminOrVillageLeaderOrIsiboLeader()
   @OkResponse(Isibo)
   @ApiRequestBody(UpdateIsiboDto.Input)
   @ErrorResponses(

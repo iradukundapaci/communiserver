@@ -19,6 +19,7 @@ export const metadata: Metadata = {
 };
 
 // Import the providers
+import { UserInitializer } from "@/components/user-initializer";
 import { AuthProvider } from "@/contexts/auth-context";
 import { UserProvider } from "@/lib/contexts/user-context";
 
@@ -33,7 +34,10 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <AuthProvider>
-          <UserProvider>{children}</UserProvider>
+          <UserProvider>
+            <UserInitializer />
+            {children}
+          </UserProvider>
         </AuthProvider>
         <Toaster />
       </body>

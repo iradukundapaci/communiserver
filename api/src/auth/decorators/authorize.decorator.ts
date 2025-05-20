@@ -58,3 +58,12 @@ export function IsAdminOrVillageLeader() {
 export function IsAdminOrCellLeader() {
   return Authorize(JwtGuard, UserRole.ADMIN, UserRole.CELL_LEADER);
 }
+
+export function IsAdminOrVillageLeaderOrIsiboLeader() {
+  return Authorize(
+    JwtGuard,
+    UserRole.ADMIN,
+    UserRole.VILLAGE_LEADER,
+    UserRole.ISIBO_LEADER,
+  );
+}
