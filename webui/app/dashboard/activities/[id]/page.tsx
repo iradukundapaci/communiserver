@@ -47,10 +47,26 @@ export default function ActivityDetailPage() {
     date: "",
     status: ActivityStatus.PENDING,
     villageId: "",
+    tasks: [] as Array<{
+      id?: string;
+      title: string;
+      description: string;
+      status?: string;
+      isiboId: string;
+    }>,
   });
+
+  // State for the current task being added
+  const [currentTask, setCurrentTask] = useState({
+    title: "",
+    description: "",
+    isiboId: user?.isibo?.id || "",
+  });
+
   const [villages, setVillages] = useState<Array<{ id: string; name: string }>>(
     []
   );
+  const [isibos, setIsibos] = useState<Array<{ id: string; name: string }>>([]);
 
   useEffect(() => {
     const fetchActivity = async () => {
@@ -66,12 +82,23 @@ export default function ActivityDetailPage() {
           return date.toISOString().slice(0, 16); // Format: YYYY-MM-DDThh:mm
         };
 
+        // Map tasks to the format expected by the form
+        const tasks =
+          activityData.tasks?.map((task) => ({
+            id: task.id,
+            title: task.title,
+            description: task.description,
+            status: task.status,
+            isiboId: task.isibo?.id || "",
+          })) || [];
+
         setFormData({
           title: activityData.title,
           description: activityData.description,
           date: formatDateForInput(date),
           status: activityData.status,
           villageId: activityData.village?.id || "",
+          tasks: tasks,
         });
       } catch (error: any) {
         if (error.message) {
@@ -90,25 +117,32 @@ export default function ActivityDetailPage() {
   }, [id, router]);
 
   useEffect(() => {
-    const fetchVillages = async () => {
+    const fetchLocations = async () => {
       try {
         // Fetch villages based on user's cell
         if (user?.cell) {
-          const response = await getVillages(user.cell.id, 1, 100);
-          setVillages(response.items);
+          const villagesResponse = await getVillages(user.cell.id, 1, 100);
+          setVillages(villagesResponse.items);
+
+          // If user has a village, fetch isibos for that village
+          if (user.village) {
+            const isibosResponse = await getIsibos(user.village.id, 1, 100);
+            setIsibos(isibosResponse.items);
+          }
         } else {
-          // If user doesn't have a cell, show an empty list
+          // If user doesn't have a cell, show empty lists
           setVillages([]);
+          setIsibos([]);
           toast.error("You need to be assigned to a cell to edit activities");
         }
       } catch (error) {
-        console.error("Failed to fetch villages:", error);
-        toast.error("Failed to load villages. Please try again later.");
+        console.error("Failed to fetch locations:", error);
+        toast.error("Failed to load locations. Please try again later.");
       }
     };
 
     if (user) {
-      fetchVillages();
+      fetchLocations();
     }
   }, [user]);
 
@@ -130,6 +164,70 @@ export default function ActivityDetailPage() {
       ...prev,
       [name]: formValue,
     }));
+  };
+
+  // Handle changes to the current task form
+  const handleTaskChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    const { name, value } = e.target;
+    setCurrentTask((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  // Handle select changes for the current task
+  const handleTaskSelectChange = (name: string, value: string) => {
+    const formValue = value === "NONE" ? "" : value;
+    setCurrentTask((prev) => ({
+      ...prev,
+      [name]: formValue,
+    }));
+  };
+
+  // Add the current task to the tasks array
+  const addTask = () => {
+    // Validate task fields
+    if (!currentTask.title) {
+      toast.error("Task title is required");
+      return;
+    }
+
+    if (!currentTask.description) {
+      toast.error("Task description is required");
+      return;
+    }
+
+    if (!currentTask.isiboId) {
+      toast.error("Isibo is required for the task");
+      return;
+    }
+
+    // Add the task to the formData
+    setFormData((prev) => ({
+      ...prev,
+      tasks: [...prev.tasks, { ...currentTask }],
+    }));
+
+    // Reset the current task form
+    setCurrentTask({
+      title: "",
+      description: "",
+      isiboId: "",
+    });
+
+    toast.success("Task added to activity");
+  };
+
+  // Remove a task from the tasks array
+  const removeTask = (index: number) => {
+    setFormData((prev) => ({
+      ...prev,
+      tasks: prev.tasks.filter((_, i) => i !== index),
+    }));
+
+    toast.success("Task removed from activity");
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -164,6 +262,8 @@ export default function ActivityDetailPage() {
       // Use the string date directly
       const activityData = {
         ...formData,
+        // If there are no tasks, don't include an empty array
+        tasks: formData.tasks.length > 0 ? formData.tasks : undefined,
       };
 
       await updateActivity(id, activityData);
@@ -281,6 +381,95 @@ export default function ActivityDetailPage() {
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+
+            <div className="border-t pt-4 mt-4">
+              <h4 className="font-medium mb-2">Tasks</h4>
+
+              {/* Task list */}
+              {formData.tasks.length > 0 ? (
+                <div className="space-y-2 mb-4">
+                  {formData.tasks.map((task, index) => (
+                    <div
+                      key={index}
+                      className="flex items-center justify-between p-2 border rounded-md"
+                    >
+                      <div>
+                        <p className="font-medium">{task.title}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {isibos.find((isibo) => isibo.id === task.isiboId)
+                            ?.name || "Unknown Isibo"}
+                        </p>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => removeTask(index)}
+                        type="button"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground mb-4">
+                  No tasks added yet. Add tasks below.
+                </p>
+              )}
+
+              {/* Add task form */}
+              <div className="space-y-4 border p-4 rounded-md">
+                <h5 className="font-medium">Add a Task</h5>
+
+                <div className="space-y-2">
+                  <Label htmlFor="taskTitle">Title</Label>
+                  <Input
+                    id="taskTitle"
+                    name="title"
+                    value={currentTask.title}
+                    onChange={handleTaskChange}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="taskDescription">Description</Label>
+                  <Textarea
+                    id="taskDescription"
+                    name="description"
+                    value={currentTask.description}
+                    onChange={handleTaskChange}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="isiboId">Isibo</Label>
+                  <Select
+                    value={currentTask.isiboId}
+                    onValueChange={(value) =>
+                      handleTaskSelectChange("isiboId", value)
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select isibo" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {isibos.map((isibo) => (
+                        <SelectItem key={isibo.id} value={isibo.id}>
+                          {isibo.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="flex justify-end">
+                  <Button type="button" variant="secondary" onClick={addTask}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Task
+                  </Button>
+                </div>
+              </div>
             </div>
           </CardContent>
           <CardFooter className="flex justify-end space-x-2">

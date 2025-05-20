@@ -59,6 +59,7 @@ export class ActivitiesService {
         task.title = taskDto.title;
         task.description = taskDto.description;
         task.status = ETaskStatus.PENDING;
+        task.activity = activity; // Set the activity reference
 
         // Find isibo
         if (taskDto.isiboId) {
@@ -113,6 +114,7 @@ export class ActivitiesService {
       .createQueryBuilder("activity")
       .leftJoinAndSelect("activity.village", "village")
       .leftJoinAndSelect("activity.tasks", "tasks")
+      .leftJoinAndSelect("tasks.isibo", "isibo")
       .orderBy("activity.createdAt", "DESC");
 
     if (DTO.q) {
@@ -210,7 +212,21 @@ export class ActivitiesService {
     }
 
     // Handle tasks if provided
-    if (updateActivityDTO.tasks && updateActivityDTO.tasks.length > 0) {
+    if (updateActivityDTO.tasks) {
+      if (!activity.tasks) {
+        activity.tasks = [];
+      }
+
+      // Keep track of task IDs that should be kept
+      const taskIdsToKeep = updateActivityDTO.tasks
+        .filter((task) => task.id)
+        .map((task) => task.id);
+
+      // Remove tasks that are not in the update DTO
+      activity.tasks = activity.tasks.filter((task) =>
+        taskIdsToKeep.includes(task.id),
+      );
+
       // Process each task in the DTO
       for (const taskDto of updateActivityDTO.tasks) {
         if (taskDto.id) {
@@ -247,6 +263,7 @@ export class ActivitiesService {
           newTask.title = taskDto.title;
           newTask.description = taskDto.description;
           newTask.status = ETaskStatus.PENDING;
+          newTask.activity = activity; // Set the activity reference
 
           // Find isibo
           if (taskDto.isiboId) {
@@ -257,10 +274,6 @@ export class ActivitiesService {
           }
 
           // Add to activity tasks
-          if (!activity.tasks) {
-            activity.tasks = [];
-          }
-
           activity.tasks.push(newTask);
         }
       }

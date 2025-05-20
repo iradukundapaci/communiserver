@@ -1,6 +1,6 @@
 import { AbstractEntity } from "src/__shared__/entities/abstract.entity";
 import { Isibo } from "src/locations/entities/isibo.entity";
-import { Column, Entity, JoinColumn, ManyToOne, OneToOne } from "typeorm";
+import { Column, Entity, JoinColumn, ManyToOne } from "typeorm";
 import { ETaskStatus } from "../enum/ETaskStatus";
 import { Activity } from "./activity.entity";
 
@@ -19,7 +19,7 @@ export class Task extends AbstractEntity {
   @JoinColumn({ name: "activity_id" })
   activity: Activity;
 
-  @OneToOne(() => Isibo, (isibo) => isibo.id, {
+  @ManyToOne(() => Isibo, {
     nullable: true,
     eager: true,
   })
