@@ -11,7 +11,6 @@ import { PasswordEncryption } from "src/__shared__/utils/password-encrytion.util
 import { VerificationService } from "src/verification/verification.service";
 import { EntityManager, Not, Repository } from "typeorm";
 import { CreateCellLeaderDTO } from "./dto/create-cell-leader.dto";
-import { CreateCitizenDTO } from "./dto/create-citizen.dto";
 import { CreateIsiboLeaderDTO } from "./dto/create-isibo-leader.dto";
 import { CreateVillageLeaderDTO } from "./dto/create-village-leader.dto";
 import { FetchProfileDto } from "./dto/fetch-profile.dto";
@@ -400,21 +399,6 @@ export class UsersService {
     return isiboLeader;
   }
 
-  async findHouseRepresentative(houseId: string): Promise<User> {
-    const houseRepresentative = await this.usersRepository.findOne({
-      where: {
-        role: UserRole.HOUSE_REPRESENTATIVE,
-        profile: {
-          house: { id: houseId },
-        },
-      },
-      relations: ["profile"],
-    });
-    if (!houseRepresentative)
-      throw new NotFoundException("House representative not found");
-    return houseRepresentative;
-  }
-
   async saveProfile(profile: Profile): Promise<Profile> {
     return this.profilesRepository.save(profile);
   }
@@ -435,7 +419,6 @@ export class UsersService {
       cell: userProfile.profile.cell,
       village: userProfile.profile.village,
       isibo: userProfile.profile.isibo,
-      house: userProfile.profile.house,
       isIsiboLeader: userProfile.profile.isIsiboLeader,
       isVillageLeader: userProfile.profile.isVillageLeader,
       isCellLeader: userProfile.profile.isCellLeader,
@@ -444,7 +427,7 @@ export class UsersService {
 
   async updateProfile(
     userId: string,
-    { names, email, phone, isiboId, houseId }: UpdateProfileDto.Input,
+    { names, email, phone, isiboId }: UpdateProfileDto.Input,
   ): Promise<UpdateProfileDto.Output> {
     const user = await this.findUserById(userId);
 
@@ -463,7 +446,6 @@ export class UsersService {
     user.profile.names = names ?? user.profile.names;
     user.phone = phone ?? user.phone;
     user.profile.isibo = isiboId ? ({ id: isiboId } as any) : null;
-    user.profile.house = houseId ? ({ id: houseId } as any) : null;
 
     if (isEmailChanged) {
       user.email = email!;
@@ -488,7 +470,6 @@ export class UsersService {
       email: user.email,
       phoneNumber: user.phone,
       isiboId: user.profile.isibo?.id,
-      houseId: user.profile.house?.id,
       isIsiboLeader: user.profile.isIsiboLeader,
       isVillageLeader: user.profile.isVillageLeader,
       isCellLeader: user.profile.isCellLeader,
@@ -596,8 +577,7 @@ export class UsersService {
     cellId: string,
     villageId: string,
     isiboId?: string,
-    houseId?: string,
-  ): Promise<{ cell: any; village: any; isibo?: any; house?: any }> {
+  ): Promise<{ cell: any; village: any; isibo?: any }> {
     const cell = await manager.getRepository("Cell").findOneBy({ id: cellId });
 
     if (!cell) {
@@ -620,71 +600,6 @@ export class UsersService {
       }
     }
 
-    let house = undefined;
-    if (houseId) {
-      house = await manager.getRepository("House").findOneBy({ id: houseId });
-      if (!house) {
-        throw new NotFoundException("House not found");
-      }
-    }
-
-    return { cell, village, isibo, house };
-  }
-
-  async createCitizen(createCitizenDTO: CreateCitizenDTO.Input): Promise<void> {
-    const { email, names, phone, cellId, villageId, isiboId, houseId } =
-      createCitizenDTO;
-
-    const userExists = await this.findUserByEmail(email);
-    if (userExists) {
-      throw new ConflictException("User already exists");
-    }
-
-    try {
-      await this.entityManager.transaction(async (manager: EntityManager) => {
-        const { cell, village, isibo, house } =
-          await this.validateAndGetLocationsForCitizen(
-            manager,
-            cellId,
-            villageId,
-            isiboId,
-            houseId,
-          );
-
-        const user = plainToInstance(User, {
-          email,
-          phone,
-          password: await PasswordEncryption.hashPassword(
-            this.generateRandomPassword(),
-          ),
-          role: UserRole.CITIZEN,
-        });
-
-        user.verifiedAt = new Date();
-        const profile = plainToInstance(Profile, {
-          names,
-          cell,
-          village,
-          isibo,
-          house,
-          isVillageLeader: false,
-          isCellLeader: false,
-          isIsiboLeader: false,
-        });
-        user.profile = profile;
-
-        await manager.save(user);
-      });
-    } catch (error) {
-      if (
-        error instanceof NotFoundException ||
-        error instanceof ConflictException
-      ) {
-        throw error;
-      }
-      throw new BadRequestException(
-        `Citizen registration failed: ${error.message}`,
-      );
-    }
+    return { cell, village, isibo };
   }
 }

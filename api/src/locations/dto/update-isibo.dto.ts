@@ -1,4 +1,5 @@
-import { IsOptional, IsString, IsUUID } from "class-validator";
+import { IsNotEmpty, IsOptional, IsString, IsUUID } from "class-validator";
+import { Citizen } from "../entities/citizen.entity";
 
 export namespace UpdateIsiboDto {
   export class Input {
@@ -13,5 +14,8 @@ export namespace UpdateIsiboDto {
     @IsUUID()
     @IsOptional()
     villageId?: string;
+
+    @IsNotEmpty()
+    members: Citizen[];
   }
 }

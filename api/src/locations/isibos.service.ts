@@ -80,6 +80,7 @@ export class IsibosService {
       name: isiboName,
       village: { id: createIsiboDto.villageId },
       leader: leader?.profile,
+      members: createIsiboDto.members,
     });
 
     return this.isiboRepository.save(isibo);
@@ -161,6 +162,8 @@ export class IsibosService {
     if (updateIsiboDto.villageId) {
       isibo.village = { id: updateIsiboDto.villageId } as Village;
     }
+
+    isibo.members = updateIsiboDto.members;
 
     return this.isiboRepository.save(isibo);
   }

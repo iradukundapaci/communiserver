@@ -17,10 +17,6 @@ export namespace UpdateProfileDto {
     @IsString()
     @IsOptional()
     isiboId?: string;
-
-    @IsString()
-    @IsOptional()
-    houseId?: string;
   }
   export class Output {
     id: string;
@@ -28,7 +24,6 @@ export namespace UpdateProfileDto {
     email: string;
     phoneNumber: string;
     isiboId: string;
-    houseId: string;
     isVillageLeader: boolean;
     isCellLeader: boolean;
     isIsiboLeader: boolean;

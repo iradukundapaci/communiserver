@@ -7,9 +7,8 @@ import {
   Entity,
   JoinColumn,
   ManyToOne,
-  OneToMany,
 } from "typeorm";
-import { House } from "./house.entity";
+import { Citizen } from "./citizen.entity";
 import { Village } from "./village.entity";
 
 @Entity("isibos")
@@ -31,18 +30,12 @@ export class Isibo extends AbstractEntity {
     }
   }
 
-  @OneToMany(() => Profile, (profile) => profile.isibo)
-  members: Profile[];
+  @Column({ type: "jsonb", nullable: true })
+  members: Citizen[];
 
   @ManyToOne(() => Profile, { nullable: true })
   @JoinColumn({ name: "leader_id" })
   leader: Profile;
-
-  @OneToMany(() => House, (house) => house.isibo, {
-    nullable: true,
-    cascade: true,
-  })
-  houses: House[];
 
   @ManyToOne(() => Village, (village) => village.isibos, { nullable: false })
   @JoinColumn({ name: "village_id" })
