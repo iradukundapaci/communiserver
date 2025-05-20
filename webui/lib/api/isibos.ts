@@ -11,12 +11,6 @@ export interface Isibo {
     id: string;
     name: string;
   };
-  houses?: House[];
-}
-
-export interface House {
-  id: string;
-  code: string;
 }
 
 export interface CreateIsiboInput {

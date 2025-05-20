@@ -4,7 +4,6 @@ export enum UserRole {
   CELL_LEADER = "CELL_LEADER",
   VILLAGE_LEADER = "VILLAGE_LEADER",
   ISIBO_LEADER = "ISIBO_LEADER",
-  HOUSE_REPRESENTATIVE = "HOUSE_REPRESENTATIVE",
   CITIZEN = "CITIZEN",
 }
 
@@ -52,21 +51,11 @@ export enum Permission {
 
   // Isibo leader permissions
   VIEW_ISIBO = "VIEW_ISIBO",
-  ASSIGN_HOUSE_REPRESENTATIVES = "ASSIGN_HOUSE_REPRESENTATIVES",
-  DEASSIGN_HOUSE_REPRESENTATIVES = "DEASSIGN_HOUSE_REPRESENTATIVES",
   VIEW_ISIBO_ANALYTICS = "VIEW_ISIBO_ANALYTICS",
-  CREATE_HOUSE = "CREATE_HOUSE",
-  UPDATE_HOUSE = "UPDATE_HOUSE",
-  DELETE_HOUSE = "DELETE_HOUSE",
-  VIEW_ALL_HOUSES = "VIEW_ALL_HOUSES",
   ADD_CITIZENS = "ADD_CITIZENS",
-  ASSIGN_CITIZENS_TO_HOUSE = "ASSIGN_CITIZENS_TO_HOUSE",
   VIEW_VILLAGE_ACTIVITY = "VIEW_VILLAGE_ACTIVITY",
   ADD_TASK_REPORT = "ADD_TASK_REPORT",
   TAKE_ATTENDANCE = "TAKE_ATTENDANCE",
-
-  // House representative permissions
-  VIEW_HOUSE = "VIEW_HOUSE",
 
   // Citizen permissions
   VIEW_PROFILE = "VIEW_PROFILE",
@@ -99,7 +88,6 @@ export const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
 
     // Additional permissions to view lower-level locations
     Permission.VIEW_ALL_ISIBOS, // Allow cell leaders to view isibos
-    Permission.VIEW_ALL_HOUSES, // Allow cell leaders to view houses
   ],
 
   [UserRole.VILLAGE_LEADER]: [
@@ -117,7 +105,6 @@ export const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     Permission.DELETE_ISIBO,
     Permission.CREATE_ISIBO_LEADER,
     Permission.VIEW_ALL_ISIBOS,
-    Permission.VIEW_ALL_HOUSES,
     Permission.CREATE_ACTIVITY,
     Permission.UPDATE_ACTIVITY,
     Permission.ADD_ACTIVITY_REPORT,
@@ -131,27 +118,11 @@ export const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
 
     // Isibo leader specific permissions
     Permission.VIEW_ISIBO,
-    Permission.ASSIGN_HOUSE_REPRESENTATIVES,
-    Permission.DEASSIGN_HOUSE_REPRESENTATIVES,
     Permission.VIEW_ISIBO_ANALYTICS,
-    Permission.CREATE_HOUSE,
-    Permission.UPDATE_HOUSE,
-    Permission.DELETE_HOUSE,
-    Permission.VIEW_ALL_HOUSES,
     Permission.ADD_CITIZENS,
-    Permission.ASSIGN_CITIZENS_TO_HOUSE,
     Permission.VIEW_VILLAGE_ACTIVITY,
     Permission.ADD_TASK_REPORT,
     Permission.TAKE_ATTENDANCE,
-  ],
-
-  [UserRole.HOUSE_REPRESENTATIVE]: [
-    // Global permissions
-    Permission.VIEW_NOTIFICATIONS,
-    Permission.VIEW_PROFILE,
-
-    // House representative specific permissions
-    Permission.VIEW_HOUSE,
   ],
 
   [UserRole.CITIZEN]: [

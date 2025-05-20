@@ -9,7 +9,6 @@ import {
   IconChartBar,
   IconClipboardList,
   IconDashboard,
-  IconHome,
   IconLogout,
   IconSettings,
   IconUserCircle,
@@ -185,19 +184,6 @@ export function DashboardSidebar(
             </SidebarMenuItem>
           </PermissionGate>
 
-          <PermissionGate permission={Permission.CREATE_HOUSE}>
-            <SidebarMenuItem>
-              <SidebarMenuButton
-                onClick={() => navigateTo("/dashboard/houses")}
-              >
-                <div className="cursor-pointer">
-                  <IconHome />
-                  <span>Manage Houses</span>
-                </div>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          </PermissionGate>
-
           <PermissionGate permission={Permission.ADD_CITIZENS}>
             <SidebarMenuItem>
               <SidebarMenuButton
@@ -217,18 +203,6 @@ export function DashboardSidebar(
                 <div className="cursor-pointer">
                   <IconClipboardList />
                   <span>Tasks</span>
-                </div>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          </PermissionGate>
-
-          {/* House Representative Section */}
-          <PermissionGate permission={Permission.VIEW_HOUSE}>
-            <SidebarMenuItem>
-              <SidebarMenuButton onClick={() => navigateTo("/dashboard/house")}>
-                <div className="cursor-pointer">
-                  <IconHome />
-                  <span>My House</span>
                 </div>
               </SidebarMenuButton>
             </SidebarMenuItem>
