@@ -20,7 +20,6 @@ export interface UpdateProfileInput {
   email?: string;
   phone?: string;
   isiboId?: string;
-  houseId?: string;
 }
 
 interface ApiResponse<T> {

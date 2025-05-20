@@ -19,7 +19,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { House, Isibo, getHouses, getIsibos } from "@/lib/api/locations";
+import { Isibo, getIsibos } from "@/lib/api/locations";
 import { changePassword, updateUserProfile } from "@/lib/api/user";
 import { useUser } from "@/lib/contexts/user-context";
 import { useEffect, useState } from "react";
@@ -29,16 +29,13 @@ export default function ProfilePage() {
   const { user, refreshUser } = useUser();
   const [isLoading, setIsLoading] = useState(false);
   const [isibos, setIsibos] = useState<Isibo[]>([]);
-  const [houses, setHouses] = useState<House[]>([]);
   const [isLoadingIsibos, setIsLoadingIsibos] = useState(false);
-  const [isLoadingHouses, setIsLoadingHouses] = useState(false);
 
   const [formData, setFormData] = useState({
     names: user?.names || "",
     email: user?.email || "",
     phone: user?.phone || "",
     isiboId: user?.isibo?.id || "",
-    houseId: user?.house?.id || "",
   });
 
   const [passwordData, setPasswordData] = useState({
@@ -55,7 +52,6 @@ export default function ProfilePage() {
         email: user.email || "",
         phone: user.phone || "",
         isiboId: user?.isibo?.id || "",
-        houseId: user?.house?.id || "",
       });
     }
   }, [user]);
@@ -67,17 +63,6 @@ export default function ProfilePage() {
       fetchIsibos(user.village.id);
     }
   }, [user?.village?.id]);
-
-  // Fetch houses when selected isibo changes
-  useEffect(() => {
-    if (formData.isiboId) {
-      console.log("Fetching houses for isibo:", formData.isiboId);
-      fetchHouses(formData.isiboId);
-    } else {
-      // Clear houses when no isibo is selected
-      setHouses([]);
-    }
-  }, [formData.isiboId]);
 
   const fetchIsibos = async (villageId: string) => {
     try {
@@ -93,20 +78,6 @@ export default function ProfilePage() {
     }
   };
 
-  const fetchHouses = async (isiboId: string) => {
-    try {
-      setIsLoadingHouses(true);
-      const response = await getHouses(isiboId);
-      console.log("Houses response:", response);
-      setHouses(response.items || []);
-    } catch (error) {
-      console.error("Error fetching houses:", error);
-      toast.error("Failed to fetch houses");
-    } finally {
-      setIsLoadingHouses(false);
-    }
-  };
-
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
@@ -119,8 +90,6 @@ export default function ProfilePage() {
     setFormData((prev) => ({
       ...prev,
       [name]: value,
-      // Clear house selection when isibo changes
-      ...(name === "isiboId" ? { houseId: "" } : {}),
     }));
   };
 
@@ -142,9 +111,11 @@ export default function ProfilePage() {
       await updateUserProfile(formData);
       await refreshUser(); // Refresh the user context
       toast.success("Profile updated successfully");
-    } catch (error: any) {
+    } catch (error) {
       console.error("Profile update error:", error);
-      toast.error(error?.message || "Failed to update profile");
+      toast.error(
+        error instanceof Error ? error.message : "Failed to update profile"
+      );
     } finally {
       setIsLoading(false);
     }
@@ -171,8 +142,10 @@ export default function ProfilePage() {
         confirmPassword: "",
       });
       toast.success("Password changed successfully");
-    } catch (error: any) {
-      toast.error(error?.message || "Failed to change password");
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Failed to change password"
+      );
     } finally {
       setIsLoading(false);
     }
@@ -323,28 +296,6 @@ export default function ProfilePage() {
                           </SelectContent>
                         </Select>
                       )}
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="houseId">House</Label>
-                      <Select
-                        value={formData.houseId}
-                        onValueChange={(value) =>
-                          handleSelectChange("houseId", value)
-                        }
-                        disabled={isLoadingHouses || !formData.isiboId}
-                      >
-                        <SelectTrigger className="w-full">
-                          <SelectValue placeholder="Select a house" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {houses.map((house) => (
-                            <SelectItem key={house.id} value={house.id}>
-                              {house.street + " " + house.code}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
                     </div>
                   </div>
                 </div>
