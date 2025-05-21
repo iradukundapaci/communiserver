@@ -1,7 +1,7 @@
 import { MigrationInterface, QueryRunner } from "typeorm";
 
-export class InitialMigration1747730165319 implements MigrationInterface {
-  name = "InitialMigration1747730165319";
+export class InitialMigration1747759324094 implements MigrationInterface {
+  name = "InitialMigration1747759324094";
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(
@@ -38,7 +38,13 @@ export class InitialMigration1747730165319 implements MigrationInterface {
       `CREATE INDEX "IDX_13ed6c247f66cc50e29ebec1da" ON "activities" ("title") `,
     );
     await queryRunner.query(
-      `CREATE TABLE "tasks" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "deletedAt" TIMESTAMP WITH TIME ZONE, "title" character varying(255) NOT NULL, "description" text NOT NULL, "status" character varying(50) NOT NULL, "activity_id" uuid, "isibo_id" uuid, CONSTRAINT "REL_fb760e32bf46df84b5d86ebafe" UNIQUE ("isibo_id"), CONSTRAINT "PK_8d12ff38fcc62aaba2cab748772" PRIMARY KEY ("id"))`,
+      `CREATE TABLE "tasks" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "deletedAt" TIMESTAMP WITH TIME ZONE, "title" character varying(255) NOT NULL, "description" text NOT NULL, "status" character varying(50) NOT NULL, "activity_id" uuid, "isibo_id" uuid NOT NULL, CONSTRAINT "UQ_61784cc8463bab250b01329cbd5" UNIQUE ("activity_id", "isibo_id"), CONSTRAINT "PK_8d12ff38fcc62aaba2cab748772" PRIMARY KEY ("id"))`,
+    );
+    await queryRunner.query(
+      `CREATE INDEX "IDX_eace9f270e3a8db1430d655c24" ON "tasks" ("activity_id") `,
+    );
+    await queryRunner.query(
+      `CREATE INDEX "IDX_fb760e32bf46df84b5d86ebafe" ON "tasks" ("isibo_id") `,
     );
     await queryRunner.query(
       `ALTER TABLE "districts" ADD CONSTRAINT "FK_9d451638507b11822dc411a2dfe" FOREIGN KEY ("province_id") REFERENCES "provinces"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`,
@@ -126,6 +132,12 @@ export class InitialMigration1747730165319 implements MigrationInterface {
     );
     await queryRunner.query(
       `ALTER TABLE "districts" DROP CONSTRAINT "FK_9d451638507b11822dc411a2dfe"`,
+    );
+    await queryRunner.query(
+      `DROP INDEX "public"."IDX_fb760e32bf46df84b5d86ebafe"`,
+    );
+    await queryRunner.query(
+      `DROP INDEX "public"."IDX_eace9f270e3a8db1430d655c24"`,
     );
     await queryRunner.query(`DROP TABLE "tasks"`);
     await queryRunner.query(

@@ -5,8 +5,8 @@ import {
   Entity,
   Index,
   JoinColumn,
+  ManyToOne,
   OneToMany,
-  OneToOne,
 } from "typeorm";
 import { EActivityStatus } from "../enum/EActivityStatus";
 import { Task } from "./task.entity";
@@ -31,7 +31,7 @@ export class Activity extends AbstractEntity {
   })
   tasks: Task[];
 
-  @OneToOne(() => Village, (village) => village.id, {
+  @ManyToOne(() => Village, (village) => village.id, {
     nullable: true,
     eager: true,
   })

@@ -34,5 +34,15 @@ export namespace FetchActivityDTO {
       id: string;
       name: string;
     };
+    tasks?: {
+      id: string;
+      title: string;
+      description: string;
+      status: string;
+      isibo?: {
+        id: string;
+        name: string;
+      };
+    }[];
   }
 }

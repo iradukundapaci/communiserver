@@ -1,8 +1,12 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { plainToInstance } from "class-transformer";
 import { paginate } from "nestjs-typeorm-paginate";
-import { Repository } from "typeorm";
+import { Not, Repository } from "typeorm";
 import { IsibosService } from "../locations/isibos.service";
 import { CreateTaskDTO } from "./dto/create-task.dto";
 import { FetchTaskDTO } from "./dto/fetch-task.dto";
@@ -32,8 +36,24 @@ export class TasksService {
       throw new NotFoundException("Activity not found");
     }
 
-    // Find the isibo
     const isibo = await this.isibosService.findIsiboById(createTaskDTO.isiboId);
+
+    if (!isibo) {
+      throw new NotFoundException("Isibo not found");
+    }
+
+    const existingTask = await this.taskRepository.findOne({
+      where: {
+        activity: { id: createTaskDTO.activityId },
+        isibo: { id: createTaskDTO.isiboId },
+      },
+    });
+
+    if (existingTask) {
+      throw new ConflictException(
+        "A task for this activity is already assigned to this Isibo",
+      );
+    }
 
     const task = this.taskRepository.create({
       title: createTaskDTO.title,
@@ -44,7 +64,28 @@ export class TasksService {
     });
 
     const savedTask = await this.taskRepository.save(task);
-    return plainToInstance(CreateTaskDTO.Output, savedTask);
+
+    // Create a clean object without circular references
+    const taskData = {
+      id: savedTask.id,
+      title: savedTask.title,
+      description: savedTask.description,
+      status: savedTask.status,
+      isibo: savedTask.isibo
+        ? {
+            id: savedTask.isibo.id,
+            name: savedTask.isibo.name,
+          }
+        : undefined,
+      activity: savedTask.activity
+        ? {
+            id: savedTask.activity.id,
+            title: savedTask.activity.title,
+          }
+        : undefined,
+    };
+
+    return plainToInstance(CreateTaskDTO.Output, taskData);
   }
 
   async findAll(dto: FetchTaskDTO.Input) {
@@ -79,9 +120,30 @@ export class TasksService {
 
     return {
       ...paginatedResult,
-      items: paginatedResult.items.map((task) =>
-        plainToInstance(FetchTaskDTO.Output, task),
-      ),
+      items: paginatedResult.items.map((task) => {
+        // Create a clean object without circular references
+        const taskData = {
+          id: task.id,
+          title: task.title,
+          description: task.description,
+          status: task.status,
+          // Include only necessary isibo data
+          isibo: task.isibo
+            ? {
+                id: task.isibo.id,
+                names: task.isibo.name,
+              }
+            : undefined,
+          // Include only necessary activity data
+          activity: task.activity
+            ? {
+                id: task.activity.id,
+                title: task.activity.title,
+              }
+            : undefined,
+        };
+        return plainToInstance(FetchTaskDTO.Output, taskData);
+      }),
     };
   }
 
@@ -95,7 +157,27 @@ export class TasksService {
       throw new NotFoundException("Task not found");
     }
 
-    return plainToInstance(FetchTaskDTO.Output, task);
+    // Create a clean object without circular references
+    const taskData = {
+      id: task.id,
+      title: task.title,
+      description: task.description,
+      status: task.status,
+      isibo: task.isibo
+        ? {
+            id: task.isibo.id,
+            name: task.isibo.name,
+          }
+        : undefined,
+      activity: task.activity
+        ? {
+            id: task.activity.id,
+            title: task.activity.title,
+          }
+        : undefined,
+    };
+
+    return plainToInstance(FetchTaskDTO.Output, taskData);
   }
 
   async update(
@@ -111,8 +193,15 @@ export class TasksService {
       throw new NotFoundException("Task not found");
     }
 
-    // Update activity if provided
-    if (updateTaskDTO.activityId) {
+    const originalActivityId = task.activity?.id;
+    const originalIsiboId = task.isibo?.id;
+    let activityChanged = false;
+    let isiboChanged = false;
+
+    if (
+      updateTaskDTO.activityId &&
+      updateTaskDTO.activityId !== originalActivityId
+    ) {
       const activity = await this.activityRepository.findOne({
         where: { id: updateTaskDTO.activityId },
       });
@@ -122,17 +211,38 @@ export class TasksService {
       }
 
       task.activity = activity;
+      activityChanged = true;
     }
 
-    // Update isibo if provided
-    if (updateTaskDTO.isiboId) {
+    if (updateTaskDTO.isiboId && updateTaskDTO.isiboId !== originalIsiboId) {
       const isibo = await this.isibosService.findIsiboById(
         updateTaskDTO.isiboId,
       );
+
+      if (!isibo) {
+        throw new NotFoundException("Isibo not found");
+      }
+
       task.isibo = isibo;
+      isiboChanged = true;
     }
 
-    // Update other fields
+    if ((activityChanged || isiboChanged) && task.activity && task.isibo) {
+      const existingTask = await this.taskRepository.findOne({
+        where: {
+          id: Not(id),
+          activity: { id: task.activity.id },
+          isibo: { id: task.isibo.id },
+        },
+      });
+
+      if (existingTask) {
+        throw new ConflictException(
+          "Another task for this activity is already assigned to this Isibo",
+        );
+      }
+    }
+
     if (updateTaskDTO.title) {
       task.title = updateTaskDTO.title;
     }
@@ -146,7 +256,28 @@ export class TasksService {
     }
 
     const updatedTask = await this.taskRepository.save(task);
-    return plainToInstance(UpdateTaskDTO.Output, updatedTask);
+
+    // Create a clean object without circular references
+    const taskData = {
+      id: updatedTask.id,
+      title: updatedTask.title,
+      description: updatedTask.description,
+      status: updatedTask.status,
+      isibo: updatedTask.isibo
+        ? {
+            id: updatedTask.isibo.id,
+            name: updatedTask.isibo.name,
+          }
+        : undefined,
+      activity: updatedTask.activity
+        ? {
+            id: updatedTask.activity.id,
+            title: updatedTask.activity.title,
+          }
+        : undefined,
+    };
+
+    return plainToInstance(UpdateTaskDTO.Output, taskData);
   }
 
   async remove(id: string): Promise<void> {

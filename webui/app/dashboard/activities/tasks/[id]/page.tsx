@@ -245,7 +245,7 @@ export default function TaskDetailPage() {
                 <SelectContent>
                   {Object.values(TaskStatus).map((status) => (
                     <SelectItem key={status} value={status}>
-                      {status}
+                      {status.charAt(0).toUpperCase() + status.slice(1)}
                     </SelectItem>
                   ))}
                 </SelectContent>

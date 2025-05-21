@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ConflictException,
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
@@ -41,7 +42,6 @@ export class ActivitiesService {
       }
     }
 
-    // Convert string date to Date object for database storage
     const activity = this.activityRepository.create({
       title: createActivityDTO.title,
       description: createActivityDTO.description,
@@ -50,11 +50,25 @@ export class ActivitiesService {
       village,
     });
 
-    // Handle tasks if provided
     if (createActivityDTO.tasks && createActivityDTO.tasks.length > 0) {
       activity.tasks = [];
 
+      // Map to track isibo IDs already assigned to tasks for this activity
+      const assignedIsibos = new Set<string>();
+
       for (const taskDto of createActivityDTO.tasks) {
+        // Check if isibo is provided and required
+        if (!taskDto.isiboId) {
+          throw new BadRequestException("Isibo ID is required for each task");
+        }
+
+        // Check if isibo is already assigned to another task in this activity
+        if (assignedIsibos.has(taskDto.isiboId)) {
+          throw new ConflictException(
+            `Isibo with ID ${taskDto.isiboId} is already assigned to another task in this activity`,
+          );
+        }
+
         const task = new Task();
         task.title = taskDto.title;
         task.description = taskDto.description;
@@ -62,17 +76,39 @@ export class ActivitiesService {
         task.activity = activity; // Set the activity reference
 
         // Find isibo
-        if (taskDto.isiboId) {
-          const isibo = await this.isibosService.findIsiboById(taskDto.isiboId);
-          task.isibo = isibo;
+        const isibo = await this.isibosService.findIsiboById(taskDto.isiboId);
+        if (!isibo) {
+          throw new NotFoundException(
+            `Isibo with ID ${taskDto.isiboId} not found`,
+          );
         }
+        task.isibo = isibo;
+        assignedIsibos.add(taskDto.isiboId);
 
         activity.tasks.push(task);
       }
     }
 
     const savedActivity = await this.activityRepository.save(activity);
-    return plainToInstance(CreateActivityDTO.Output, savedActivity);
+
+    // Create a clean object without circular references
+    const activityData = {
+      id: savedActivity.id,
+      title: savedActivity.title,
+      description: savedActivity.description,
+      date: savedActivity.date,
+      status: savedActivity.status,
+      tasks: savedActivity.tasks
+        ? savedActivity.tasks.map((task) => ({
+            id: task.id,
+            title: task.title,
+            description: task.description,
+            status: task.status,
+          }))
+        : [],
+    };
+
+    return plainToInstance(CreateActivityDTO.Output, activityData);
   }
 
   async delete(id: string): Promise<void> {
@@ -148,23 +184,74 @@ export class ActivitiesService {
 
     return {
       ...paginatedResult,
-      items: paginatedResult.items.map((activity) =>
-        plainToInstance(FetchActivityDTO.Output, activity),
-      ),
+      items: paginatedResult.items.map((activity) => {
+        // Create a clean object without circular references
+        const activityData = {
+          id: activity.id,
+          title: activity.title,
+          description: activity.description,
+          date: activity.date,
+          status: activity.status,
+          village: activity.village
+            ? {
+                id: activity.village.id,
+                name: activity.village.name,
+              }
+            : undefined,
+          tasks: activity.tasks
+            ? activity.tasks.map((task) => ({
+                id: task.id,
+                title: task.title,
+                description: task.description,
+                status: task.status,
+                isibo: task.isibo
+                  ? {
+                      id: task.isibo.id,
+                      name: task.isibo.name,
+                    }
+                  : undefined,
+              }))
+            : [],
+        };
+
+        return plainToInstance(FetchActivityDTO.Output, activityData);
+      }),
     };
   }
 
   async getActivityDetails(id: string) {
     const activity = await this.findOne(id);
-    return plainToInstance(FetchActivityDTO.Output, {
+
+    // Create a clean object without circular references
+    const activityData = {
       id: activity.id,
       title: activity.title,
       description: activity.description,
       date: activity.date,
       status: activity.status,
-      village: activity.village,
-      tasks: activity.tasks,
-    });
+      village: activity.village
+        ? {
+            id: activity.village.id,
+            name: activity.village.name,
+          }
+        : undefined,
+      tasks: activity.tasks
+        ? activity.tasks.map((task) => ({
+            id: task.id,
+            title: task.title,
+            description: task.description,
+            status: task.status,
+            isibo: task.isibo
+              ? {
+                  id: task.isibo.id,
+                  name: task.isibo.name,
+                }
+              : undefined,
+          }))
+        : [],
+    };
+
+    return plainToInstance(FetchActivityDTO.Output, activityData);
   }
 
   async update(
@@ -227,6 +314,16 @@ export class ActivitiesService {
         taskIdsToKeep.includes(task.id),
       );
 
+      // Map to track isibo IDs already assigned to tasks for this activity
+      const assignedIsibos = new Map<string, string>(); // Maps isiboId -> taskId
+
+      // First, add all existing tasks to the tracking map
+      for (const task of activity.tasks) {
+        if (task.isibo) {
+          assignedIsibos.set(task.isibo.id, task.id);
+        }
+      }
+
       // Process each task in the DTO
       for (const taskDto of updateActivityDTO.tasks) {
         if (taskDto.id) {
@@ -251,10 +348,37 @@ export class ActivitiesService {
 
             // Update isibo if provided
             if (taskDto.isiboId) {
-              const isibo = await this.isibosService.findIsiboById(
-                taskDto.isiboId,
-              );
-              existingTask.isibo = isibo;
+              // If the isibo ID is different from the current one
+              if (
+                !existingTask.isibo ||
+                taskDto.isiboId !== existingTask.isibo.id
+              ) {
+                // Check if this isibo is already assigned to another task
+                const existingTaskId = assignedIsibos.get(taskDto.isiboId);
+                if (existingTaskId && existingTaskId !== existingTask.id) {
+                  throw new ConflictException(
+                    `Isibo with ID ${taskDto.isiboId} is already assigned to another task in this activity`,
+                  );
+                }
+
+                const isibo = await this.isibosService.findIsiboById(
+                  taskDto.isiboId,
+                );
+
+                if (!isibo) {
+                  throw new NotFoundException(
+                    `Isibo with ID ${taskDto.isiboId} not found`,
+                  );
+                }
+
+                // If this task had a previous isibo, remove it from the tracking map
+                if (existingTask.isibo) {
+                  assignedIsibos.delete(existingTask.isibo.id);
+                }
+
+                existingTask.isibo = isibo;
+                assignedIsibos.set(isibo.id, existingTask.id);
+              }
             }
           }
         } else {
@@ -265,13 +389,29 @@ export class ActivitiesService {
           newTask.status = ETaskStatus.PENDING;
           newTask.activity = activity; // Set the activity reference
 
-          // Find isibo
-          if (taskDto.isiboId) {
-            const isibo = await this.isibosService.findIsiboById(
-              taskDto.isiboId,
-            );
-            newTask.isibo = isibo;
+          // Find isibo - required for new tasks
+          if (!taskDto.isiboId) {
+            throw new BadRequestException("Isibo ID is required for each task");
           }
+
+          // Check if this isibo is already assigned to another task
+          const existingTaskId = assignedIsibos.get(taskDto.isiboId);
+          if (existingTaskId) {
+            throw new ConflictException(
+              `Isibo with ID ${taskDto.isiboId} is already assigned to another task in this activity`,
+            );
+          }
+
+          const isibo = await this.isibosService.findIsiboById(taskDto.isiboId);
+
+          if (!isibo) {
+            throw new NotFoundException(
+              `Isibo with ID ${taskDto.isiboId} not found`,
+            );
+          }
+
+          newTask.isibo = isibo;
+          assignedIsibos.set(taskDto.isiboId, "new-task"); // Mark as assigned
 
           // Add to activity tasks
           activity.tasks.push(newTask);
@@ -279,6 +419,10 @@ export class ActivitiesService {
       }
     }
 
-    return await this.activityRepository.save(activity);
+    // Save the activity with its tasks
+    const savedActivity = await this.activityRepository.save(activity);
+
+    // Return the saved activity without modifying its structure
+    return savedActivity;
   }
 }

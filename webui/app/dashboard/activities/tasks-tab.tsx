@@ -1,13 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -368,9 +362,6 @@ export default function TasksTab() {
         <div className="flex items-center justify-between">
           <div>
             <CardTitle>Tasks</CardTitle>
-            <CardDescription>
-              Manage tasks for activities in your administrative area
-            </CardDescription>
           </div>
           <div className="flex gap-2">
             <Button
@@ -466,7 +457,7 @@ export default function TasksTab() {
                         {task.activity.title}
                       </td>
                       <td className="p-4 whitespace-nowrap">
-                        {task.isibo ? task.isibo.names : "-"}
+                        {task.isibo?.names}
                       </td>
                       <td className="p-4 whitespace-nowrap">
                         <span

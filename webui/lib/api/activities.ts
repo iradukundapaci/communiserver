@@ -3,10 +3,15 @@ import { getAuthTokens } from "./auth";
 
 // Types
 export enum ActivityStatus {
-  PENDING = "PENDING",
-  IN_PROGRESS = "IN_PROGRESS",
-  COMPLETED = "COMPLETED",
-  CANCELLED = "CANCELLED",
+  ACTIVE = "active",
+  INACTIVE = "inactive",
+  COMPLETED = "completed",
+  CANCELLED = "cancelled",
+  ONGOING = "ongoing",
+  UPCOMING = "upcoming",
+  RESCHEDULED = "rescheduled",
+  POSTPONED = "postponed",
+  PENDING = "pending",
 }
 
 export interface Activity {
@@ -23,10 +28,15 @@ export interface Activity {
 }
 
 export enum TaskStatus {
-  PENDING = "PENDING",
-  IN_PROGRESS = "IN_PROGRESS",
-  COMPLETED = "COMPLETED",
-  CANCELLED = "CANCELLED",
+  ACTIVE = "active",
+  INACTIVE = "inactive",
+  COMPLETED = "completed",
+  CANCELLED = "cancelled",
+  ONGOING = "ongoing",
+  UPCOMING = "upcoming",
+  RESCHEDULED = "rescheduled",
+  POSTPONED = "postponed",
+  PENDING = "pending",
 }
 
 export interface Task {

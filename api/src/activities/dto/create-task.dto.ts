@@ -30,7 +30,7 @@ export namespace CreateTaskDTO {
     };
     isibo: {
       id: string;
-      names: string;
+      name: string;
     };
   }
 }

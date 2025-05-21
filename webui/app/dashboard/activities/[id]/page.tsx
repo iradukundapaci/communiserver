@@ -25,9 +25,10 @@ import {
   getActivityById,
   updateActivity,
 } from "@/lib/api/activities";
+import { getIsibos } from "@/lib/api/isibos";
 import { getVillages } from "@/lib/api/villages";
 import { useUser } from "@/lib/contexts/user-context";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Plus, Trash2 } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import * as React from "react";
 import { useEffect, useState } from "react";

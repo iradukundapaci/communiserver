@@ -26,5 +26,9 @@ export namespace FetchTaskDTO {
       id: string;
       names: string;
     };
+    activity: {
+      id: string;
+      title: string;
+    };
   }
 }
