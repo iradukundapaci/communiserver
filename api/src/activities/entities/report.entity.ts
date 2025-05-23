@@ -1,15 +1,17 @@
 import { AbstractEntity } from "src/__shared__/entities/abstract.entity";
 import { Citizen } from "src/locations/entities/citizen.entity";
-import { Column, Entity, ManyToOne, OneToOne } from "typeorm";
+import { Column, Entity, JoinColumn, ManyToOne } from "typeorm";
 import { Activity } from "./activity.entity";
 import { Task } from "./task.entity";
 
 @Entity("reports")
 export class Report extends AbstractEntity {
   @ManyToOne(() => Activity, { nullable: false })
+  @JoinColumn({ name: "activityId" })
   activity: Activity;
 
-  @OneToOne(() => Task, { nullable: false })
+  @ManyToOne(() => Task, { nullable: false })
+  @JoinColumn({ name: "taskId" })
   task: Task;
 
   @Column({ type: "jsonb", nullable: true })

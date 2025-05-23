@@ -47,9 +47,9 @@ export class ReportsService {
     const queryBuilder = this.reportRepository
       .createQueryBuilder("report")
       .leftJoinAndSelect("report.task", "task")
-      .leftJoin("task.isibo", "isibo")
-      .leftJoin("report.activity", "activity")
-      .leftJoin("activity.village", "village");
+      .leftJoinAndSelect("task.isibo", "isibo")
+      .leftJoinAndSelect("report.activity", "activity")
+      .leftJoinAndSelect("activity.village", "village");
 
     if (dto.taskId) {
       queryBuilder.andWhere("task.id = :taskId", { taskId: dto.taskId });
@@ -76,7 +76,7 @@ export class ReportsService {
   async findOne(id: string): Promise<Report> {
     const report = await this.reportRepository.findOne({
       where: { id },
-      relations: ["task", "activity", "attendance"],
+      relations: ["task", "task.isibo", "activity", "activity.village"],
     });
 
     if (!report) {

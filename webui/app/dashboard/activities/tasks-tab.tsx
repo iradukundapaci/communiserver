@@ -1,5 +1,6 @@
 "use client";
 
+import { CreateReportDialog } from "@/components/reports/create-report-dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -46,7 +47,7 @@ function CreateTaskDialog({ onTaskCreated }: CreateTaskDialogProps) {
     isiboId: user?.isibo?.id || "",
   });
   const [activities, setActivities] = useState<Activity[]>([]);
-  const [isibos, setIsibos] = useState<unknown[]>([]);
+  const [isibos, setIsibos] = useState<{ id: string; name: string }[]>([]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -129,7 +130,7 @@ function CreateTaskDialog({ onTaskCreated }: CreateTaskDialogProps) {
         isiboId: "",
       });
     } catch (error: unknown) {
-      if (error.message) {
+      if (error instanceof Error) {
         toast.error(error.message);
       } else {
         toast.error("Failed to create task");
@@ -284,7 +285,7 @@ export default function TasksTab() {
       setTotalPages(response.meta.totalPages);
       setCurrentPage(page);
     } catch (error: unknown) {
-      if (error.message) {
+      if (error instanceof Error) {
         toast.error(error.message);
       } else {
         toast.error("Failed to fetch tasks");
@@ -311,11 +312,7 @@ export default function TasksTab() {
     fetchActivities();
   }, []);
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSearching(true);
-    fetchTasks(selectedActivityId, 1, true);
-  };
+  // Function to handle search if needed in the future
 
   const handleActivityChange = (value: string) => {
     setSelectedActivityId(value);
@@ -352,7 +349,7 @@ export default function TasksTab() {
           selectedActivityId === "ALL_ACTIVITIES" ? "" : selectedActivityId;
         fetchTasks(activityIdParam, 1, true);
       } catch (error: unknown) {
-        if (error.message) {
+        if (error instanceof Error) {
           toast.error(error.message);
         } else {
           toast.error("Failed to delete task");
@@ -380,7 +377,10 @@ export default function TasksTab() {
               <RefreshCw className="h-4 w-4 mr-2" />
               Refresh
             </Button>
-            <CreateTaskDialog onTaskCreated={handleRefresh} />
+            {/* Only show create button for admin, cell leader, and village leader */}
+            {user.user?.role !== "ISIBO_LEADER" && (
+              <CreateTaskDialog onTaskCreated={handleRefresh} />
+            )}
           </div>
         </div>
       </CardHeader>
@@ -484,29 +484,41 @@ export default function TasksTab() {
                       </td>
                       <td className="p-4 whitespace-nowrap">
                         <div className="flex items-center gap-2">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() =>
-                              router.push(
-                                `/dashboard/activities/tasks/${task.id}`
-                              )
-                            }
-                          >
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleDelete(task.id)}
-                            disabled={isDeleting === task.id}
-                          >
-                            {isDeleting === task.id ? (
-                              <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-primary"></div>
-                            ) : (
-                              <Trash2 className="h-4 w-4 text-red-500" />
-                            )}
-                          </Button>
+                          {user.user?.role === "ISIBO_LEADER" ? (
+                            // For isibo leaders, show report button
+                            <CreateReportDialog
+                              taskId={task.id}
+                              activityId={task.activity.id}
+                              onReportCreated={handleRefresh}
+                            />
+                          ) : (
+                            // For other roles, show edit and delete buttons
+                            <>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() =>
+                                  router.push(
+                                    `/dashboard/activities/tasks/${task.id}`
+                                  )
+                                }
+                              >
+                                <Pencil className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => handleDelete(task.id)}
+                                disabled={isDeleting === task.id}
+                              >
+                                {isDeleting === task.id ? (
+                                  <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-primary"></div>
+                                ) : (
+                                  <Trash2 className="h-4 w-4 text-red-500" />
+                                )}
+                              </Button>
+                            </>
+                          )}
                         </div>
                       </td>
                     </tr>
