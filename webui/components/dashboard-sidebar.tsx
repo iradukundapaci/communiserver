@@ -208,23 +208,15 @@ export function DashboardSidebar(
             </SidebarMenuItem>
           </PermissionGate>
 
-          <PermissionGate
-            anyPermissions={[
-              Permission.ADD_TASK_REPORT,
-              Permission.VIEW_VILLAGE_ACTIVITY,
-            ]}
-          >
-            <SidebarMenuItem>
-              <SidebarMenuButton
-                onClick={() => navigateTo("/dashboard/reports")}
-              >
-                <div className="cursor-pointer">
-                  <IconClipboardList />
-                  <span>Reports</span>
-                </div>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          </PermissionGate>
+          {/* Reports - Available to all users */}
+          <SidebarMenuItem>
+            <SidebarMenuButton onClick={() => navigateTo("/dashboard/reports")}>
+              <div className="cursor-pointer">
+                <IconClipboardList />
+                <span>Reports</span>
+              </div>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
 
           {/* Common Items for All Users */}
           <SidebarMenuItem>

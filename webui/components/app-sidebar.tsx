@@ -3,6 +3,7 @@
 import {
   IconBuilding,
   IconChecklist,
+  IconClipboardList,
   IconDashboard,
   IconInnerShadowTop,
   IconMessage,
@@ -48,6 +49,11 @@ const data = {
       title: "Activities",
       url: "/dashboard/activities",
       icon: IconChecklist,
+    },
+    {
+      title: "Reports",
+      url: "/dashboard/reports",
+      icon: IconClipboardList,
     },
     {
       title: "Notifications",
