@@ -246,13 +246,13 @@ function CreateTaskDialog({ onTaskCreated }: CreateTaskDialogProps) {
 
 export default function TasksTab() {
   const router = useRouter();
-  const [searchQuery, setSearchQuery] = useState("");
+  const user = useUser();
   const [selectedActivityId, setSelectedActivityId] =
     useState("ALL_ACTIVITIES");
   const [tasks, setTasks] = useState<Task[]>([]);
   const [activities, setActivities] = useState<Activity[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isSearching, setIsSearching] = useState(false);
+  const [, setIsSearching] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
@@ -265,7 +265,15 @@ export default function TasksTab() {
   ) => {
     try {
       setIsLoading(true);
-      const response = await getTasks(activityId, page, 10);
+
+      // For isibo leaders, only fetch tasks for their isibo
+      let response;
+      if (user.user?.role === "ISIBO_LEADER" && user?.user.isibo?.id) {
+        response = await getTasks(activityId, page, 10, user.user.isibo.id);
+      } else {
+        // For other roles, fetch all tasks
+        response = await getTasks(activityId, page, 10);
+      }
 
       if (resetTasks) {
         setTasks(response.items);
@@ -462,11 +470,11 @@ export default function TasksTab() {
                       <td className="p-4 whitespace-nowrap">
                         <span
                           className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                            task.status === "COMPLETED"
+                            task.status === "completed"
                               ? "bg-green-100 text-green-800"
-                              : task.status === "IN_PROGRESS"
+                              : task.status === "ongoing"
                               ? "bg-blue-100 text-blue-800"
-                              : task.status === "CANCELLED"
+                              : task.status === "cancelled"
                               ? "bg-red-100 text-red-800"
                               : "bg-yellow-100 text-yellow-800"
                           }`}

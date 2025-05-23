@@ -107,12 +107,14 @@ interface ApiResponse<T> {
  * @param page Page number
  * @param size Items per page
  * @param search Search query
+ * @param villageId Optional village ID to filter activities
  * @returns Promise with paginated activities
  */
 export async function getActivities(
   page: number = 1,
   size: number = 10,
-  search?: string
+  search?: string,
+  villageId?: string
 ): Promise<PaginatedResponse<Activity>> {
   try {
     const tokens = getAuthTokens();
@@ -124,6 +126,9 @@ export async function getActivities(
     let url = `/api/v1/activities?page=${page}&size=${size}`;
     if (search) {
       url += `&q=${encodeURIComponent(search)}`;
+    }
+    if (villageId) {
+      url += `&villageId=${encodeURIComponent(villageId)}`;
     }
 
     const response = await fetch(url, {

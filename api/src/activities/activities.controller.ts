@@ -81,7 +81,7 @@ export class ActivitiesController {
   async update(
     @Param("id") id: string,
     @Body() updateActivityDTO: UpdateActivityDTO.Input,
-  ): Promise<GenericResponse<Activity>> {
+  ): Promise<GenericResponse<UpdateActivityDTO.Output>> {
     const activity = await this.activitiesService.update(id, updateActivityDTO);
     return new GenericResponse("Activity updated successfully", activity);
   }

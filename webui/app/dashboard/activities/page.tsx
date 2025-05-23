@@ -67,8 +67,16 @@ export default function ActivitiesPage() {
     window.history.pushState({}, "", url.toString());
   };
 
+  // All roles can see both tabs now
+
   return (
-    <PermissionGate permission={Permission.CREATE_ACTIVITY}>
+    <PermissionGate
+      anyPermissions={[
+        Permission.CREATE_ACTIVITY,
+        Permission.VIEW_VILLAGE_ACTIVITY,
+        Permission.ADD_TASK_REPORT,
+      ]}
+    >
       <div className="flex flex-col gap-4">
         <div className="flex items-center justify-between">
           <h1 className="text-3xl font-bold">Activities Management</h1>
@@ -107,7 +115,17 @@ function CreateActivityDialog({
   const { user } = useUser();
   const [isOpen, setIsOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    title: string;
+    description: string;
+    date: string;
+    villageId: string;
+    tasks: Array<{
+      title: string;
+      description: string;
+      isiboId: string;
+    }>;
+  }>({
     title: "",
     description: "",
     date: "",
@@ -284,7 +302,14 @@ function CreateActivityDialog({
       const activityData = {
         ...formData,
         // If there are no tasks, don't include an empty array
-        tasks: formData.tasks.length > 0 ? formData.tasks : undefined,
+        // Add dummy activityId that will be replaced by the backend
+        tasks:
+          formData.tasks.length > 0
+            ? formData.tasks.map((task) => ({
+                ...task,
+                activityId: "temp-id", // This will be replaced by the backend
+              }))
+            : undefined,
       };
 
       await createActivity(activityData);
@@ -307,8 +332,8 @@ function CreateActivityDialog({
         description: "",
         isiboId: "",
       });
-    } catch (error: any) {
-      if (error.message) {
+    } catch (error: unknown) {
+      if (error instanceof Error) {
         toast.error(error.message);
       } else {
         toast.error("Failed to create activity");
@@ -515,6 +540,7 @@ function CreateActivityDialog({
 
 function ActivitiesTab() {
   const router = useRouter();
+  const { user } = useUser();
   const [searchQuery, setSearchQuery] = useState("");
   const [activities, setActivities] = useState<Activity[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -531,7 +557,16 @@ function ActivitiesTab() {
   ) => {
     try {
       setIsLoading(true);
-      const response = await getActivities(page, 10, query);
+
+      // For isibo leaders, only fetch activities in their village
+      let response;
+      if (user?.role === "ISIBO_LEADER" && user?.village?.id) {
+        // Filter activities by village ID
+        response = await getActivities(page, 10, query, user.village.id);
+      } else {
+        // For other roles, fetch all activities
+        response = await getActivities(page, 10, query);
+      }
 
       if (resetActivities) {
         setActivities(response.items);
@@ -544,8 +579,8 @@ function ActivitiesTab() {
 
       setTotalPages(response.meta.totalPages);
       setCurrentPage(page);
-    } catch (error: any) {
-      if (error.message) {
+    } catch (error: unknown) {
+      if (error instanceof Error) {
         toast.error(error.message);
       } else {
         toast.error("Failed to fetch activities");
@@ -560,6 +595,7 @@ function ActivitiesTab() {
 
   useEffect(() => {
     fetchActivities("", 1, true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleSearch = (e: React.FormEvent) => {
@@ -586,8 +622,8 @@ function ActivitiesTab() {
         await deleteActivity(id);
         toast.success("Activity deleted successfully");
         fetchActivities(searchQuery, 1, true);
-      } catch (error: any) {
-        if (error.message) {
+      } catch (error: unknown) {
+        if (error instanceof Error) {
           toast.error(error.message);
         } else {
           toast.error("Failed to delete activity");
@@ -601,7 +637,7 @@ function ActivitiesTab() {
 
   const getStatusBadgeClass = (status: ActivityStatus) => {
     switch (status) {
-      case ActivityStatus.IN_PROGRESS:
+      case ActivityStatus.ONGOING:
         return "bg-green-100 text-green-800";
       case ActivityStatus.COMPLETED:
         return "bg-blue-100 text-blue-800";
@@ -633,7 +669,10 @@ function ActivitiesTab() {
               <RefreshCw className="h-4 w-4 mr-2" />
               Refresh
             </Button>
-            <CreateActivityDialog onActivityCreated={handleRefresh} />
+            {/* Only show create button for admin, cell leader, and village leader */}
+            {user?.role !== "ISIBO_LEADER" && (
+              <CreateActivityDialog onActivityCreated={handleRefresh} />
+            )}
           </div>
         </div>
       </CardHeader>
@@ -724,31 +763,37 @@ function ActivitiesTab() {
                         {activity.village?.name || "-"}
                       </td>
                       <td className="p-4 whitespace-nowrap">
-                        <div className="flex items-center gap-2">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() =>
-                              router.push(
-                                `/dashboard/activities/${activity.id}`
-                              )
-                            }
-                          >
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleDelete(activity.id)}
-                            disabled={isDeleting === activity.id}
-                          >
-                            {isDeleting === activity.id ? (
-                              <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-primary"></div>
-                            ) : (
-                              <Trash2 className="h-4 w-4 text-red-500" />
-                            )}
-                          </Button>
-                        </div>
+                        {user?.role !== "ISIBO_LEADER" ? (
+                          <div className="flex items-center gap-2">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() =>
+                                router.push(
+                                  `/dashboard/activities/${activity.id}`
+                                )
+                              }
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleDelete(activity.id)}
+                              disabled={isDeleting === activity.id}
+                            >
+                              {isDeleting === activity.id ? (
+                                <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-primary"></div>
+                              ) : (
+                                <Trash2 className="h-4 w-4 text-red-500" />
+                              )}
+                            </Button>
+                          </div>
+                        ) : (
+                          <span className="text-muted-foreground">
+                            No actions available
+                          </span>
+                        )}
                       </td>
                     </tr>
                   ))

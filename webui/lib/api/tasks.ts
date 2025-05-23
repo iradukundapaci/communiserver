@@ -20,12 +20,14 @@ interface ApiResponse<T> {
  * @param activityId Optional activity ID to filter tasks
  * @param page Page number
  * @param size Items per page
+ * @param isiboId Optional isibo ID to filter tasks
  * @returns Promise with paginated tasks
  */
 export async function getTasks(
   activityId?: string,
   page: number = 1,
-  size: number = 10
+  size: number = 10,
+  isiboId?: string
 ): Promise<PaginatedResponse<Task>> {
   try {
     const tokens = getAuthTokens();
@@ -37,6 +39,9 @@ export async function getTasks(
     let url = `/api/v1/tasks?page=${page}&size=${size}`;
     if (activityId) {
       url += `&activityId=${activityId}`;
+    }
+    if (isiboId) {
+      url += `&isiboId=${isiboId}`;
     }
 
     const response = await fetch(url, {

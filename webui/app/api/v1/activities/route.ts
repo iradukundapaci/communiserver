@@ -19,10 +19,14 @@ export async function GET(request: NextRequest) {
     const page = searchParams.get("page") || "1";
     const size = searchParams.get("size") || "10";
     const q = searchParams.get("q") || "";
+    const villageId = searchParams.get("villageId") || "";
 
     let url = `${API_URL}/api/v1/activities?page=${page}&size=${size}`;
     if (q) {
       url += `&q=${encodeURIComponent(q)}`;
+    }
+    if (villageId) {
+      url += `&villageId=${encodeURIComponent(villageId)}`;
     }
 
     const response = await fetch(url, {

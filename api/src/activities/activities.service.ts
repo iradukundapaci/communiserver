@@ -8,6 +8,7 @@ import { InjectRepository } from "@nestjs/typeorm";
 import { plainToInstance } from "class-transformer";
 import { paginate } from "nestjs-typeorm-paginate";
 import { Brackets, Repository } from "typeorm";
+import { Isibo } from "../locations/entities/isibo.entity";
 import { IsibosService } from "../locations/isibos.service";
 import { VillagesService } from "../locations/villages.service";
 import { CreateActivityDTO } from "./dto/create-activity.dto";
@@ -257,7 +258,7 @@ export class ActivitiesService {
   async update(
     id: string,
     updateActivityDTO: UpdateActivityDTO.Input,
-  ): Promise<Activity> {
+  ): Promise<UpdateActivityDTO.Output> {
     const activity = await this.activityRepository.findOne({
       where: { id },
       relations: ["village", "tasks", "tasks.isibo"],
@@ -321,6 +322,9 @@ export class ActivitiesService {
       for (const task of activity.tasks) {
         if (task.isibo) {
           assignedIsibos.set(task.isibo.id, task.id);
+          console.log(
+            `Pre-tracked existing task ${task.id} for isibo ${task.isibo.id}`,
+          );
         }
       }
 
@@ -345,6 +349,9 @@ export class ActivitiesService {
             if (taskDto.status) {
               existingTask.status = taskDto.status;
             }
+
+            // Store the original isibo ID before any changes
+            const originalIsiboId = existingTask.isibo?.id;
 
             // Update isibo if provided
             if (taskDto.isiboId) {
@@ -376,32 +383,29 @@ export class ActivitiesService {
                   assignedIsibos.delete(existingTask.isibo.id);
                 }
 
-                existingTask.isibo = isibo;
+                // Create a new isibo reference to avoid potential issues with entity references
+                existingTask.isibo = { id: isibo.id } as Isibo;
                 assignedIsibos.set(isibo.id, existingTask.id);
               }
             }
           }
         } else {
-          // Create new task
-          const newTask = new Task();
-          newTask.title = taskDto.title;
-          newTask.description = taskDto.description;
-          newTask.status = ETaskStatus.PENDING;
-          newTask.activity = activity; // Set the activity reference
-
-          // Find isibo - required for new tasks
+          // Check if a task already exists for this isibo in this activity
           if (!taskDto.isiboId) {
             throw new BadRequestException("Isibo ID is required for each task");
           }
 
-          // Check if this isibo is already assigned to another task
+          // Check if this isibo is already assigned to a task in this activity
           const existingTaskId = assignedIsibos.get(taskDto.isiboId);
           if (existingTaskId) {
-            throw new ConflictException(
-              `Isibo with ID ${taskDto.isiboId} is already assigned to another task in this activity`,
+            // If the task already exists, skip it
+            console.log(
+              `Task for isibo ${taskDto.isiboId} already exists, skipping`,
             );
+            continue;
           }
 
+          // Find the isibo
           const isibo = await this.isibosService.findIsiboById(taskDto.isiboId);
 
           if (!isibo) {
@@ -410,7 +414,17 @@ export class ActivitiesService {
             );
           }
 
-          newTask.isibo = isibo;
+          // Create new task
+          const newTask = new Task();
+          newTask.title = taskDto.title;
+          newTask.description = taskDto.description;
+          newTask.status = ETaskStatus.PENDING;
+
+          // Use a simple reference to avoid circular references
+          newTask.activity = { id: activity.id } as Activity;
+
+          // Use a simple reference to avoid circular references
+          newTask.isibo = { id: isibo.id } as Isibo;
           assignedIsibos.set(taskDto.isiboId, "new-task"); // Mark as assigned
 
           // Add to activity tasks
@@ -422,7 +436,35 @@ export class ActivitiesService {
     // Save the activity with its tasks
     const savedActivity = await this.activityRepository.save(activity);
 
-    // Return the saved activity without modifying its structure
-    return savedActivity;
+    // Create a clean object without circular references
+    const activityData = {
+      id: savedActivity.id,
+      title: savedActivity.title,
+      description: savedActivity.description,
+      date: savedActivity.date,
+      status: savedActivity.status,
+      village: savedActivity.village
+        ? {
+            id: savedActivity.village.id,
+            name: savedActivity.village.name,
+          }
+        : undefined,
+      tasks: savedActivity.tasks
+        ? savedActivity.tasks.map((task) => ({
+            id: task.id,
+            title: task.title,
+            description: task.description,
+            status: task.status,
+            isibo: task.isibo
+              ? {
+                  id: task.isibo.id,
+                  name: task.isibo.name,
+                }
+              : undefined,
+          }))
+        : [],
+    };
+
+    return plainToInstance(UpdateActivityDTO.Output, activityData);
   }
 }

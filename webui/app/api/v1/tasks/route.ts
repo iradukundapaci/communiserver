@@ -19,10 +19,14 @@ export async function GET(request: NextRequest) {
     const page = searchParams.get("page") || "1";
     const size = searchParams.get("size") || "10";
     const activityId = searchParams.get("activityId") || "";
+    const isiboId = searchParams.get("isiboId") || "";
 
     let url = `${API_URL}/tasks?page=${page}&size=${size}`;
     if (activityId) {
       url += `&activityId=${encodeURIComponent(activityId)}`;
+    }
+    if (isiboId) {
+      url += `&isiboId=${encodeURIComponent(isiboId)}`;
     }
 
     const response = await fetch(
