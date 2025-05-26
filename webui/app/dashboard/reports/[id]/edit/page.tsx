@@ -3,9 +3,9 @@
 import { AttendanceSelector } from "@/components/reports/attendance-selector";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { FileUpload } from "@/components/ui/file-upload";
 import { getIsiboById } from "@/lib/api/isibos";
 import {
   Citizen,
@@ -35,12 +35,14 @@ export default function EditReportPage({
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoadingIsibo, setIsLoadingIsibo] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [hasUploadErrors, setHasUploadErrors] = useState(false);
   const [formData, setFormData] = useState({
     attendance: [] as Citizen[],
     comment: "",
     evidenceUrls: [] as string[],
   });
-  const [evidenceUrl, setEvidenceUrl] = useState("");
+
 
   useEffect(() => {
     const fetchReport = async () => {
@@ -120,21 +122,16 @@ export default function EditReportPage({
     }));
   };
 
-  const handleAddEvidenceUrl = () => {
-    if (evidenceUrl.trim()) {
-      setFormData((prev) => ({
-        ...prev,
-        evidenceUrls: [...prev.evidenceUrls, evidenceUrl.trim()],
-      }));
-      setEvidenceUrl("");
-    }
-  };
-
-  const handleRemoveEvidenceUrl = (index: number) => {
+  const handleFilesUploaded = (urls: string[]) => {
     setFormData((prev) => ({
       ...prev,
-      evidenceUrls: prev.evidenceUrls.filter((_, i) => i !== index),
+      evidenceUrls: urls,
     }));
+  };
+
+  const handleUploadStatusChange = (uploading: boolean, hasErrors: boolean) => {
+    setIsUploading(uploading);
+    setHasUploadErrors(hasErrors);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -235,54 +232,37 @@ export default function EditReportPage({
               />
             </div>
 
-            {/* Evidence URLs */}
+            {/* Evidence Files */}
             <div className="grid grid-cols-4 items-start gap-4">
-              <Label htmlFor="evidenceUrl" className="text-right mt-2">
-                Evidence URLs
+              <Label className="text-right mt-2">
+                Evidence Files
               </Label>
-              <div className="col-span-3 space-y-2">
-                <div className="flex gap-2">
-                  <Input
-                    id="evidenceUrl"
-                    value={evidenceUrl}
-                    onChange={(e) => setEvidenceUrl(e.target.value)}
-                    placeholder="https://example.com/evidence"
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={handleAddEvidenceUrl}
-                  >
-                    Add
-                  </Button>
-                </div>
-                {formData.evidenceUrls.length > 0 && (
-                  <div className="space-y-1">
-                    {formData.evidenceUrls.map((url, index) => (
-                      <div key={index} className="flex items-center gap-2">
-                        <div className="text-sm truncate flex-1">{url}</div>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleRemoveEvidenceUrl(index)}
-                        >
-                          Remove
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
-                )}
+              <div className="col-span-3">
+                <FileUpload
+                  onFilesUploaded={handleFilesUploaded}
+                  uploadedFiles={formData.evidenceUrls}
+                  maxFiles={10}
+                  maxSizeInMB={10}
+                  accept="image/*,application/pdf,.doc,.docx,.txt,.mp4,.mp3,.zip,.rar"
+                  onUploadStatusChange={handleUploadStatusChange}
+                />
               </div>
             </div>
 
             <div className="flex justify-end">
-              <Button type="submit" disabled={isSubmitting}>
+              <Button type="submit" disabled={isSubmitting || isUploading || hasUploadErrors}>
                 {isSubmitting ? (
                   <>
                     <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-primary mr-2"></div>
                     Updating...
                   </>
+                ) : isUploading ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-primary mr-2"></div>
+                    Uploading files...
+                  </>
+                ) : hasUploadErrors ? (
+                  "Fix upload errors first"
                 ) : (
                   <>
                     <Save className="h-4 w-4 mr-2" />

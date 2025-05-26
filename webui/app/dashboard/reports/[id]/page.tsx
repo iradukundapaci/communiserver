@@ -6,7 +6,7 @@ import { Report, getReportById } from "@/lib/api/reports";
 import { useUser } from "@/lib/contexts/user-context";
 import { ArrowLeft, ExternalLink } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 export default function ReportDetailPage({

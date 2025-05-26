@@ -10,9 +10,9 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { FileUpload } from "@/components/ui/file-upload";
 import { createReport, Citizen } from "@/lib/api/reports";
 import { getIsiboById } from "@/lib/api/isibos";
 import { AttendanceSelector } from "./attendance-selector";
@@ -37,6 +37,8 @@ export function CreateReportDialog({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoadingIsibo, setIsLoadingIsibo] = useState(false);
   const [isiboMembers, setIsiboMembers] = useState<Citizen[]>([]);
+  const [isUploading, setIsUploading] = useState(false);
+  const [hasUploadErrors, setHasUploadErrors] = useState(false);
   const [formData, setFormData] = useState({
     taskId,
     activityId,
@@ -44,8 +46,6 @@ export function CreateReportDialog({
     comment: "",
     evidenceUrls: [] as string[],
   });
-  const [evidenceUrl, setEvidenceUrl] = useState("");
-
   // Fetch isibo members when dialog opens
   useEffect(() => {
     if (isOpen && user?.isibo?.id) {
@@ -76,20 +76,10 @@ export function CreateReportDialog({
     }));
   };
 
-  const handleAddEvidenceUrl = () => {
-    if (evidenceUrl.trim()) {
-      setFormData((prev) => ({
-        ...prev,
-        evidenceUrls: [...prev.evidenceUrls, evidenceUrl.trim()],
-      }));
-      setEvidenceUrl("");
-    }
-  };
-
-  const handleRemoveEvidenceUrl = (index: number) => {
+  const handleFilesUploaded = (urls: string[]) => {
     setFormData((prev) => ({
       ...prev,
-      evidenceUrls: prev.evidenceUrls.filter((_, i) => i !== index),
+      evidenceUrls: urls,
     }));
   };
 
@@ -98,6 +88,11 @@ export function CreateReportDialog({
       ...prev,
       attendance: attendees,
     }));
+  };
+
+  const handleUploadStatusChange = (uploading: boolean, hasErrors: boolean) => {
+    setIsUploading(uploading);
+    setHasUploadErrors(hasErrors);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -138,15 +133,15 @@ export function CreateReportDialog({
           Submit Report
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[600px]">
+      <DialogContent className="sm:max-w-[600px] max-h-[90vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>Submit Task Report</DialogTitle>
           <DialogDescription>
             Provide details about the task completion
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit}>
-          <div className="grid gap-4 py-4">
+        <form onSubmit={handleSubmit} className="flex flex-col flex-1 overflow-hidden">
+          <div className="grid gap-4 py-4 overflow-y-auto flex-1">
             {/* Attendance */}
             <div className="grid grid-cols-4 items-start gap-4">
               <Label className="text-right mt-2">
@@ -176,54 +171,22 @@ export function CreateReportDialog({
               />
             </div>
             <div className="grid grid-cols-4 items-start gap-4">
-              <Label htmlFor="evidenceUrl" className="text-right mt-2">
-                Evidence URLs
+              <Label className="text-right mt-2">
+                Evidence Files
               </Label>
-              <div className="col-span-3 space-y-2">
-                <div className="flex gap-2">
-                  <Input
-                    id="evidenceUrl"
-                    value={evidenceUrl}
-                    onChange={(e) => setEvidenceUrl(e.target.value)}
-                    placeholder="Add URL to photos, documents, etc."
-                    className="flex-1"
-                  />
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    onClick={handleAddEvidenceUrl}
-                  >
-                    Add
-                  </Button>
-                </div>
-                {formData.evidenceUrls.length > 0 && (
-                  <div className="space-y-2 mt-2">
-                    <p className="text-sm font-medium">Added URLs:</p>
-                    <ul className="space-y-1">
-                      {formData.evidenceUrls.map((url, index) => (
-                        <li
-                          key={index}
-                          className="flex items-center justify-between text-sm bg-muted p-2 rounded"
-                        >
-                          <span className="truncate flex-1">{url}</span>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleRemoveEvidenceUrl(index)}
-                            className="h-6 w-6 p-0"
-                          >
-                            &times;
-                          </Button>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
+              <div className="col-span-3">
+                <FileUpload
+                  onFilesUploaded={handleFilesUploaded}
+                  uploadedFiles={formData.evidenceUrls}
+                  maxFiles={10}
+                  maxSizeInMB={10}
+                  accept="image/*,application/pdf,.doc,.docx,.txt,.mp4,.mp3,.zip,.rar"
+                  onUploadStatusChange={handleUploadStatusChange}
+                />
               </div>
             </div>
           </div>
-          <DialogFooter>
+          <DialogFooter className="flex-shrink-0 mt-4">
             <Button
               type="button"
               variant="outline"
@@ -231,12 +194,19 @@ export function CreateReportDialog({
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={isSubmitting}>
+            <Button type="submit" disabled={isSubmitting || isUploading || hasUploadErrors}>
               {isSubmitting ? (
                 <>
                   <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-primary mr-2"></div>
                   Submitting...
                 </>
+              ) : isUploading ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-primary mr-2"></div>
+                  Uploading files...
+                </>
+              ) : hasUploadErrors ? (
+                "Fix upload errors first"
               ) : (
                 "Submit Report"
               )}
