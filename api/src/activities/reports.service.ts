@@ -36,6 +36,7 @@ export class ReportsService {
       task: { id: dto.taskId },
       activity: { id: dto.activityId },
       comment: dto.comment,
+      attendance: dto.attendance,
       evidenceUrls: dto.evidenceUrls,
     });
 

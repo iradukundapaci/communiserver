@@ -13,58 +13,35 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { createReport, Citizen } from "@/lib/api/reports";
-import { getIsiboById } from "@/lib/api/isibos";
-import { AttendanceSelector } from "./attendance-selector";
-import { useUser } from "@/lib/contexts/user-context";
-import { ClipboardList } from "lucide-react";
-import { useState, useEffect } from "react";
+import { Report, updateReport } from "@/lib/api/reports";
+import { Pencil } from "lucide-react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
-interface CreateReportDialogProps {
-  taskId: string;
-  activityId: string;
-  onReportCreated: () => void;
+interface EditReportDialogProps {
+  report: Report;
+  onReportUpdated: () => void;
 }
 
-export function CreateReportDialog({
-  taskId,
-  activityId,
-  onReportCreated,
-}: CreateReportDialogProps) {
-  const { user } = useUser();
+export function EditReportDialog({
+  report,
+  onReportUpdated,
+}: EditReportDialogProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isLoadingIsibo, setIsLoadingIsibo] = useState(false);
-  const [isiboMembers, setIsiboMembers] = useState<Citizen[]>([]);
   const [formData, setFormData] = useState({
-    taskId,
-    activityId,
-    attendance: [] as Citizen[],
-    comment: "",
-    evidenceUrls: [] as string[],
+    comment: report.comment || "",
+    evidenceUrls: report.evidenceUrls || [],
   });
   const [evidenceUrl, setEvidenceUrl] = useState("");
 
-  // Fetch isibo members when dialog opens
+  // Update form data when report changes
   useEffect(() => {
-    if (isOpen && user?.isibo?.id) {
-      fetchIsiboMembers(user.isibo.id);
-    }
-  }, [isOpen, user]);
-
-  const fetchIsiboMembers = async (isiboId: string) => {
-    try {
-      setIsLoadingIsibo(true);
-      const isibo = await getIsiboById(isiboId);
-      setIsiboMembers(isibo.members || []);
-    } catch (error) {
-      console.error("Failed to fetch isibo members:", error);
-      toast.error("Failed to fetch isibo members");
-    } finally {
-      setIsLoadingIsibo(false);
-    }
-  };
+    setFormData({
+      comment: report.comment || "",
+      evidenceUrls: report.evidenceUrls || [],
+    });
+  }, [report]);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -93,36 +70,20 @@ export function CreateReportDialog({
     }));
   };
 
-  const handleAttendanceChange = (attendees: Citizen[]) => {
-    setFormData((prev) => ({
-      ...prev,
-      attendance: attendees,
-    }));
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
 
     try {
-      await createReport(formData);
-      toast.success("Report submitted successfully");
+      await updateReport(report.id, formData);
+      toast.success("Report updated successfully");
       setIsOpen(false);
-      onReportCreated();
-
-      // Reset form
-      setFormData({
-        taskId,
-        activityId,
-        attendance: [],
-        comment: "",
-        evidenceUrls: [],
-      });
+      onReportUpdated();
     } catch (error: any) {
       if (error.message) {
         toast.error(error.message);
       } else {
-        toast.error("Failed to submit report");
+        toast.error("Failed to update report");
       }
       console.error(error);
     } finally {
@@ -133,34 +94,38 @@ export function CreateReportDialog({
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm">
-          <ClipboardList className="h-4 w-4 mr-2" />
-          Submit Report
+        <Button variant="ghost" size="icon">
+          <Pencil className="h-4 w-4" />
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
-          <DialogTitle>Submit Task Report</DialogTitle>
+          <DialogTitle>Edit Report</DialogTitle>
           <DialogDescription>
-            Provide details about the task completion
+            Update the details of your report
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit}>
           <div className="grid gap-4 py-4">
-            {/* Attendance */}
-            <div className="grid grid-cols-4 items-start gap-4">
-              <Label className="text-right mt-2">
-                Attendance
-              </Label>
+            {/* Activity and Task Info (Read-only) */}
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label className="text-right">Activity</Label>
               <div className="col-span-3">
-                <AttendanceSelector
-                  isiboMembers={isiboMembers}
-                  selectedAttendees={formData.attendance}
-                  onAttendanceChange={handleAttendanceChange}
-                />
+                <div className="p-2 bg-muted rounded-md text-sm">
+                  {report.activity.title}
+                </div>
+              </div>
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label className="text-right">Task</Label>
+              <div className="col-span-3">
+                <div className="p-2 bg-muted rounded-md text-sm">
+                  {report.task.title}
+                </div>
               </div>
             </div>
 
+            {/* Comment */}
             <div className="grid grid-cols-4 items-start gap-4">
               <Label htmlFor="comment" className="text-right mt-2">
                 Comments
@@ -172,9 +137,10 @@ export function CreateReportDialog({
                 onChange={handleChange}
                 className="col-span-3"
                 placeholder="Provide details about the task completion"
-                rows={4}
               />
             </div>
+
+            {/* Evidence URLs */}
             <div className="grid grid-cols-4 items-start gap-4">
               <Label htmlFor="evidenceUrl" className="text-right mt-2">
                 Evidence URLs
@@ -185,60 +151,45 @@ export function CreateReportDialog({
                     id="evidenceUrl"
                     value={evidenceUrl}
                     onChange={(e) => setEvidenceUrl(e.target.value)}
-                    placeholder="Add URL to photos, documents, etc."
-                    className="flex-1"
+                    placeholder="https://example.com/evidence"
                   />
                   <Button
                     type="button"
-                    variant="secondary"
+                    variant="outline"
                     onClick={handleAddEvidenceUrl}
                   >
                     Add
                   </Button>
                 </div>
                 {formData.evidenceUrls.length > 0 && (
-                  <div className="space-y-2 mt-2">
-                    <p className="text-sm font-medium">Added URLs:</p>
-                    <ul className="space-y-1">
-                      {formData.evidenceUrls.map((url, index) => (
-                        <li
-                          key={index}
-                          className="flex items-center justify-between text-sm bg-muted p-2 rounded"
+                  <div className="space-y-1">
+                    {formData.evidenceUrls.map((url, index) => (
+                      <div key={index} className="flex items-center gap-2">
+                        <div className="text-sm truncate flex-1">{url}</div>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleRemoveEvidenceUrl(index)}
                         >
-                          <span className="truncate flex-1">{url}</span>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleRemoveEvidenceUrl(index)}
-                            className="h-6 w-6 p-0"
-                          >
-                            &times;
-                          </Button>
-                        </li>
-                      ))}
-                    </ul>
+                          Remove
+                        </Button>
+                      </div>
+                    ))}
                   </div>
                 )}
               </div>
             </div>
           </div>
           <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setIsOpen(false)}
-            >
-              Cancel
-            </Button>
             <Button type="submit" disabled={isSubmitting}>
               {isSubmitting ? (
                 <>
                   <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-primary mr-2"></div>
-                  Submitting...
+                  Updating...
                 </>
               ) : (
-                "Submit Report"
+                "Update Report"
               )}
             </Button>
           </DialogFooter>

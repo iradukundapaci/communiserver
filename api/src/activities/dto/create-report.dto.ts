@@ -20,9 +20,6 @@ export namespace CreateReportDTO {
     taskId: string;
 
     @IsArray()
-    @ValidateNested({ each: true })
-    @Type(() => Citizen)
-    @IsOptional()
     attendance?: Citizen[];
 
     @IsString()

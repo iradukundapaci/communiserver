@@ -20,11 +20,9 @@ export interface Report {
 }
 
 export interface Citizen {
-  id: string;
-  firstName: string;
-  lastName: string;
-  nationalId: string;
-  phoneNumber?: string;
+  names: string;
+  email: string;
+  phone: string;
 }
 
 export interface CreateReportInput {

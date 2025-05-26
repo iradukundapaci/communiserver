@@ -12,46 +12,92 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { createReport, Citizen } from "@/lib/api/reports";
+import { Activity, getActivities } from "@/lib/api/activities";
 import { getIsiboById } from "@/lib/api/isibos";
-import { AttendanceSelector } from "./attendance-selector";
+import { Citizen, createReport } from "@/lib/api/reports";
+import { Task, getTasks } from "@/lib/api/tasks";
 import { useUser } from "@/lib/contexts/user-context";
-import { ClipboardList } from "lucide-react";
-import { useState, useEffect } from "react";
+import { Plus } from "lucide-react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
-interface CreateReportDialogProps {
-  taskId: string;
-  activityId: string;
+interface CreateStandaloneReportDialogProps {
   onReportCreated: () => void;
 }
 
-export function CreateReportDialog({
-  taskId,
-  activityId,
+export function CreateStandaloneReportDialog({
   onReportCreated,
-}: CreateReportDialogProps) {
+}: CreateStandaloneReportDialogProps) {
   const { user } = useUser();
   const [isOpen, setIsOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isLoadingIsibo, setIsLoadingIsibo] = useState(false);
+  const [activities, setActivities] = useState<Activity[]>([]);
+  const [tasks, setTasks] = useState<Task[]>([]);
   const [isiboMembers, setIsiboMembers] = useState<Citizen[]>([]);
+  const [isLoadingActivities, setIsLoadingActivities] = useState(false);
+  const [isLoadingTasks, setIsLoadingTasks] = useState(false);
+  const [isLoadingIsibo, setIsLoadingIsibo] = useState(false);
   const [formData, setFormData] = useState({
-    taskId,
-    activityId,
+    taskId: "",
+    activityId: "",
     attendance: [] as Citizen[],
     comment: "",
     evidenceUrls: [] as string[],
   });
   const [evidenceUrl, setEvidenceUrl] = useState("");
 
-  // Fetch isibo members when dialog opens
+  // Fetch activities and isibo members when dialog opens
   useEffect(() => {
-    if (isOpen && user?.isibo?.id) {
-      fetchIsiboMembers(user.isibo.id);
+    if (isOpen) {
+      fetchActivities();
+      if (user?.isibo?.id) {
+        fetchIsiboMembers(user.isibo.id);
+      }
     }
   }, [isOpen, user]);
+
+  // Fetch tasks when activity is selected
+  useEffect(() => {
+    if (formData.activityId) {
+      fetchTasks(formData.activityId);
+    }
+  }, [formData.activityId]);
+
+  const fetchActivities = async () => {
+    try {
+      setIsLoadingActivities(true);
+      // For isibo leaders, fetch activities for their village
+      const response = await getActivities(1, 100, "", user?.village?.id);
+      setActivities(response.items);
+    } catch (error) {
+      console.error("Failed to fetch activities:", error);
+      toast.error("Failed to fetch activities");
+    } finally {
+      setIsLoadingActivities(false);
+    }
+  };
+
+  const fetchTasks = async (activityId: string) => {
+    try {
+      setIsLoadingTasks(true);
+      // For isibo leaders, fetch tasks for their isibo
+      const response = await getTasks(activityId, 1, 100, user?.isibo?.id);
+      setTasks(response.items);
+    } catch (error) {
+      console.error("Failed to fetch tasks:", error);
+      toast.error("Failed to fetch tasks");
+    } finally {
+      setIsLoadingTasks(false);
+    }
+  };
 
   const fetchIsiboMembers = async (isiboId: string) => {
     try {
@@ -70,6 +116,13 @@ export function CreateReportDialog({
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
     const { name, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  const handleSelectChange = (name: string, value: string) => {
     setFormData((prev) => ({
       ...prev,
       [name]: value,
@@ -102,6 +155,17 @@ export function CreateReportDialog({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!formData.activityId) {
+      toast.error("Please select an activity");
+      return;
+    }
+
+    if (!formData.taskId) {
+      toast.error("Please select a task");
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -112,8 +176,8 @@ export function CreateReportDialog({
 
       // Reset form
       setFormData({
-        taskId,
-        activityId,
+        taskId: "",
+        activityId: "",
         attendance: [],
         comment: "",
         evidenceUrls: [],
@@ -133,20 +197,72 @@ export function CreateReportDialog({
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm">
-          <ClipboardList className="h-4 w-4 mr-2" />
-          Submit Report
+        <Button>
+          <Plus className="h-4 w-4 mr-2" />
+          Create Report
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
-          <DialogTitle>Submit Task Report</DialogTitle>
+          <DialogTitle>Create New Report</DialogTitle>
           <DialogDescription>
-            Provide details about the task completion
+            Submit a report for a task in your isibo
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit}>
           <div className="grid gap-4 py-4">
+            {/* Activity Selection */}
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="activity" className="text-right">
+                Activity
+              </Label>
+              <div className="col-span-3">
+                <Select
+                  value={formData.activityId}
+                  onValueChange={(value) =>
+                    handleSelectChange("activityId", value)
+                  }
+                  disabled={isLoadingActivities}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select an activity" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {activities.map((activity) => (
+                      <SelectItem key={activity.id} value={activity.id}>
+                        {activity.title}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {/* Task Selection */}
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="task" className="text-right">
+                Task
+              </Label>
+              <div className="col-span-3">
+                <Select
+                  value={formData.taskId}
+                  onValueChange={(value) => handleSelectChange("taskId", value)}
+                  disabled={isLoadingTasks || !formData.activityId}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a task" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {tasks.map((task) => (
+                      <SelectItem key={task.id} value={task.id}>
+                        {task.title}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
             {/* Attendance */}
             <div className="grid grid-cols-4 items-start gap-4">
               <Label className="text-right mt-2">
@@ -161,6 +277,7 @@ export function CreateReportDialog({
               </div>
             </div>
 
+            {/* Comment */}
             <div className="grid grid-cols-4 items-start gap-4">
               <Label htmlFor="comment" className="text-right mt-2">
                 Comments
@@ -172,9 +289,10 @@ export function CreateReportDialog({
                 onChange={handleChange}
                 className="col-span-3"
                 placeholder="Provide details about the task completion"
-                rows={4}
               />
             </div>
+
+            {/* Evidence URLs */}
             <div className="grid grid-cols-4 items-start gap-4">
               <Label htmlFor="evidenceUrl" className="text-right mt-2">
                 Evidence URLs
@@ -185,52 +303,37 @@ export function CreateReportDialog({
                     id="evidenceUrl"
                     value={evidenceUrl}
                     onChange={(e) => setEvidenceUrl(e.target.value)}
-                    placeholder="Add URL to photos, documents, etc."
-                    className="flex-1"
+                    placeholder="https://example.com/evidence"
                   />
                   <Button
                     type="button"
-                    variant="secondary"
+                    variant="outline"
                     onClick={handleAddEvidenceUrl}
                   >
                     Add
                   </Button>
                 </div>
                 {formData.evidenceUrls.length > 0 && (
-                  <div className="space-y-2 mt-2">
-                    <p className="text-sm font-medium">Added URLs:</p>
-                    <ul className="space-y-1">
-                      {formData.evidenceUrls.map((url, index) => (
-                        <li
-                          key={index}
-                          className="flex items-center justify-between text-sm bg-muted p-2 rounded"
+                  <div className="space-y-1">
+                    {formData.evidenceUrls.map((url, index) => (
+                      <div key={index} className="flex items-center gap-2">
+                        <div className="text-sm truncate flex-1">{url}</div>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleRemoveEvidenceUrl(index)}
                         >
-                          <span className="truncate flex-1">{url}</span>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleRemoveEvidenceUrl(index)}
-                            className="h-6 w-6 p-0"
-                          >
-                            &times;
-                          </Button>
-                        </li>
-                      ))}
-                    </ul>
+                          Remove
+                        </Button>
+                      </div>
+                    ))}
                   </div>
                 )}
               </div>
             </div>
           </div>
           <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setIsOpen(false)}
-            >
-              Cancel
-            </Button>
             <Button type="submit" disabled={isSubmitting}>
               {isSubmitting ? (
                 <>

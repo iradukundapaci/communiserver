@@ -13,7 +13,7 @@ import { Activity, getActivities } from "@/lib/api/activities";
 import { getIsibos } from "@/lib/api/isibos";
 import { Report, deleteReport, getReports } from "@/lib/api/reports";
 import { useUser } from "@/lib/contexts/user-context";
-import { Eye, RefreshCw, Trash2 } from "lucide-react";
+import { Eye, Pencil, Plus, RefreshCw, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -185,6 +185,16 @@ export default function ReportsPage() {
                 <RefreshCw className="h-4 w-4 mr-2" />
                 Refresh
               </Button>
+
+              {/* Add create button for isibo leaders */}
+              {user?.role === "ISIBO_LEADER" && (
+                <Button
+                  onClick={() => router.push("/dashboard/reports/create")}
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Create Report
+                </Button>
+              )}
             </div>
           </div>
         </CardHeader>
@@ -314,22 +324,43 @@ export default function ReportsPage() {
                             >
                               <Eye className="h-4 w-4" />
                             </Button>
-                            {/* Only cell leaders and village leaders can delete reports */}
+                            {/* Allow isibo leaders to edit/delete their own reports, and admins/leaders to delete any report */}
                             {(user?.role === "CELL_LEADER" ||
                               user?.role === "VILLAGE_LEADER" ||
-                              user?.role === "ADMIN") && (
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => handleDelete(report.id)}
-                                disabled={isDeleting === report.id}
-                              >
-                                {isDeleting === report.id ? (
-                                  <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-primary"></div>
-                                ) : (
-                                  <Trash2 className="h-4 w-4 text-red-500" />
+                              user?.role === "ADMIN" ||
+                              (user?.role === "ISIBO_LEADER" &&
+                                user?.isibo?.id ===
+                                  report.task?.isibo?.id)) && (
+                              <>
+                                {/* Edit button - only for isibo leaders for their own reports */}
+                                {user?.role === "ISIBO_LEADER" && (
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() =>
+                                      router.push(
+                                        `/dashboard/reports/${report.id}/edit`
+                                      )
+                                    }
+                                  >
+                                    <Pencil className="h-4 w-4" />
+                                  </Button>
                                 )}
-                              </Button>
+
+                                {/* Delete button */}
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => handleDelete(report.id)}
+                                  disabled={isDeleting === report.id}
+                                >
+                                  {isDeleting === report.id ? (
+                                    <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-primary"></div>
+                                  ) : (
+                                    <Trash2 className="h-4 w-4 text-red-500" />
+                                  )}
+                                </Button>
+                              </>
                             )}
                           </div>
                         </td>

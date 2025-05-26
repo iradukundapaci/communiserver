@@ -12,8 +12,12 @@ import { toast } from "sonner";
 export default function ReportDetailPage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
+  // Unwrap params using React.use()
+  const resolvedParams = React.use(params);
+  const reportId = resolvedParams.id;
+
   const router = useRouter();
   const { user } = useUser();
   const [report, setReport] = useState<Report | null>(null);
@@ -23,7 +27,7 @@ export default function ReportDetailPage({
     const fetchReport = async () => {
       try {
         setIsLoading(true);
-        const data = await getReportById(params.id);
+        const data = await getReportById(reportId);
         setReport(data);
       } catch (error: unknown) {
         if (error instanceof Error) {
@@ -38,7 +42,7 @@ export default function ReportDetailPage({
     };
 
     fetchReport();
-  }, [params.id]);
+  }, [reportId]);
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -128,8 +132,7 @@ export default function ReportDetailPage({
                     <ul className="space-y-1">
                       {report.attendance.map((citizen, index) => (
                         <li key={index}>
-                          {citizen.firstName} {citizen.lastName} (
-                          {citizen.nationalId})
+                          {citizen.names} ({citizen.email} • {citizen.phone})
                         </li>
                       ))}
                     </ul>
