@@ -1,5 +1,7 @@
-import { IconTrendingDown, IconTrendingUp } from "@tabler/icons-react"
+"use client";
 
+import * as React from "react";
+import { IconTrendingDown, IconTrendingUp, IconUsers, IconMapPin, IconClipboardList, IconFileText } from "@tabler/icons-react";
 import { Badge } from "@/components/ui/badge"
 import {
   Card,
@@ -9,92 +11,175 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
+import { Skeleton } from "@/components/ui/skeleton"
 
 export function SectionCards() {
+  const [coreMetrics, setCoreMetrics] = React.useState<any>(null);
+  const [isLoading, setIsLoading] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    const fetchCoreMetrics = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
+
+        const token = localStorage.getItem('accessToken');
+        const response = await fetch('/api/v1/analytics/core-metrics?timeRange=30d', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error(`Failed to fetch core metrics: ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        setCoreMetrics(data);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to fetch data');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchCoreMetrics();
+  }, []);
+
+  if (isLoading) {
+    return (
+      <div className="*:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card dark:*:data-[slot=card]:bg-card grid grid-cols-1 gap-4 px-4 *:data-[slot=card]:bg-gradient-to-t *:data-[slot=card]:shadow-xs lg:px-6 @xl/main:grid-cols-2 @5xl/main:grid-cols-4">
+        {[...Array(4)].map((_, i) => (
+          <Card key={i} className="@container/card">
+            <CardHeader>
+              <Skeleton className="h-4 w-24" />
+              <Skeleton className="h-8 w-32" />
+              <Skeleton className="h-6 w-16" />
+            </CardHeader>
+            <CardFooter>
+              <Skeleton className="h-4 w-full" />
+            </CardFooter>
+          </Card>
+        ))}
+      </div>
+    );
+  }
+
+  if (error || !coreMetrics) {
+    return (
+      <div className="px-4 lg:px-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Error Loading Analytics</CardTitle>
+            <CardDescription>
+              {error || "Failed to load analytics data. Please try again."}
+            </CardDescription>
+          </CardHeader>
+        </Card>
+      </div>
+    );
+  }
+
+  const { userStats, locationStats, activityStats, reportStats } = coreMetrics;
+  const totalUsers = userStats.reduce((sum, stat) => sum + stat.count, 0);
+
   return (
     <div className="*:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card dark:*:data-[slot=card]:bg-card grid grid-cols-1 gap-4 px-4 *:data-[slot=card]:bg-gradient-to-t *:data-[slot=card]:shadow-xs lg:px-6 @xl/main:grid-cols-2 @5xl/main:grid-cols-4">
+      {/* Total Users */}
       <Card className="@container/card">
         <CardHeader>
-          <CardDescription>Total Revenue</CardDescription>
+          <CardDescription>Total Users</CardDescription>
           <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-            $1,250.00
+            {totalUsers.toLocaleString()}
           </CardTitle>
           <CardAction>
             <Badge variant="outline">
-              <IconTrendingUp />
-              +12.5%
+              <IconUsers className="size-3" />
+              Active
             </Badge>
           </CardAction>
         </CardHeader>
         <CardFooter className="flex-col items-start gap-1.5 text-sm">
           <div className="line-clamp-1 flex gap-2 font-medium">
-            Trending up this month <IconTrendingUp className="size-4" />
+            Community members registered <IconUsers className="size-4" />
           </div>
           <div className="text-muted-foreground">
-            Visitors for the last 6 months
+            Across all roles and locations
           </div>
         </CardFooter>
       </Card>
+
+      {/* Location Coverage */}
       <Card className="@container/card">
         <CardHeader>
-          <CardDescription>New Customers</CardDescription>
+          <CardDescription>Leadership Coverage</CardDescription>
           <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-            1,234
+            {locationStats.leadershipCoveragePercentage}%
           </CardTitle>
           <CardAction>
-            <Badge variant="outline">
-              <IconTrendingDown />
-              -20%
+            <Badge variant="outline" className={locationStats.leadershipCoveragePercentage >= 70 ? "text-green-600" : "text-orange-600"}>
+              {locationStats.leadershipCoveragePercentage >= 70 ? <IconTrendingUp className="size-3" /> : <IconTrendingDown className="size-3" />}
+              Villages
             </Badge>
           </CardAction>
         </CardHeader>
         <CardFooter className="flex-col items-start gap-1.5 text-sm">
           <div className="line-clamp-1 flex gap-2 font-medium">
-            Down 20% this period <IconTrendingDown className="size-4" />
+            {locationStats.villagesWithLeaders} of {locationStats.totalVillages} villages have leaders <IconMapPin className="size-4" />
           </div>
           <div className="text-muted-foreground">
-            Acquisition needs attention
+            {locationStats.villagesWithoutLeaders} villages need leaders
           </div>
         </CardFooter>
       </Card>
+
+      {/* Task Completion */}
       <Card className="@container/card">
         <CardHeader>
-          <CardDescription>Active Accounts</CardDescription>
+          <CardDescription>Task Completion Rate</CardDescription>
           <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-            45,678
+            {activityStats.taskCompletionRate}%
           </CardTitle>
           <CardAction>
-            <Badge variant="outline">
-              <IconTrendingUp />
-              +12.5%
+            <Badge variant="outline" className={activityStats.taskCompletionRate >= 70 ? "text-green-600" : activityStats.taskCompletionRate >= 50 ? "text-orange-600" : "text-red-600"}>
+              {activityStats.taskCompletionRate >= 70 ? <IconTrendingUp className="size-3" /> : <IconTrendingDown className="size-3" />}
+              {activityStats.taskCompletionRate >= 70 ? "Excellent" : activityStats.taskCompletionRate >= 50 ? "Good" : "Needs Attention"}
             </Badge>
           </CardAction>
         </CardHeader>
         <CardFooter className="flex-col items-start gap-1.5 text-sm">
           <div className="line-clamp-1 flex gap-2 font-medium">
-            Strong user retention <IconTrendingUp className="size-4" />
+            {activityStats.completedTasks} of {activityStats.totalTasks} tasks completed <IconClipboardList className="size-4" />
           </div>
-          <div className="text-muted-foreground">Engagement exceed targets</div>
+          <div className="text-muted-foreground">
+            {activityStats.pendingTasks} tasks pending completion
+          </div>
         </CardFooter>
       </Card>
+
+      {/* Report Engagement */}
       <Card className="@container/card">
         <CardHeader>
-          <CardDescription>Growth Rate</CardDescription>
+          <CardDescription>Report Evidence Rate</CardDescription>
           <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-            4.5%
+            {reportStats.evidencePercentage}%
           </CardTitle>
           <CardAction>
-            <Badge variant="outline">
-              <IconTrendingUp />
-              +4.5%
+            <Badge variant="outline" className={reportStats.evidencePercentage >= 60 ? "text-green-600" : "text-orange-600"}>
+              {reportStats.evidencePercentage >= 60 ? <IconTrendingUp className="size-3" /> : <IconTrendingDown className="size-3" />}
+              Evidence
             </Badge>
           </CardAction>
         </CardHeader>
         <CardFooter className="flex-col items-start gap-1.5 text-sm">
           <div className="line-clamp-1 flex gap-2 font-medium">
-            Steady performance increase <IconTrendingUp className="size-4" />
+            {reportStats.reportsWithEvidence} of {reportStats.totalReports} reports have evidence <IconFileText className="size-4" />
           </div>
-          <div className="text-muted-foreground">Meets growth projections</div>
+          <div className="text-muted-foreground">
+            Average {reportStats.averageAttendance} attendees per report
+          </div>
         </CardFooter>
       </Card>
     </div>

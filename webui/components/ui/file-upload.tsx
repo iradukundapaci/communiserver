@@ -91,7 +91,7 @@ export function FileUpload({
     const extension = getFileExtension(filename);
 
     if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(extension)) {
-      return <Image className="h-4 w-4" />;
+      return <Image className="h-4 w-4" aria-label="Image file" />;
     }
     if (['pdf'].includes(extension)) {
       return <FileText className="h-4 w-4 text-red-500" />;

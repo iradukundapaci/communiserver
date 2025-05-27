@@ -15,6 +15,7 @@ import { AppDataSource } from "./__shared__/config/typeorm.config";
 import { GlobalExceptionFilter } from "./__shared__/filters/global-exception.filter";
 import { AuditInterceptor } from "./__shared__/interceptors/audit.interceptor";
 import { ActivitiesModule } from "./activities/activities.module";
+import { AnalyticsModule } from "./analytics/analytics.module";
 import { AuthModule } from "./auth/auth.module";
 import { LocationsModule } from "./locations/locations.module";
 import { NotificationsModule } from "./notifications/notifications.module";
@@ -33,6 +34,7 @@ import { VerificationModule } from "./verification/verification.module";
     NotificationsModule,
     SeedModule,
     ActivitiesModule,
+    AnalyticsModule,
     LocationsModule,
     VerificationModule,
   ],
