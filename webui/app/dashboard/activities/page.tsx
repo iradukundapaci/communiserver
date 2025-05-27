@@ -46,6 +46,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import * as React from "react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { ActivitiesPDFButton } from "@/components/pdf-report-button";
 import TasksTabComponent from "./tasks-tab";
 
 export default function ActivitiesPage() {
@@ -661,6 +662,7 @@ function ActivitiesTab() {
             </CardDescription>
           </div>
           <div className="flex gap-2">
+            <ActivitiesPDFButton data={activities} />
             <Button
               variant="outline"
               onClick={handleRefresh}

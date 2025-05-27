@@ -7,6 +7,7 @@ import { UserRoleDistribution } from "@/components/analytics/user-role-distribut
 import { ActivityStatusOverview } from "@/components/analytics/activity-status-overview";
 import { EngagementMetrics } from "@/components/analytics/engagement-metrics";
 import { RecentActivitiesTimeline } from "@/components/analytics/recent-activities-timeline";
+import { DashboardPDFButton } from "@/components/pdf-report-button";
 import { useLoadUser } from "@/hooks/use-load-user";
 import { useAnalytics } from "@/hooks/use-analytics";
 import { Button } from "@/components/ui/button";
@@ -18,6 +19,10 @@ export default function Page() {
   useLoadUser();
 
   const {
+    coreMetrics,
+    locationPerformance,
+    engagementMetrics,
+    timeSeriesData,
     isLoading: analyticsLoading,
     error: analyticsError,
     lastUpdated,
@@ -44,16 +49,26 @@ export default function Page() {
             </p>
           )}
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleRefreshAnalytics}
-          disabled={analyticsLoading}
-          className="gap-2"
-        >
-          <RefreshCw className={`h-4 w-4 ${analyticsLoading ? 'animate-spin' : ''}`} />
-          Refresh
-        </Button>
+        <div className="flex items-center gap-2">
+          <DashboardPDFButton
+            data={{
+              coreMetrics: coreMetrics,
+              locationPerformance: locationPerformance,
+              engagementMetrics: engagementMetrics,
+              timeSeriesData: timeSeriesData
+            }}
+          />
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleRefreshAnalytics}
+            disabled={analyticsLoading}
+            className="gap-2"
+          >
+            <RefreshCw className={`h-4 w-4 ${analyticsLoading ? 'animate-spin' : ''}`} />
+            Refresh
+          </Button>
+        </div>
       </div>
 
       {analyticsError && (

@@ -47,6 +47,7 @@ import { Pencil, PlusCircle, Trash2, UserMinus, UserPlus } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { LocationsPDFButton } from "@/components/pdf-report-button";
 
 export default function VillagesPage() {
   const router = useRouter();
@@ -213,14 +214,23 @@ export default function VillagesPage() {
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold">Villages Management</h1>
 
-        <PermissionGate permission={Permission.CREATE_VILLAGE}>
-          <Button
-            onClick={() => router.push("/dashboard/locations/villages/create")}
-          >
-            <PlusCircle className="mr-2 h-4 w-4" />
-            Create Village
-          </Button>
-        </PermissionGate>
+        <div className="flex items-center gap-2">
+          <LocationsPDFButton
+            data={{
+              villages: villages,
+              cells: cells,
+              isibos: []
+            }}
+          />
+          <PermissionGate permission={Permission.CREATE_VILLAGE}>
+            <Button
+              onClick={() => router.push("/dashboard/locations/villages/create")}
+            >
+              <PlusCircle className="mr-2 h-4 w-4" />
+              Create Village
+            </Button>
+          </PermissionGate>
+        </div>
       </div>
 
       <Card>

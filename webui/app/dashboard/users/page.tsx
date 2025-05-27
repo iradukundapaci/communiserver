@@ -24,6 +24,7 @@ import { RefreshCw, Search } from "lucide-react";
 import * as React from "react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { UsersPDFButton } from "@/components/pdf-report-button";
 
 export default function UsersPage() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -130,14 +131,17 @@ export default function UsersPage() {
       <div className="flex flex-col gap-4">
         <div className="flex items-center justify-between">
           <h1 className="text-3xl font-bold">Users Management</h1>
-          <Button
-            variant="outline"
-            onClick={handleRefresh}
-            disabled={isLoading}
-          >
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Refresh
-          </Button>
+          <div className="flex items-center gap-2">
+            <UsersPDFButton data={users} />
+            <Button
+              variant="outline"
+              onClick={handleRefresh}
+              disabled={isLoading}
+            >
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Refresh
+            </Button>
+          </div>
         </div>
 
         <Card>

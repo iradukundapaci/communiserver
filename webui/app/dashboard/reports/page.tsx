@@ -17,6 +17,7 @@ import { Eye, Pencil, Plus, RefreshCw, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { ReportsPDFButton } from "@/components/pdf-report-button";
 
 export default function ReportsPage() {
   const router = useRouter();
@@ -177,6 +178,7 @@ export default function ReportsPage() {
               <CardTitle>Reports</CardTitle>
             </div>
             <div className="flex gap-2">
+              <ReportsPDFButton data={reports} />
               <Button
                 variant="outline"
                 onClick={handleRefresh}
