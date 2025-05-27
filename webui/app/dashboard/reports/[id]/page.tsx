@@ -3,7 +3,6 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Report, getReportById } from "@/lib/api/reports";
-import { useUser } from "@/lib/contexts/user-context";
 import { ArrowLeft, ExternalLink } from "lucide-react";
 import { useRouter } from "next/navigation";
 import React, { useEffect, useState } from "react";
@@ -19,7 +18,6 @@ export default function ReportDetailPage({
   const reportId = resolvedParams.id;
 
   const router = useRouter();
-  const { user } = useUser();
   const [report, setReport] = useState<Report | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 

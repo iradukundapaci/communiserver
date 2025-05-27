@@ -11,6 +11,10 @@ export interface Report {
   task: {
     id: string;
     title: string;
+    isibo: {
+      id: string;
+      names: string;
+    };
   };
   attendance?: Citizen[];
   comment?: string;

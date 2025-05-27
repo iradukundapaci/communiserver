@@ -34,7 +34,7 @@ export default function EditReportPage({
   const [isiboMembers, setIsiboMembers] = useState<Citizen[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isLoadingIsibo, setIsLoadingIsibo] = useState(false);
+  const [, setIsLoadingIsibo] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [hasUploadErrors, setHasUploadErrors] = useState(false);
   const [formData, setFormData] = useState({

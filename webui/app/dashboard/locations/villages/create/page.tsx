@@ -53,7 +53,7 @@ export default function CreateVillagePage() {
       if (user?.role === "CELL_LEADER" && user?.cell?.id) {
         setFormData((prev) => ({
           ...prev,
-          cellId: user.cell.id,
+          cellId: user.cell?.id || "",
         }));
       }
       // Otherwise, select the first cell by default

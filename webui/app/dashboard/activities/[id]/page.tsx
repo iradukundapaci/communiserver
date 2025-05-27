@@ -22,6 +22,7 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   Activity,
   ActivityStatus,
+  TaskStatus,
   getActivityById,
   updateActivity,
 } from "@/lib/api/activities";
@@ -51,8 +52,7 @@ export default function ActivityDetailPage() {
     tasks: [] as Array<{
       id?: string;
       title: string;
-      description: string;
-      status?: string;
+      status?: TaskStatus;
       isiboId: string;
     }>,
   });
@@ -88,7 +88,6 @@ export default function ActivityDetailPage() {
           activityData.tasks?.map((task) => ({
             id: task.id,
             title: task.title,
-            description: task.description,
             status: task.status,
             isiboId: task.isibo?.id || "",
           })) || [];
