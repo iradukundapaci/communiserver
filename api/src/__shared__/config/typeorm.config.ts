@@ -13,6 +13,9 @@ export const typeormOptions = {
   migrationsTableName: "sql_migrations",
   migrations: ["dist/__migrations__/*{.ts,.js}"],
   migrationsRun: true,
+  ssl: {
+    rejectUnauthorized: false,
+  },
 };
 export const AppDataSource = new DataSource(
   typeormOptions as DataSourceOptions,
