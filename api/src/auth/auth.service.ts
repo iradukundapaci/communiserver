@@ -5,7 +5,7 @@ import { IJwtPayload } from "./interfaces/jwt.payload.interface";
 import { UserRole } from "src/__shared__/enums/user-role.enum";
 import { ForgotPasswordDto } from "./dto/forgot-password.dto";
 import { ResetPasswordDto } from "./dto/reset-password.dto";
-import { SesService } from "src/notifications/ses.service";
+import { NotificationService } from "src/notifications/notification.service";
 import { UsersService } from "src/users/users.service";
 import { User } from "src/users/entities/user.entity";
 import { TokenService } from "./utils/jwt.util";
@@ -36,7 +36,7 @@ export class AuthService {
     private readonly entityManager: EntityManager,
     private readonly usersService: UsersService,
     private readonly configService: ConfigService<IAppConfig>,
-    private readonly sesService: SesService,
+    private readonly notificationService: NotificationService,
   ) {
     this.tokenService = new TokenService();
   }
@@ -150,18 +150,19 @@ export class AuthService {
     if (!user) throw new NotFoundException("User not found");
 
     const resetToken = this.tokenService.generateEmailToken(email);
-    const resetPasswordLink = `${this.configService.get("url").client}/reset-password?token=${resetToken}`;
-
-    const forgotEmail = {
-      to: [email],
-      subject: "Reset password",
-      text: "Reset password.",
-      html: forgotPasswordEmailTemplate(user.profile.names, resetPasswordLink),
-    };
+    const frontendUrl = this.configService.get("url")?.client || 'http://localhost:3000';
+    const resetUrl = `${frontendUrl}/reset-password?token=${resetToken}`;
 
     try {
-      await this.sesService.sendEmail(forgotEmail);
-    } catch {
+      await this.notificationService.sendPasswordResetEmail({
+        name: user.profile.names,
+        email: user.email,
+        resetToken,
+        resetUrl,
+        expiresIn: '1 hour',
+      });
+    } catch (error) {
+      console.error('Failed to send password reset email:', error);
       throw new BadRequestException("Forgot password request failed");
     }
   }
@@ -193,17 +194,9 @@ export class AuthService {
 
   private async sendVerificationEmail(user: User): Promise<void> {
     const verificationToken = this.tokenService.generateEmailToken(user.email);
-    const verifyEmailLink = `${this.configService.get("url").client}/en/verify-email?token=${verificationToken}`;
+    const verifyEmailLink = `${this.configService.get("url")?.client || 'http://localhost:3000'}/en/verify-email?token=${verificationToken}`;
 
-    const verifyEmail = {
-      to: [user.email],
-      subject: "Verify email",
-      from: this.configService.get("emails").from,
-      text: "Verify email.",
-      html: verifyEmailTemplate(user.profile.names, verifyEmailLink),
-    };
-
-    await this.sesService.sendEmail(verifyEmail);
+    await this.notificationService.sendEmailVerification(user.email, user.profile.names, verifyEmailLink);
   }
 
   async verifyEmail(token: string): Promise<void> {

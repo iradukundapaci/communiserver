@@ -9,6 +9,9 @@ import { plainToInstance } from "class-transformer";
 import { UserRole } from "src/__shared__/enums/user-role.enum";
 import { PasswordEncryption } from "src/__shared__/utils/password-encrytion.util";
 import { VerificationService } from "src/verification/verification.service";
+import { NotificationService } from "src/notifications/notification.service";
+import { ConfigService } from "@nestjs/config";
+import { IAppConfig } from "src/__shared__/interfaces/app-config.interface";
 import { EntityManager, Not, Repository } from "typeorm";
 import { CreateCellLeaderDTO } from "./dto/create-cell-leader.dto";
 import { CreateIsiboLeaderDTO } from "./dto/create-isibo-leader.dto";
@@ -27,6 +30,8 @@ export class UsersService {
     @InjectRepository(Profile)
     private readonly profilesRepository: Repository<Profile>,
     private readonly verificationService: VerificationService,
+    private readonly notificationService: NotificationService,
+    private readonly configService: ConfigService<IAppConfig>,
     @InjectEntityManager()
     private readonly entityManager: EntityManager,
   ) {}
@@ -176,7 +181,9 @@ export class UsersService {
     user.profile = profile;
 
     user = await manager.save(user);
-    // await this.sendAccountCreationEmail(user, password);
+
+    // Send account creation email
+    await this.sendAccountCreationEmail(user, password);
 
     return user;
   }
@@ -315,23 +322,39 @@ export class UsersService {
     }
   }
 
-  // async sendAccountCreationEmail(user: User, password: string): Promise<void> {
-  //   const loginLink = `${this.configService.get("url").client}/en/admin`;
+  private async sendAccountCreationEmail(user: User, password: string): Promise<void> {
+    try {
+      const frontendUrl = this.configService.get('url')?.client || 'http://localhost:3000';
+      const loginUrl = `${frontendUrl}/login`;
 
-  //   const registrationEmail = {
-  //     to: [user.email],
-  //     subject: "Welcome to Communiserve",
-  //     from: this.configService.get("emails").from,
-  //     text: "Welcome to communiserver",
-  //     html: managerRegistrationTemplate(
-  //       user.profile.names,
-  //       password,
-  //       loginLink,
-  //     ),
-  //   };
+      // Determine role and location
+      let role = 'CITIZEN';
+      let location = '';
 
-  //   await this.sesService.sendEmail(registrationEmail);
-  // }
+      if (user.profile.isCellLeader) {
+        role = 'CELL_LEADER';
+        location = user.profile.cell?.name || 'Unknown Cell';
+      } else if (user.profile.isVillageLeader) {
+        role = 'VILLAGE_LEADER';
+        location = user.profile.village?.name || 'Unknown Village';
+      } else if (user.profile.isIsiboLeader) {
+        role = 'ISIBO_LEADER';
+        location = user.profile.isibo?.name || 'Unknown Isibo';
+      }
+
+      await this.notificationService.sendAccountCreationEmail({
+        name: user.profile.names,
+        email: user.email,
+        role,
+        temporaryPassword: password,
+        loginUrl,
+        location,
+      });
+    } catch (error) {
+      // Log error but don't fail the user creation process
+      console.error('Failed to send account creation email:', error);
+    }
+  }
 
   async findUserByEmail(email: string): Promise<User | undefined> {
     return this.usersRepository.findOne({
@@ -339,6 +362,8 @@ export class UsersService {
       relations: ["profile"],
     });
   }
+
+
 
   async findUserById(userId: string): Promise<User> {
     const user = await this.usersRepository.findOne({

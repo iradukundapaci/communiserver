@@ -1,7 +1,7 @@
 import { IAppConfig } from "../__shared__/interfaces/app-config.interface";
 import { JwtRefreshStrategy } from "./strategies/refresh-jwt.strategy";
 import { ConfigModule, ConfigService } from "@nestjs/config";
-import { SesService } from "src/notifications/ses.service";
+import { NotificationsModule } from "src/notifications/notifications.module";
 import { JwtStrategy } from "./strategies/jwt.strategy";
 import { UsersModule } from "src/users/users.module";
 import { AuthController } from "./auth.controller";
@@ -27,6 +27,7 @@ import { TokenService } from "./utils/jwt.util";
       inject: [ConfigService],
     }),
     UsersModule,
+    NotificationsModule,
   ],
   controllers: [AuthController],
   providers: [
@@ -34,7 +35,6 @@ import { TokenService } from "./utils/jwt.util";
     JwtStrategy,
     JwtRefreshStrategy,
     ConfigService,
-    SesService,
     TokenService,
   ],
   exports: [JwtModule, AuthService, TokenService],

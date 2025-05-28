@@ -29,6 +29,7 @@ import { FetchProfileDto } from "./dto/fetch-profile.dto";
 import { FetchUserDto } from "./dto/fetch-user.dto";
 import { PasswordDto } from "./dto/update-password.dto";
 import { UpdateProfileDto } from "./dto/update-profile.dto";
+
 import { User } from "./entities/user.entity";
 import { UsersService } from "./users.service";
 
@@ -157,4 +158,6 @@ export class UsersController {
     await this.usersService.createIsiboLeader(createIsiboLeaderDto);
     return new GenericResponse("Isibo leader created successfully");
   }
+
+
 }

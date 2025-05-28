@@ -187,7 +187,7 @@ export function getUserFromToken(): {
  */
 export async function forgotPassword(email: string): Promise<string> {
   try {
-    const response = await fetch("/api/v1/auth/forgot-password", {
+    const response = await fetch("/api/v1/users/request-password-reset", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

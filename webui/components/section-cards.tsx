@@ -83,37 +83,14 @@ export function SectionCards() {
   }
 
   const { userStats, locationStats, activityStats, reportStats } = coreMetrics;
+
+  // Calculate total users from userStats array
+  const totalUsers = userStats?.reduce((sum: number, stat: UserStat) => sum + (stat.count || 0), 0) || 0;
+
   interface UserStat {
     count: number;
   }
 
-  interface LocationStats {
-    leadershipCoveragePercentage: number;
-    villagesWithLeaders: number;
-    totalVillages: number;
-    villagesWithoutLeaders: number;
-  }
-
-  interface ActivityStats {
-    taskCompletionRate: number;
-    completedTasks: number;
-    totalTasks: number;
-    pendingTasks: number;
-  }
-
-  interface ReportStats {
-    evidencePercentage: number;
-    reportsWithEvidence: number;
-    totalReports: number;
-    averageAttendance: number;
-  }
-
-  interface CoreMetrics {
-    userStats: UserStat[];
-    locationStats: LocationStats;
-    activityStats: ActivityStats;
-    reportStats: ReportStats;
-  }
 
   return (
     <div className="*:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card dark:*:data-[slot=card]:bg-card grid grid-cols-1 gap-4 px-4 *:data-[slot=card]:bg-gradient-to-t *:data-[slot=card]:shadow-xs lg:px-6 @xl/main:grid-cols-2 @5xl/main:grid-cols-4">
@@ -122,7 +99,7 @@ export function SectionCards() {
         <CardHeader>
           <CardDescription>Total Users</CardDescription>
           <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-            {userStats.count.toLocaleString()}
+            {totalUsers.toLocaleString()}
           </CardTitle>
           <CardAction>
             <Badge variant="outline">
@@ -146,21 +123,21 @@ export function SectionCards() {
         <CardHeader>
           <CardDescription>Leadership Coverage</CardDescription>
           <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-            {locationStats.leadershipCoveragePercentage}%
+            {locationStats?.leadershipCoveragePercentage || 0}%
           </CardTitle>
           <CardAction>
-            <Badge variant="outline" className={locationStats.leadershipCoveragePercentage >= 70 ? "text-green-600" : "text-orange-600"}>
-              {locationStats.leadershipCoveragePercentage >= 70 ? <IconTrendingUp className="size-3" /> : <IconTrendingDown className="size-3" />}
+            <Badge variant="outline" className={(locationStats?.leadershipCoveragePercentage || 0) >= 70 ? "text-green-600" : "text-orange-600"}>
+              {(locationStats?.leadershipCoveragePercentage || 0) >= 70 ? <IconTrendingUp className="size-3" /> : <IconTrendingDown className="size-3" />}
               Villages
             </Badge>
           </CardAction>
         </CardHeader>
         <CardFooter className="flex-col items-start gap-1.5 text-sm">
           <div className="line-clamp-1 flex gap-2 font-medium">
-            {locationStats.villagesWithLeaders} of {locationStats.totalVillages} villages have leaders <IconMapPin className="size-4" />
+            {locationStats?.villagesWithLeaders || 0} of {locationStats?.totalVillages || 0} villages have leaders <IconMapPin className="size-4" />
           </div>
           <div className="text-muted-foreground">
-            {locationStats.villagesWithoutLeaders} villages need leaders
+            {locationStats?.villagesWithoutLeaders || 0} villages need leaders
           </div>
         </CardFooter>
       </Card>
@@ -170,21 +147,21 @@ export function SectionCards() {
         <CardHeader>
           <CardDescription>Task Completion Rate</CardDescription>
           <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-            {activityStats.taskCompletionRate}%
+            {activityStats?.taskCompletionRate || 0}%
           </CardTitle>
           <CardAction>
-            <Badge variant="outline" className={activityStats.taskCompletionRate >= 70 ? "text-green-600" : activityStats.taskCompletionRate >= 50 ? "text-orange-600" : "text-red-600"}>
-              {activityStats.taskCompletionRate >= 70 ? <IconTrendingUp className="size-3" /> : <IconTrendingDown className="size-3" />}
-              {activityStats.taskCompletionRate >= 70 ? "Excellent" : activityStats.taskCompletionRate >= 50 ? "Good" : "Needs Attention"}
+            <Badge variant="outline" className={(activityStats?.taskCompletionRate || 0) >= 70 ? "text-green-600" : (activityStats?.taskCompletionRate || 0) >= 50 ? "text-orange-600" : "text-red-600"}>
+              {(activityStats?.taskCompletionRate || 0) >= 70 ? <IconTrendingUp className="size-3" /> : <IconTrendingDown className="size-3" />}
+              {(activityStats?.taskCompletionRate || 0) >= 70 ? "Excellent" : (activityStats?.taskCompletionRate || 0) >= 50 ? "Good" : "Needs Attention"}
             </Badge>
           </CardAction>
         </CardHeader>
         <CardFooter className="flex-col items-start gap-1.5 text-sm">
           <div className="line-clamp-1 flex gap-2 font-medium">
-            {activityStats.completedTasks} of {activityStats.totalTasks} tasks completed <IconClipboardList className="size-4" />
+            {activityStats?.completedTasks || 0} of {activityStats?.totalTasks || 0} tasks completed <IconClipboardList className="size-4" />
           </div>
           <div className="text-muted-foreground">
-            {activityStats.pendingTasks} tasks pending completion
+            {activityStats?.pendingTasks || 0} tasks pending completion
           </div>
         </CardFooter>
       </Card>
@@ -194,21 +171,21 @@ export function SectionCards() {
         <CardHeader>
           <CardDescription>Report Evidence Rate</CardDescription>
           <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-            {reportStats.evidencePercentage}%
+            {reportStats?.evidencePercentage || 0}%
           </CardTitle>
           <CardAction>
-            <Badge variant="outline" className={reportStats.evidencePercentage >= 60 ? "text-green-600" : "text-orange-600"}>
-              {reportStats.evidencePercentage >= 60 ? <IconTrendingUp className="size-3" /> : <IconTrendingDown className="size-3" />}
+            <Badge variant="outline" className={(reportStats?.evidencePercentage || 0) >= 60 ? "text-green-600" : "text-orange-600"}>
+              {(reportStats?.evidencePercentage || 0) >= 60 ? <IconTrendingUp className="size-3" /> : <IconTrendingDown className="size-3" />}
               Evidence
             </Badge>
           </CardAction>
         </CardHeader>
         <CardFooter className="flex-col items-start gap-1.5 text-sm">
           <div className="line-clamp-1 flex gap-2 font-medium">
-            {reportStats.reportsWithEvidence} of {reportStats.totalReports} reports have evidence <IconFileText className="size-4" />
+            {reportStats?.reportsWithEvidence || 0} of {reportStats?.totalReports || 0} reports have evidence <IconFileText className="size-4" />
           </div>
           <div className="text-muted-foreground">
-            Average {reportStats.averageAttendance} attendees per report
+            Average {reportStats?.averageAttendance || 0} attendees per report
           </div>
         </CardFooter>
       </Card>
