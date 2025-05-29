@@ -127,6 +127,7 @@ export const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     Permission.ADD_TASK_REPORT,
     Permission.TAKE_ATTENDANCE,
     Permission.CREATE_CITIZEN,
+    Permission.VIEW_LEADERS, // Allow isibo leaders to view users (citizens in their isibo)
   ],
 
   [UserRole.CITIZEN]: [Permission.VIEW_NOTIFICATIONS, Permission.VIEW_PROFILE],

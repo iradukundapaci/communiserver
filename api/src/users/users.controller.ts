@@ -19,6 +19,7 @@ import {
   IsAdmin,
   IsAdminOrCellLeader,
   IsAdminOrVillageLeader,
+  IsAdminOrVillageLeaderOrIsiboLeader,
   IsAuthorized,
 } from "src/auth/decorators/authorize.decorator";
 import { GetUser } from "src/auth/decorators/get-user.decorator";
@@ -93,8 +94,11 @@ export class UsersController {
   @IsAuthorized()
   @PaginatedOkResponse(FetchUserDto.Output)
   @ErrorResponses(UnauthorizedResponse, ForbiddenResponse, NotFoundResponse)
-  async getAllUsers(@Query() fetchUserDto: FetchUserDto.Input) {
-    const result = await this.usersService.findAllUsers(fetchUserDto);
+  async getAllUsers(
+    @Query() fetchUserDto: FetchUserDto.Input,
+    @GetUser() user: User,
+  ) {
+    const result = await this.usersService.findAllUsers(fetchUserDto, user);
     return new GenericResponse("Users retrieved successfully", result);
   }
 
@@ -161,7 +165,7 @@ export class UsersController {
   }
 
   @PostOperation("citizens", "Create a new citizen")
-  @IsAdminOrVillageLeader()
+  @IsAdminOrVillageLeaderOrIsiboLeader()
   @ApiRequestBody(CreateCitizenDTO.Input)
   @ErrorResponses(
     UnauthorizedResponse,
@@ -172,8 +176,9 @@ export class UsersController {
   )
   async createCitizen(
     @Body() createCitizenDto: CreateCitizenDTO.Input,
+    @GetUser() user: User,
   ): Promise<GenericResponse> {
-    await this.usersService.createCitizen(createCitizenDto);
+    await this.usersService.createCitizen(createCitizenDto, user);
     return new GenericResponse("Citizen created successfully");
   }
 

@@ -323,7 +323,7 @@ export class UsersService {
     }
   }
 
-  async createCitizen(createCitizenDTO: CreateCitizenDTO.Input): Promise<void> {
+  async createCitizen(createCitizenDTO: CreateCitizenDTO.Input, currentUser?: User): Promise<void> {
     const { email, names, phone, cellId, villageId, isiboId } = createCitizenDTO;
 
     const userExists = await this.findUserByEmail(email);
@@ -333,11 +333,26 @@ export class UsersService {
 
     try {
       await this.entityManager.transaction(async (manager: EntityManager) => {
+        let finalCellId = cellId;
+        let finalVillageId = villageId;
+        let finalIsiboId = isiboId;
+
+        // If the current user is an isibo leader, auto-assign to their isibo
+        if (currentUser) {
+          const userProfile = await this.findUserById(currentUser.id);
+
+          if (userProfile.role === UserRole.ISIBO_LEADER && userProfile.profile.isibo) {
+            finalIsiboId = userProfile.profile.isibo.id;
+            finalVillageId = userProfile.profile.village?.id || villageId;
+            finalCellId = userProfile.profile.cell?.id || cellId;
+          }
+        }
+
         const { cell, village, isibo } = await this.validateAndGetLocationsForCitizen(
           manager,
-          cellId,
-          villageId,
-          isiboId,
+          finalCellId,
+          finalVillageId,
+          finalIsiboId,
         );
 
         await this.createLeaderUser(
@@ -539,13 +554,14 @@ export class UsersService {
     };
   }
 
-  async findAllUsers(fetchUserDto: FetchUserDto.Input) {
+  async findAllUsers(fetchUserDto: FetchUserDto.Input, currentUser?: User) {
     try {
       const { q, role, page, size } = fetchUserDto;
 
       const queryBuilder = this.usersRepository
         .createQueryBuilder("user")
         .leftJoinAndSelect("user.profile", "profile")
+        .leftJoinAndSelect("profile.isibo", "isibo")
         .select([
           "user.id",
           "user.email",
@@ -554,7 +570,36 @@ export class UsersService {
           "user.activated",
           "user.createdAt",
           "profile.names",
+          "profile.id",
+          "isibo.id",
+          "isibo.name",
         ]);
+
+      // Apply role-based filtering
+      if (currentUser) {
+        const userProfile = await this.findUserById(currentUser.id);
+
+        if (userProfile.role === UserRole.ISIBO_LEADER && userProfile.profile.isibo) {
+          // Isibo leaders can only see citizens in their isibo
+          queryBuilder.andWhere("profile.isibo.id = :isiboId", {
+            isiboId: userProfile.profile.isibo.id
+          });
+          queryBuilder.andWhere("user.role = :citizenRole", {
+            citizenRole: UserRole.CITIZEN
+          });
+        } else if (userProfile.role === UserRole.VILLAGE_LEADER && userProfile.profile.village) {
+          // Village leaders can see users in their village
+          queryBuilder.andWhere("profile.village.id = :villageId", {
+            villageId: userProfile.profile.village.id
+          });
+        } else if (userProfile.role === UserRole.CELL_LEADER && userProfile.profile.cell) {
+          // Cell leaders can see users in their cell
+          queryBuilder.andWhere("profile.cell.id = :cellId", {
+            cellId: userProfile.profile.cell.id
+          });
+        }
+        // Admins can see all users (no additional filtering)
+      }
 
       // Apply search filter if query is provided
       if (q) {
@@ -587,6 +632,10 @@ export class UsersService {
         phone: user.phone,
         role: user.role,
         activated: user.activated,
+        isibo: user.profile.isibo ? {
+          id: user.profile.isibo.id,
+          name: user.profile.isibo.name,
+        } : null,
       }));
 
       // Calculate pagination metadata

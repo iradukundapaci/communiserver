@@ -184,7 +184,7 @@ export function DashboardSidebar(
             </SidebarMenuItem>
           </PermissionGate>
 
-          <PermissionGate permission={Permission.CREATE_CITIZEN}>
+          <PermissionGate permission={Permission.VIEW_LEADERS}>
             <SidebarMenuItem>
               <SidebarMenuButton
                 onClick={() => navigateTo("/dashboard/users")}

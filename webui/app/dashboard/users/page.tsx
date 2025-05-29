@@ -76,7 +76,12 @@ export default function UsersPage() {
       setIsLoading(true);
       // If role is "ALL_ROLES", pass an empty string to the API
       const roleValue = role === "ALL_ROLES" ? "" : role;
-      const response = await getUsers(query, roleValue, page, 10);
+      const response = await getUsers({
+        q: query,
+        role: roleValue,
+        page,
+        size: 10,
+      });
 
       if (resetUsers) {
         setUsers(response.items);
@@ -196,7 +201,7 @@ export default function UsersPage() {
     <PermissionGate permission={Permission.VIEW_LEADERS}>
       <div className="flex flex-col gap-4">
         <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold">Users Management</h1>
+          <h1 className="text-3xl font-bold">Users</h1>
           <div className="flex items-center gap-2">
             <PermissionGate permission={Permission.CREATE_CITIZEN}>
               <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
@@ -350,6 +355,9 @@ export default function UsersPage() {
                         Role
                       </th>
                       <th className="h-10 px-4 text-left align-middle font-medium text-muted-foreground">
+                        Isibo
+                      </th>
+                      <th className="h-10 px-4 text-left align-middle font-medium text-muted-foreground">
                         Status
                       </th>
                     </tr>
@@ -358,7 +366,7 @@ export default function UsersPage() {
                     {isLoading && users.length === 0 ? (
                       <tr>
                         <td
-                          colSpan={5}
+                          colSpan={6}
                           className="p-4 text-center text-muted-foreground"
                         >
                           <div className="flex justify-center py-8">
@@ -369,7 +377,7 @@ export default function UsersPage() {
                     ) : users.length === 0 ? (
                       <tr>
                         <td
-                          colSpan={5}
+                          colSpan={6}
                           className="p-4 text-center text-muted-foreground"
                         >
                           No users found
@@ -389,6 +397,9 @@ export default function UsersPage() {
                           </td>
                           <td className="p-4 whitespace-nowrap">
                             {getRoleDisplayName(user.role)}
+                          </td>
+                          <td className="p-4 whitespace-nowrap">
+                            {user.isibo ? user.isibo.name : "-"}
                           </td>
                           <td className="p-4 whitespace-nowrap">
                             <span

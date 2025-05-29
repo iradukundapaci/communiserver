@@ -53,18 +53,15 @@ export interface CreateCitizenInput {
 
 /**
  * Get all users with optional filtering
- * @param query Search query for name, email, or phone
- * @param role Filter by user role
- * @param page Page number
- * @param size Items per page
+ * @param params Object with query parameters
  * @returns Promise with paginated users
  */
-export async function getUsers(
-  query?: string,
-  role?: string,
-  page: number = 1,
-  size: number = 10
-): Promise<PaginatedResponse<User>> {
+export async function getUsers(params: {
+  q?: string;
+  role?: string;
+  page?: number;
+  size?: number;
+} = {}): Promise<PaginatedResponse<User>> {
   try {
     const tokens = getAuthTokens();
 
@@ -72,9 +69,10 @@ export async function getUsers(
       throw new Error("Not authenticated");
     }
 
+    const { q, role, page = 1, size = 10 } = params;
     let url = `/api/v1/users?page=${page}&size=${size}`;
-    if (query) {
-      url += `&q=${encodeURIComponent(query)}`;
+    if (q) {
+      url += `&q=${encodeURIComponent(q)}`;
     }
     if (role) {
       url += `&role=${encodeURIComponent(role)}`;
