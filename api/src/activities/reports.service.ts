@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   Injectable,
   NotFoundException,
@@ -6,6 +7,7 @@ import {
 import { InjectRepository } from "@nestjs/typeorm";
 import { paginate } from "nestjs-typeorm-paginate";
 import { Repository } from "typeorm";
+import { UsersService } from "../users/users.service";
 import { CreateReportDTO } from "./dto/create-report.dto";
 import { FetchReportDTO } from "./dto/fetch-report.dto";
 import { UpdateReportDTO } from "./dto/update-report.dto";
@@ -16,6 +18,7 @@ export class ReportsService {
   constructor(
     @InjectRepository(Report)
     private readonly reportRepository: Repository<Report>,
+    private readonly usersService: UsersService,
   ) {}
 
   async create(dto: CreateReportDTO.Input): Promise<CreateReportDTO.Output> {
@@ -36,12 +39,17 @@ export class ReportsService {
       task: { id: dto.taskId },
       activity: { id: dto.activityId },
       comment: dto.comment,
-      attendance: dto.attendance,
       evidenceUrls: dto.evidenceUrls,
     });
 
     const saved = await this.reportRepository.save(report);
-    return saved;
+
+    // Assign attendance if provided
+    if (dto.attendanceIds && dto.attendanceIds.length > 0) {
+      await this.assignAttendanceToReport(saved.id, dto.attendanceIds);
+    }
+
+    return this.findReportById(saved.id);
   }
 
   async findAll(dto: FetchReportDTO.Input): Promise<FetchReportDTO.Output> {
@@ -77,7 +85,7 @@ export class ReportsService {
   async findOne(id: string): Promise<Report> {
     const report = await this.reportRepository.findOne({
       where: { id },
-      relations: ["task", "task.isibo", "activity", "activity.village"],
+      relations: ["task", "task.isibo", "activity", "activity.village", "attendance", "attendance.user"],
     });
 
     if (!report) {
@@ -87,9 +95,42 @@ export class ReportsService {
     return report;
   }
 
+  async findReportById(id: string): Promise<Report> {
+    return this.findOne(id);
+  }
+
+  async assignAttendanceToReport(reportId: string, attendanceIds: string[]): Promise<void> {
+    const report = await this.reportRepository.findOne({
+      where: { id: reportId },
+      relations: ["attendance"],
+    });
+
+    if (!report) {
+      throw new NotFoundException("Report not found");
+    }
+
+    if (attendanceIds.length > 0) {
+      // Validate that all attendance IDs exist
+      const profiles = await this.usersService.findProfilesByIds(attendanceIds);
+
+      if (profiles.length !== attendanceIds.length) {
+        throw new NotFoundException("One or more attendee profiles not found");
+      }
+
+      // Assign attendance to report
+      report.attendance = profiles;
+      await this.reportRepository.save(report);
+    } else {
+      // Clear attendance if empty array is provided
+      report.attendance = [];
+      await this.reportRepository.save(report);
+    }
+  }
+
   async update(id: string, dto: UpdateReportDTO.Input): Promise<Report> {
     const report = await this.reportRepository.findOne({
       where: { id },
+      relations: ["attendance"],
     });
 
     if (!report) {
@@ -98,10 +139,15 @@ export class ReportsService {
 
     if (dto.comment !== undefined) report.comment = dto.comment;
     if (dto.evidenceUrls !== undefined) report.evidenceUrls = dto.evidenceUrls;
-    report.attendance = dto.attendance;
 
     const updated = await this.reportRepository.save(report);
-    return updated;
+
+    // Update attendance if provided
+    if (dto.attendanceIds !== undefined) {
+      await this.assignAttendanceToReport(updated.id, dto.attendanceIds);
+    }
+
+    return this.findReportById(updated.id);
   }
 
   async delete(id: string): Promise<void> {

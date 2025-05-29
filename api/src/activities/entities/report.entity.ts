@@ -1,6 +1,6 @@
 import { AbstractEntity } from "src/__shared__/entities/abstract.entity";
-import { Citizen } from "src/locations/entities/citizen.entity";
-import { Column, Entity, JoinColumn, ManyToOne } from "typeorm";
+import { Profile } from "src/users/entities/profile.entity";
+import { Column, Entity, JoinColumn, JoinTable, ManyToMany, ManyToOne } from "typeorm";
 import { Activity } from "./activity.entity";
 import { Task } from "./task.entity";
 
@@ -14,8 +14,13 @@ export class Report extends AbstractEntity {
   @JoinColumn({ name: "taskId" })
   task: Task;
 
-  @Column({ type: "jsonb", nullable: true })
-  attendance: Citizen[];
+  @ManyToMany(() => Profile)
+  @JoinTable({
+    name: "report_attendance",
+    joinColumn: { name: "report_id", referencedColumnName: "id" },
+    inverseJoinColumn: { name: "profile_id", referencedColumnName: "id" },
+  })
+  attendance: Profile[];
 
   @Column("text", { nullable: true })
   comment: string;

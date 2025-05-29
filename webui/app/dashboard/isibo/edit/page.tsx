@@ -11,9 +11,12 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Citizen, getIsiboById, updateIsibo } from "@/lib/api/isibos";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { IsiboMember, getIsiboById, updateIsibo } from "@/lib/api/isibos";
+import { User, getUsers, createCitizen, CreateCitizenInput } from "@/lib/api/users";
 import { useUser } from "@/lib/contexts/user-context";
-import { ArrowLeft, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, Plus, UserPlus } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -25,11 +28,22 @@ export default function EditMyIsiboPage() {
   const [formData, setFormData] = useState({
     name: "",
     villageId: "",
-    members: [] as Citizen[],
+    memberIds: [] as string[],
   });
   const [villageName, setVillageName] = useState<string>("");
+  const [currentMembers, setCurrentMembers] = useState<IsiboMember[]>([]);
+  const [availableCitizens, setAvailableCitizens] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [isLoadingCitizens, setIsLoadingCitizens] = useState(false);
+  const [showCreateCitizenDialog, setShowCreateCitizenDialog] = useState(false);
+  const [newCitizenData, setNewCitizenData] = useState<CreateCitizenInput>({
+    names: "",
+    email: "",
+    phone: "",
+    cellId: "",
+    villageId: "",
+  });
 
   // Fetch isibo data when component mounts
   useEffect(() => {
@@ -39,52 +53,67 @@ export default function EditMyIsiboPage() {
       return;
     }
 
-    async function fetchIsibo() {
+    async function fetchData() {
       if (!user?.isibo?.id) return;
 
       try {
         setIsLoading(true);
-        const isibo = await getIsiboById(user.isibo.id);
 
-        // Check if the isibo has members property
-        if (!isibo.members) {
-          // If members property is missing, initialize it as an empty array
-          isibo.members = [];
-        }
+        // Fetch isibo data
+        const isibo = await getIsiboById(user.isibo.id);
 
         // Set the form data
         setFormData({
           name: isibo.name,
           villageId: isibo.village?.id || "",
-          members: isibo.members || [],
+          memberIds: isibo.members?.map(m => m.id) || [],
         });
+
+        setCurrentMembers(isibo.members || []);
 
         // Store the village name for display
         if (isibo.village) {
           setVillageName(isibo.village.name);
         }
+
+        // Set new citizen data with current location info
+        setNewCitizenData(prev => ({
+          ...prev,
+          cellId: user.cell?.id || "",
+          villageId: isibo.village?.id || "",
+        }));
+
+        // Fetch available citizens
+        await fetchAvailableCitizens();
       } catch (error: unknown) {
-        // Check if the error is related to the houses property
         const err = error as { message?: string };
-        if (err.message && err.message.includes("houses")) {
-          toast.error(
-            "The backend needs to be updated to remove house references. Please contact the administrator."
-          );
-        } else if (err.message) {
-          toast.error(err.message);
-        } else {
-          toast.error("Failed to fetch isibo");
-        }
+        toast.error(err.message || "Failed to fetch isibo data");
         console.error(error);
-        // Redirect back to the dashboard if there's an error
         router.push("/dashboard");
       } finally {
         setIsLoading(false);
       }
     }
 
-    fetchIsibo();
+    fetchData();
   }, [user, router]);
+
+  const fetchAvailableCitizens = async () => {
+    try {
+      setIsLoadingCitizens(true);
+      const response = await getUsers({ role: "CITIZEN", page: 1, size: 100 });
+      // Filter out citizens who are already members of this isibo
+      const available = response.items.filter(citizen =>
+        !currentMembers.some(member => member.id === citizen.id)
+      );
+      setAvailableCitizens(available);
+    } catch (error) {
+      console.error("Failed to fetch citizens:", error);
+      toast.error("Failed to load available citizens");
+    } finally {
+      setIsLoadingCitizens(false);
+    }
+  };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -94,50 +123,45 @@ export default function EditMyIsiboPage() {
     }));
   };
 
-  // New member state
-  const [newMember, setNewMember] = useState<Citizen>({
-    names: "",
-    email: "",
-    phone: "",
-  });
-
-  // Handle new member input changes
-  const handleMemberInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleCitizenInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setNewMember((prev) => ({
+    setNewCitizenData((prev) => ({
       ...prev,
       [name]: value,
     }));
   };
 
-  // Add a new member
-  const handleAddMember = () => {
-    // Validate member data
-    if (!newMember.names.trim()) {
-      toast.error("Member name is required");
+  const handleCitizenSelection = (citizenId: string, checked: boolean) => {
+    setFormData((prev) => ({
+      ...prev,
+      memberIds: checked
+        ? [...prev.memberIds, citizenId]
+        : prev.memberIds.filter(id => id !== citizenId)
+    }));
+  };
+
+  const handleCreateCitizen = async () => {
+    if (!newCitizenData.names.trim() || !newCitizenData.email.trim()) {
+      toast.error("Name and email are required");
       return;
     }
 
-    // Add member to the list
-    setFormData((prev) => ({
-      ...prev,
-      members: [...prev.members, { ...newMember }],
-    }));
-
-    // Reset the form
-    setNewMember({
-      names: "",
-      email: "",
-      phone: "",
-    });
-  };
-
-  // Remove a member
-  const handleRemoveMember = (index: number) => {
-    setFormData((prev) => ({
-      ...prev,
-      members: prev.members.filter((_, i) => i !== index),
-    }));
+    try {
+      await createCitizen(newCitizenData);
+      toast.success("Citizen created successfully");
+      setShowCreateCitizenDialog(false);
+      setNewCitizenData({
+        names: "",
+        email: "",
+        phone: "",
+        cellId: user?.cell?.id || "",
+        villageId: formData.villageId,
+      });
+      // Refresh available citizens
+      await fetchAvailableCitizens();
+    } catch (error: any) {
+      toast.error(error.message || "Failed to create citizen");
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -153,18 +177,12 @@ export default function EditMyIsiboPage() {
       return;
     }
 
-    if (formData.members.length === 0) {
-      toast.error("Please add at least one member to the isibo");
-      return;
-    }
-
     setIsSaving(true);
 
     try {
-      // Send the name and members when updating the isibo
       await updateIsibo(user.isibo.id, {
         name: formData.name,
-        members: formData.members,
+        memberIds: formData.memberIds,
       });
       toast.success("Isibo updated successfully");
       router.push("/dashboard");
@@ -233,93 +251,138 @@ export default function EditMyIsiboPage() {
             </div>
 
             <div className="space-y-4 mt-6">
-              <div>
-                <h3 className="text-lg font-medium mb-2">Isibo Members</h3>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Add members to this isibo. At least one member is required.
-                </p>
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg font-medium mb-2">Isibo Members</h3>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Select existing citizens or create new ones to add to this isibo.
+                  </p>
+                </div>
+                <Dialog open={showCreateCitizenDialog} onOpenChange={setShowCreateCitizenDialog}>
+                  <DialogTrigger asChild>
+                    <Button variant="outline" size="sm">
+                      <UserPlus className="h-4 w-4 mr-2" />
+                      Create Citizen
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Create New Citizen</DialogTitle>
+                      <DialogDescription>
+                        Create a new citizen account that can be added to this isibo.
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                      <div>
+                        <Label htmlFor="citizenName">Name*</Label>
+                        <Input
+                          id="citizenName"
+                          name="names"
+                          value={newCitizenData.names}
+                          onChange={handleCitizenInputChange}
+                          placeholder="Enter citizen name"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="citizenEmail">Email*</Label>
+                        <Input
+                          id="citizenEmail"
+                          name="email"
+                          type="email"
+                          value={newCitizenData.email}
+                          onChange={handleCitizenInputChange}
+                          placeholder="Enter citizen email"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="citizenPhone">Phone</Label>
+                        <Input
+                          id="citizenPhone"
+                          name="phone"
+                          value={newCitizenData.phone}
+                          onChange={handleCitizenInputChange}
+                          placeholder="Enter citizen phone"
+                        />
+                      </div>
+                    </div>
+                    <DialogFooter>
+                      <Button variant="outline" onClick={() => setShowCreateCitizenDialog(false)}>
+                        Cancel
+                      </Button>
+                      <Button onClick={handleCreateCitizen}>
+                        Create Citizen
+                      </Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
               </div>
 
-              {/* Members list */}
-              {formData.members.length > 0 && (
+              {/* Current Members */}
+              {currentMembers.length > 0 && (
                 <div className="border rounded-md p-4 mb-4">
                   <h4 className="font-medium mb-2">
-                    Added Members ({formData.members.length})
+                    Current Members ({currentMembers.length})
                   </h4>
                   <div className="space-y-2">
-                    {formData.members.map((member, index) => (
+                    {currentMembers.map((member) => (
                       <div
-                        key={index}
+                        key={member.id}
                         className="flex items-center justify-between border-b pb-2"
                       >
                         <div>
                           <p className="font-medium">{member.names}</p>
                           <div className="text-sm text-muted-foreground">
-                            {member.email && <p>Email: {member.email}</p>}
-                            {member.phone && <p>Phone: {member.phone}</p>}
+                            <p>Email: {member.user.email}</p>
+                            <p>Phone: {member.user.phone}</p>
                           </div>
                         </div>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleRemoveMember(index)}
-                        >
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
+                        <Checkbox
+                          checked={formData.memberIds.includes(member.id)}
+                          onCheckedChange={(checked) =>
+                            handleCitizenSelection(member.id, checked as boolean)
+                          }
+                        />
                       </div>
                     ))}
                   </div>
                 </div>
               )}
 
-              {/* Add new member form */}
+              {/* Available Citizens */}
               <div className="border rounded-md p-4">
-                <h4 className="font-medium mb-2">Add New Member</h4>
-                <div className="space-y-3">
-                  <div>
-                    <Label htmlFor="memberName">Name*</Label>
-                    <Input
-                      id="memberName"
-                      name="names"
-                      value={newMember.names}
-                      onChange={handleMemberInputChange}
-                      placeholder="Enter member name"
-                      className="max-w-md"
-                    />
+                <h4 className="font-medium mb-2">Available Citizens</h4>
+                {isLoadingCitizens ? (
+                  <div className="flex justify-center py-4">
+                    <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-primary"></div>
                   </div>
-                  <div>
-                    <Label htmlFor="memberEmail">Email</Label>
-                    <Input
-                      id="memberEmail"
-                      name="email"
-                      type="email"
-                      value={newMember.email}
-                      onChange={handleMemberInputChange}
-                      placeholder="Enter member email"
-                      className="max-w-md"
-                    />
+                ) : availableCitizens.length > 0 ? (
+                  <div className="space-y-2 max-h-60 overflow-y-auto">
+                    {availableCitizens.map((citizen) => (
+                      <div
+                        key={citizen.id}
+                        className="flex items-center justify-between border-b pb-2"
+                      >
+                        <div>
+                          <p className="font-medium">{citizen.names}</p>
+                          <div className="text-sm text-muted-foreground">
+                            <p>Email: {citizen.email}</p>
+                            <p>Phone: {citizen.phone}</p>
+                          </div>
+                        </div>
+                        <Checkbox
+                          checked={formData.memberIds.includes(citizen.id)}
+                          onCheckedChange={(checked) =>
+                            handleCitizenSelection(citizen.id, checked as boolean)
+                          }
+                        />
+                      </div>
+                    ))}
                   </div>
-                  <div>
-                    <Label htmlFor="memberPhone">Phone</Label>
-                    <Input
-                      id="memberPhone"
-                      name="phone"
-                      value={newMember.phone}
-                      onChange={handleMemberInputChange}
-                      placeholder="Enter member phone"
-                      className="max-w-md"
-                    />
-                  </div>
-                  <Button
-                    type="button"
-                    onClick={handleAddMember}
-                    className="mt-2"
-                  >
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add Member
-                  </Button>
-                </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground py-4">
+                    No available citizens found. Create new citizens using the "Create Citizen" button above.
+                  </p>
+                )}
               </div>
             </div>
           </CardContent>

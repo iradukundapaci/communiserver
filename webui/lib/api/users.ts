@@ -42,6 +42,15 @@ export interface User {
   isCellLeader?: boolean;
 }
 
+export interface CreateCitizenInput {
+  names: string;
+  email: string;
+  phone: string;
+  cellId: string;
+  villageId: string;
+  isiboId?: string;
+}
+
 /**
  * Get all users with optional filtering
  * @param query Search query for name, email, or phone
@@ -164,6 +173,38 @@ export async function updateProfile(profileData: {
     return data.payload;
   } catch (error) {
     console.error("Update profile error:", error);
+    throw error;
+  }
+}
+
+/**
+ * Create a new citizen
+ * @param citizenData Citizen data
+ * @returns Promise with success message
+ */
+export async function createCitizen(citizenData: CreateCitizenInput): Promise<void> {
+  try {
+    const tokens = getAuthTokens();
+
+    if (!tokens) {
+      throw new Error("Not authenticated");
+    }
+
+    const response = await fetch("/api/v1/users/citizens", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${tokens.accessToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(citizenData),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || "Failed to create citizen");
+    }
+  } catch (error) {
+    console.error("Create citizen error:", error);
     throw error;
   }
 }

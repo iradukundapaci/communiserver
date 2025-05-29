@@ -7,8 +7,8 @@ import {
   Entity,
   JoinColumn,
   ManyToOne,
+  OneToMany,
 } from "typeorm";
-import { Citizen } from "./citizen.entity";
 import { Village } from "./village.entity";
 
 @Entity("isibos")
@@ -30,8 +30,8 @@ export class Isibo extends AbstractEntity {
     }
   }
 
-  @Column({ type: "jsonb", nullable: true })
-  members: Citizen[];
+  @OneToMany(() => Profile, (profile) => profile.isibo)
+  members: Profile[];
 
   @ManyToOne(() => Profile, { nullable: true })
   @JoinColumn({ name: "leader_id" })

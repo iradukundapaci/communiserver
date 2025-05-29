@@ -16,23 +16,28 @@ export interface Report {
       names: string;
     };
   };
-  attendance?: Citizen[];
+  attendance?: ReportAttendee[];
   comment?: string;
   evidenceUrls?: string[];
   createdAt: Date;
   updatedAt: Date;
 }
 
-export interface Citizen {
+export interface ReportAttendee {
+  id: string;
   names: string;
-  email: string;
-  phone: string;
+  user: {
+    id: string;
+    email: string;
+    phone: string;
+    role: string;
+  };
 }
 
 export interface CreateReportInput {
   activityId: string;
   taskId: string;
-  attendance?: Citizen[];
+  attendanceIds?: string[];
   comment?: string;
   evidenceUrls?: string[];
 }
@@ -40,7 +45,7 @@ export interface CreateReportInput {
 export interface UpdateReportInput {
   activityId?: string;
   taskId?: string;
-  attendance?: Citizen[];
+  attendanceIds?: string[];
   comment?: string;
   evidenceUrls?: string[];
 }

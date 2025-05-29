@@ -48,6 +48,7 @@ export enum Permission {
   CREATE_ACTIVITY = "CREATE_ACTIVITY",
   UPDATE_ACTIVITY = "UPDATE_ACTIVITY",
   ADD_ACTIVITY_REPORT = "ADD_ACTIVITY_REPORT",
+  CREATE_CITIZEN = "CREATE_CITIZEN",
 
   // Isibo leader permissions
   VIEW_ISIBO = "VIEW_ISIBO",
@@ -108,6 +109,7 @@ export const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     Permission.CREATE_ACTIVITY,
     Permission.UPDATE_ACTIVITY,
     Permission.ADD_ACTIVITY_REPORT,
+    Permission.CREATE_CITIZEN,
     Permission.VIEW_LEADERS,
   ],
 
@@ -124,6 +126,7 @@ export const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     Permission.VIEW_VILLAGE_ACTIVITY,
     Permission.ADD_TASK_REPORT,
     Permission.TAKE_ATTENDANCE,
+    Permission.CREATE_CITIZEN,
   ],
 
   [UserRole.CITIZEN]: [Permission.VIEW_NOTIFICATIONS, Permission.VIEW_PROFILE],

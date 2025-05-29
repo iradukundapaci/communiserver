@@ -198,14 +198,15 @@ export class AnalyticsService {
         .andWhere('array_length(report.evidenceUrls, 1) > 0')
         .getCount(),
       reportQuery.clone()
-        .select('report.attendance')
-        .where('report.attendance IS NOT NULL')
+        .leftJoin('report.attendance', 'attendance')
+        .select(['report.id', 'COUNT(attendance.id) as attendanceCount'])
+        .groupBy('report.id')
         .getRawMany(),
     ]);
 
     const totalAttendees = attendanceData.reduce((sum, report) => {
-      const attendance = report.report_attendance;
-      return sum + (Array.isArray(attendance) ? attendance.length : 0);
+      const attendanceCount = parseInt(report.attendanceCount) || 0;
+      return sum + attendanceCount;
     }, 0);
 
     const averageAttendance = totalReports > 0 ? Math.round(totalAttendees / totalReports) : 0;
@@ -519,13 +520,14 @@ export class AnalyticsService {
     }
 
     const isibos = await isiboQuery
-      .select(['isibo.members'])
-      .where('isibo.members IS NOT NULL')
+      .leftJoin('isibo.members', 'members')
+      .select(['isibo.id', 'COUNT(members.id) as memberCount'])
+      .groupBy('isibo.id')
       .getRawMany();
 
     const totalCitizens = isibos.reduce((sum, isibo) => {
-      const members = isibo.isibo_members;
-      return sum + (Array.isArray(members) ? members.length : 0);
+      const memberCount = parseInt(isibo.memberCount) || 0;
+      return sum + memberCount;
     }, 0);
 
     const totalIsibosWithMembers = isibos.length;

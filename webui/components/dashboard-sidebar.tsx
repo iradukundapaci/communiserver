@@ -184,14 +184,14 @@ export function DashboardSidebar(
             </SidebarMenuItem>
           </PermissionGate>
 
-          <PermissionGate permission={Permission.ADD_CITIZENS}>
+          <PermissionGate permission={Permission.CREATE_CITIZEN}>
             <SidebarMenuItem>
               <SidebarMenuButton
-                onClick={() => navigateTo("/dashboard/citizens")}
+                onClick={() => navigateTo("/dashboard/users")}
               >
                 <div className="cursor-pointer">
                   <IconUsers />
-                  <span>Manage Citizens</span>
+                  <span>Users</span>
                 </div>
               </SidebarMenuButton>
             </SidebarMenuItem>

@@ -9,7 +9,17 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -17,16 +27,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { getUsers } from "@/lib/api/users";
+import { getUsers, createCitizen, CreateCitizenInput } from "@/lib/api/users";
+import { useUser } from "@/lib/contexts/user-context";
 import { Permission } from "@/lib/permissions";
 import { UserRole } from "@/lib/user-roles";
-import { RefreshCw, Search } from "lucide-react";
+import { RefreshCw, Search, UserPlus } from "lucide-react";
 import * as React from "react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { UsersPDFButton } from "@/components/pdf-report-button";
 
 export default function UsersPage() {
+  const { user } = useUser();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedRole, setSelectedRole] = useState<string>("");
   const [users, setUsers] = useState<
@@ -44,6 +56,15 @@ export default function UsersPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [isCreating, setIsCreating] = useState(false);
+  const [newCitizenData, setNewCitizenData] = useState<CreateCitizenInput>({
+    names: "",
+    email: "",
+    phone: "",
+    cellId: "",
+    villageId: "",
+  });
 
   const fetchUsers = async (
     query: string = searchQuery,
@@ -83,6 +104,16 @@ export default function UsersPage() {
     fetchUsers("", "", 1, true);
   }, []);
 
+  useEffect(() => {
+    if (user) {
+      setNewCitizenData(prev => ({
+        ...prev,
+        cellId: user.cell?.id || "",
+        villageId: user.village?.id || "",
+      }));
+    }
+  }, [user]);
+
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     setIsSearching(true);
@@ -105,6 +136,41 @@ export default function UsersPage() {
 
   const handleRefresh = () => {
     fetchUsers(searchQuery, selectedRole, 1, true);
+  };
+
+  const handleCitizenInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setNewCitizenData(prev => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  const handleCreateCitizen = async () => {
+    if (!newCitizenData.names.trim() || !newCitizenData.email.trim()) {
+      toast.error("Name and email are required");
+      return;
+    }
+
+    try {
+      setIsCreating(true);
+      await createCitizen(newCitizenData);
+      toast.success("Citizen created successfully");
+      setShowCreateDialog(false);
+      setNewCitizenData({
+        names: "",
+        email: "",
+        phone: "",
+        cellId: user?.cell?.id || "",
+        villageId: user?.village?.id || "",
+      });
+      // Refresh the users list
+      handleRefresh();
+    } catch (error: any) {
+      toast.error(error.message || "Failed to create citizen");
+    } finally {
+      setIsCreating(false);
+    }
   };
 
   const getRoleDisplayName = (role: string) => {
@@ -132,6 +198,65 @@ export default function UsersPage() {
         <div className="flex items-center justify-between">
           <h1 className="text-3xl font-bold">Users Management</h1>
           <div className="flex items-center gap-2">
+            <PermissionGate permission={Permission.CREATE_CITIZEN}>
+              <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
+                <DialogTrigger asChild>
+                  <Button>
+                    <UserPlus className="h-4 w-4 mr-2" />
+                    Create Citizen
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Create New Citizen</DialogTitle>
+                    <DialogDescription>
+                      Create a new citizen account. They will receive login credentials via email.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <div>
+                      <Label htmlFor="names">Full Name*</Label>
+                      <Input
+                        id="names"
+                        name="names"
+                        value={newCitizenData.names}
+                        onChange={handleCitizenInputChange}
+                        placeholder="Enter full name"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="email">Email*</Label>
+                      <Input
+                        id="email"
+                        name="email"
+                        type="email"
+                        value={newCitizenData.email}
+                        onChange={handleCitizenInputChange}
+                        placeholder="Enter email address"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="phone">Phone</Label>
+                      <Input
+                        id="phone"
+                        name="phone"
+                        value={newCitizenData.phone}
+                        onChange={handleCitizenInputChange}
+                        placeholder="Enter phone number"
+                      />
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button variant="outline" onClick={() => setShowCreateDialog(false)}>
+                      Cancel
+                    </Button>
+                    <Button onClick={handleCreateCitizen} disabled={isCreating}>
+                      {isCreating ? "Creating..." : "Create Citizen"}
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+            </PermissionGate>
             <UsersPDFButton data={users} />
             <Button
               variant="outline"

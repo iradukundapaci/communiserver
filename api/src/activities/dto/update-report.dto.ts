@@ -1,12 +1,10 @@
-import { Type } from "class-transformer";
 import {
   IsArray,
   IsOptional,
   IsString,
   IsUUID,
-  ValidateNested,
 } from "class-validator";
-import { Citizen } from "src/locations/entities/citizen.entity";
+import { Profile } from "src/users/entities/profile.entity";
 
 export namespace UpdateReportDTO {
   export class Input {
@@ -19,7 +17,9 @@ export namespace UpdateReportDTO {
     taskId?: string;
 
     @IsArray()
-    attendance?: Citizen[];
+    @IsUUID("4", { each: true })
+    @IsOptional()
+    attendanceIds?: string[];
 
     @IsString()
     @IsOptional()
@@ -36,7 +36,7 @@ export namespace UpdateReportDTO {
     activity: { id: string; title: string };
     task: { id: string; title: string };
     submittedAt: Date;
-    attendance: Citizen[];
+    attendance: Profile[];
     comment?: string;
     evidenceUrls?: string[];
   }

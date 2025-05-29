@@ -23,6 +23,7 @@ import {
 } from "src/auth/decorators/authorize.decorator";
 import { GetUser } from "src/auth/decorators/get-user.decorator";
 import { CreateCellLeaderDTO } from "./dto/create-cell-leader.dto";
+import { CreateCitizenDTO } from "./dto/create-citizen.dto";
 import { CreateIsiboLeaderDTO } from "./dto/create-isibo-leader.dto";
 import { CreateVillageLeaderDTO } from "./dto/create-village-leader.dto";
 import { FetchProfileDto } from "./dto/fetch-profile.dto";
@@ -159,5 +160,21 @@ export class UsersController {
     return new GenericResponse("Isibo leader created successfully");
   }
 
+  @PostOperation("citizens", "Create a new citizen")
+  @IsAdminOrVillageLeader()
+  @ApiRequestBody(CreateCitizenDTO.Input)
+  @ErrorResponses(
+    UnauthorizedResponse,
+    ConflictResponse,
+    ForbiddenResponse,
+    NotFoundResponse,
+    BadRequestResponse,
+  )
+  async createCitizen(
+    @Body() createCitizenDto: CreateCitizenDTO.Input,
+  ): Promise<GenericResponse> {
+    await this.usersService.createCitizen(createCitizenDto);
+    return new GenericResponse("Citizen created successfully");
+  }
 
 }

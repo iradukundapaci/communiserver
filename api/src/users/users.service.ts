@@ -12,8 +12,9 @@ import { VerificationService } from "src/verification/verification.service";
 import { NotificationService } from "src/notifications/notification.service";
 import { ConfigService } from "@nestjs/config";
 import { IAppConfig } from "src/__shared__/interfaces/app-config.interface";
-import { EntityManager, Not, Repository } from "typeorm";
+import { EntityManager, In, Not, Repository } from "typeorm";
 import { CreateCellLeaderDTO } from "./dto/create-cell-leader.dto";
+import { CreateCitizenDTO } from "./dto/create-citizen.dto";
 import { CreateIsiboLeaderDTO } from "./dto/create-isibo-leader.dto";
 import { CreateVillageLeaderDTO } from "./dto/create-village-leader.dto";
 import { FetchProfileDto } from "./dto/fetch-profile.dto";
@@ -322,6 +323,47 @@ export class UsersService {
     }
   }
 
+  async createCitizen(createCitizenDTO: CreateCitizenDTO.Input): Promise<void> {
+    const { email, names, phone, cellId, villageId, isiboId } = createCitizenDTO;
+
+    const userExists = await this.findUserByEmail(email);
+    if (userExists) {
+      throw new ConflictException("User already exists");
+    }
+
+    try {
+      await this.entityManager.transaction(async (manager: EntityManager) => {
+        const { cell, village, isibo } = await this.validateAndGetLocationsForCitizen(
+          manager,
+          cellId,
+          villageId,
+          isiboId,
+        );
+
+        await this.createLeaderUser(
+          manager,
+          { email, phone, names },
+          cell,
+          village,
+          isibo,
+          false,
+          false,
+          false,
+        );
+      });
+    } catch (error) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof ConflictException
+      ) {
+        throw error;
+      }
+      throw new BadRequestException(
+        `Citizen registration failed: ${error.message}`,
+      );
+    }
+  }
+
   private async sendAccountCreationEmail(user: User, password: string): Promise<void> {
     try {
       const frontendUrl = this.configService.get('url')?.client || 'http://localhost:3000';
@@ -591,6 +633,29 @@ export class UsersService {
     refreshToken: string,
   ): Promise<void> {
     await this.usersRepository.update(userId, { refreshToken });
+  }
+
+  async findProfilesByIds(profileIds: string[]): Promise<Profile[]> {
+    return this.profilesRepository.find({
+      where: { id: In(profileIds) },
+      relations: ["user"],
+    });
+  }
+
+  async removeIsiboFromProfiles(isiboId: string): Promise<void> {
+    await this.profilesRepository.update(
+      { isibo: { id: isiboId } },
+      { isibo: null }
+    );
+  }
+
+  async assignProfilesToIsibo(profileIds: string[], isiboId: string): Promise<void> {
+    if (profileIds.length > 0) {
+      await this.profilesRepository.update(
+        { id: In(profileIds) },
+        { isibo: { id: isiboId } }
+      );
+    }
   }
 
   private async validateAndGetLocationsForCitizen(

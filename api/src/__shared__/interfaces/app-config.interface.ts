@@ -29,7 +29,6 @@ interface IDatabaseConfig {
   password: string;
   host: string;
   port?: number;
-  url: string;
 }
 
 interface IBackdoorConfig {

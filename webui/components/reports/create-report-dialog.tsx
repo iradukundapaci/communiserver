@@ -13,8 +13,8 @@ import {
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { FileUpload } from "@/components/ui/file-upload";
-import { createReport, Citizen } from "@/lib/api/reports";
-import { getIsiboById } from "@/lib/api/isibos";
+import { createReport } from "@/lib/api/reports";
+import { getIsiboById, IsiboMember } from "@/lib/api/isibos";
 import { AttendanceSelector } from "./attendance-selector";
 import { useUser } from "@/lib/contexts/user-context";
 import { ClipboardList } from "lucide-react";
@@ -36,13 +36,13 @@ export function CreateReportDialog({
   const [isOpen, setIsOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoadingIsibo, setIsLoadingIsibo] = useState(false);
-  const [isiboMembers, setIsiboMembers] = useState<Citizen[]>([]);
+  const [isiboMembers, setIsiboMembers] = useState<IsiboMember[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [hasUploadErrors, setHasUploadErrors] = useState(false);
   const [formData, setFormData] = useState({
     taskId,
     activityId,
-    attendance: [] as Citizen[],
+    attendanceIds: [] as string[],
     comment: "",
     evidenceUrls: [] as string[],
   });
@@ -83,10 +83,10 @@ export function CreateReportDialog({
     }));
   };
 
-  const handleAttendanceChange = (attendees: Citizen[]) => {
+  const handleAttendanceChange = (attendeeIds: string[]) => {
     setFormData((prev) => ({
       ...prev,
-      attendance: attendees,
+      attendanceIds: attendeeIds,
     }));
   };
 
@@ -109,7 +109,7 @@ export function CreateReportDialog({
       setFormData({
         taskId,
         activityId,
-        attendance: [],
+        attendanceIds: [],
         comment: "",
         evidenceUrls: [],
       });
@@ -150,7 +150,7 @@ export function CreateReportDialog({
               <div className="col-span-3">
                 <AttendanceSelector
                   isiboMembers={isiboMembers}
-                  selectedAttendees={formData.attendance}
+                  selectedAttendeeIds={formData.attendanceIds}
                   onAttendanceChange={handleAttendanceChange}
                 />
               </div>

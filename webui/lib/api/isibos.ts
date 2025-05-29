@@ -11,27 +11,32 @@ export interface Isibo {
     id: string;
     name: string;
   };
-  members?: Citizen[];
+  members?: IsiboMember[];
 }
 
-export interface Citizen {
+export interface IsiboMember {
+  id: string;
   names: string;
-  email: string;
-  phone: string;
+  user: {
+    id: string;
+    email: string;
+    phone: string;
+    role: string;
+  };
 }
 
 export interface CreateIsiboInput {
   name: string;
   villageId: string;
   leaderId?: string;
-  members: Citizen[];
+  memberIds?: string[];
 }
 
 export interface UpdateIsiboInput {
   name?: string;
   villageId?: string;
   leaderId?: string;
-  members: Citizen[];
+  memberIds?: string[];
 }
 
 export interface AssignIsiboLeaderInput {

@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   Injectable,
   NotFoundException,
@@ -80,10 +81,16 @@ export class IsibosService {
       name: isiboName,
       village: { id: createIsiboDto.villageId },
       leader: leader?.profile,
-      members: createIsiboDto.members,
     });
 
-    return this.isiboRepository.save(isibo);
+    const savedIsibo = await this.isiboRepository.save(isibo);
+
+    // Assign members if provided
+    if (createIsiboDto.memberIds && createIsiboDto.memberIds.length > 0) {
+      await this.assignMembersToIsibo(savedIsibo.id, createIsiboDto.memberIds);
+    }
+
+    return this.findIsiboById(savedIsibo.id);
   }
 
   async updateIsibo(
@@ -163,9 +170,14 @@ export class IsibosService {
       isibo.village = { id: updateIsiboDto.villageId } as Village;
     }
 
-    isibo.members = updateIsiboDto.members;
+    const savedIsibo = await this.isiboRepository.save(isibo);
 
-    return this.isiboRepository.save(isibo);
+    // Update members if provided
+    if (updateIsiboDto.memberIds !== undefined) {
+      await this.assignMembersToIsibo(savedIsibo.id, updateIsiboDto.memberIds);
+    }
+
+    return this.findIsiboById(savedIsibo.id);
   }
 
   async deleteIsibo(id: string): Promise<void> {
@@ -215,7 +227,7 @@ export class IsibosService {
   async findIsiboById(id: string): Promise<Isibo> {
     const isibo = await this.isiboRepository.findOne({
       where: { id },
-      relations: ["leader", "village"],
+      relations: ["leader", "village", "members", "members.user"],
     });
 
     if (!isibo) {
@@ -223,6 +235,30 @@ export class IsibosService {
     }
 
     return isibo;
+  }
+
+  async assignMembersToIsibo(isiboId: string, memberIds: string[]): Promise<void> {
+    // First, remove all current members from this isibo
+    await this.usersService.removeIsiboFromProfiles(isiboId);
+
+    // Then assign new members if any
+    if (memberIds.length > 0) {
+      // Validate that all member IDs exist and are citizens
+      const profiles = await this.usersService.findProfilesByIds(memberIds);
+
+      if (profiles.length !== memberIds.length) {
+        throw new NotFoundException("One or more member profiles not found");
+      }
+
+      // Check that all users have CITIZEN role
+      const nonCitizens = profiles.filter((profile) => profile.user.role !== UserRole.CITIZEN);
+      if (nonCitizens.length > 0) {
+        throw new BadRequestException("All members must have CITIZEN role");
+      }
+
+      // Assign members to isibo
+      await this.usersService.assignProfilesToIsibo(memberIds, isiboId);
+    }
   }
 
   async assignIsiboLeader(id: string, userId: string): Promise<Isibo> {
