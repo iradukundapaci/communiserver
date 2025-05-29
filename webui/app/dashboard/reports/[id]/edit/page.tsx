@@ -6,9 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { FileUpload } from "@/components/ui/file-upload";
-import { getIsiboById } from "@/lib/api/isibos";
+import { getIsiboById, IsiboMember } from "@/lib/api/isibos";
 import {
-  Citizen,
   Report,
   getReportById,
   updateReport,
@@ -31,14 +30,14 @@ export default function EditReportPage({
   const router = useRouter();
   const { user } = useUser();
   const [report, setReport] = useState<Report | null>(null);
-  const [isiboMembers, setIsiboMembers] = useState<Citizen[]>([]);
+  const [isiboMembers, setIsiboMembers] = useState<IsiboMember[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [, setIsLoadingIsibo] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [hasUploadErrors, setHasUploadErrors] = useState(false);
   const [formData, setFormData] = useState({
-    attendance: [] as Citizen[],
+    attendanceIds: [] as string[],
     comment: "",
     evidenceUrls: [] as string[],
   });
@@ -53,7 +52,7 @@ export default function EditReportPage({
 
         // Initialize form data
         setFormData({
-          attendance: data.attendance || [],
+          attendanceIds: data.attendance?.map(attendee => attendee.id) || [],
           comment: data.comment || "",
           evidenceUrls: data.evidenceUrls || [],
         });
@@ -115,10 +114,10 @@ export default function EditReportPage({
     }));
   };
 
-  const handleAttendanceChange = (attendees: Citizen[]) => {
+  const handleAttendanceChange = (attendeeIds: string[]) => {
     setFormData((prev) => ({
       ...prev,
-      attendance: attendees,
+      attendanceIds: attendeeIds,
     }));
   };
 
@@ -139,10 +138,14 @@ export default function EditReportPage({
     setIsSubmitting(true);
 
     try {
-      await updateReport(reportId, formData);
+      await updateReport(reportId, {
+        attendanceIds: formData.attendanceIds,
+        comment: formData.comment,
+        evidenceUrls: formData.evidenceUrls,
+      });
       toast.success("Report updated successfully");
       router.push("/dashboard/reports");
-    } catch (error: any) {
+    } catch (error: unknown) {
       if (error instanceof Error) {
         toast.error(error.message);
       } else {
@@ -211,7 +214,7 @@ export default function EditReportPage({
               <div className="col-span-3">
                 <AttendanceSelector
                   isiboMembers={isiboMembers}
-                  selectedAttendees={formData.attendance}
+                  selectedAttendeeIds={formData.attendanceIds}
                   onAttendanceChange={handleAttendanceChange}
                 />
               </div>

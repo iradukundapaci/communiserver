@@ -3,20 +3,10 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
+
 import { Label } from "@/components/ui/label";
 import { IsiboMember } from "@/lib/api/isibos";
-import { Plus, Trash2, Users, UserPlus } from "lucide-react";
-import { useState } from "react";
+import { Trash2, Users } from "lucide-react";
 
 interface AttendanceSelectorProps {
   isiboMembers: IsiboMember[];

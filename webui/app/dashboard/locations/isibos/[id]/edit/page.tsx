@@ -20,7 +20,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Cell, getCells } from "@/lib/api/cells";
-import { Citizen, getIsiboById, updateIsibo } from "@/lib/api/isibos";
+import { getIsiboById, updateIsibo } from "@/lib/api/isibos";
 import { getVillages, Village } from "@/lib/api/villages";
 import { useUser } from "@/lib/contexts/user-context";
 import { Permission } from "@/lib/permissions";
@@ -42,7 +42,7 @@ export default function EditIsiboPage({
   const [formData, setFormData] = useState({
     name: "",
     villageId: "",
-    members: [] as Citizen[],
+    members: [] as import("@/lib/api/users").User[],
   });
   const [villages, setVillages] = useState<Village[]>([]);
   const [cells, setCells] = useState<Cell[]>([]);
@@ -99,11 +99,21 @@ export default function EditIsiboPage({
         isibo.members = [];
       }
 
+      // Convert IsiboMember[] to User[] for form compatibility
+      const convertedMembers = (isibo.members || []).map(member => ({
+        id: member.user.id,
+        names: member.names,
+        email: member.user.email,
+        phone: member.user.phone,
+        role: member.user.role,
+        activated: true, // Assume activated for existing members
+      }));
+
       // Set the form data
       setFormData({
         name: isibo.name,
         villageId: isibo.village?.id || "",
-        members: isibo.members || [],
+        members: convertedMembers,
       });
 
       // If the isibo has a village, set the cell ID
@@ -160,7 +170,11 @@ export default function EditIsiboPage({
   };
 
   // New member state
-  const [newMember, setNewMember] = useState<Citizen>({
+  const [newMember, setNewMember] = useState<{
+    names: string;
+    email: string;
+    phone: string;
+  }>({
     names: "",
     email: "",
     phone: "",
@@ -183,10 +197,19 @@ export default function EditIsiboPage({
       return;
     }
 
-    // Add member to the list
+    // Add member to the list with required User properties
+    const newUserMember: import("@/lib/api/users").User = {
+      id: `temp-${Date.now()}`, // Temporary ID for new members
+      names: newMember.names,
+      email: newMember.email,
+      phone: newMember.phone,
+      role: "CITIZEN",
+      activated: false, // New members start as inactive
+    };
+
     setFormData((prev) => ({
       ...prev,
-      members: [...prev.members, { ...newMember }],
+      members: [...prev.members, newUserMember],
     }));
 
     // Reset the form
@@ -224,7 +247,7 @@ export default function EditIsiboPage({
       // Send the name and members when updating the isibo
       await updateIsibo(id, {
         name: formData.name,
-        members: formData.members,
+        memberIds: formData.members.map(member => member.id),
       });
       toast.success("Isibo updated successfully");
       router.push("/dashboard/locations/isibos");

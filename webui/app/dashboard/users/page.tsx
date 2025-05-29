@@ -27,7 +27,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { getUsers, createCitizen, CreateCitizenInput } from "@/lib/api/users";
+import { getUsers, createCitizen, CreateCitizenInput, User } from "@/lib/api/users";
 import { useUser } from "@/lib/contexts/user-context";
 import { Permission } from "@/lib/permissions";
 import { UserRole } from "@/lib/user-roles";
@@ -41,16 +41,7 @@ export default function UsersPage() {
   const { user } = useUser();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedRole, setSelectedRole] = useState<string>("");
-  const [users, setUsers] = useState<
-    Array<{
-      id: string;
-      names: string;
-      email: string;
-      phone: string;
-      role: string;
-      activated: boolean;
-    }>
-  >([]);
+  const [users, setUsers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSearching, setIsSearching] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);

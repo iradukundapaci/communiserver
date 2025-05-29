@@ -21,8 +21,8 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { FileUpload } from "@/components/ui/file-upload";
 import { Activity, getActivities } from "@/lib/api/activities";
-import { getIsiboById } from "@/lib/api/isibos";
-import { Citizen, createReport } from "@/lib/api/reports";
+import { getIsiboById, IsiboMember } from "@/lib/api/isibos";
+import { createReport } from "@/lib/api/reports";
 import { Task, getTasks } from "@/lib/api/tasks";
 import { useUser } from "@/lib/contexts/user-context";
 import { Plus } from "lucide-react";
@@ -42,16 +42,16 @@ export function CreateStandaloneReportDialog({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [activities, setActivities] = useState<Activity[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
-  const [isiboMembers, setIsiboMembers] = useState<Citizen[]>([]);
+  const [isiboMembers, setIsiboMembers] = useState<IsiboMember[]>([]);
   const [isLoadingActivities, setIsLoadingActivities] = useState(false);
   const [isLoadingTasks, setIsLoadingTasks] = useState(false);
-  const [isLoadingIsibo, setIsLoadingIsibo] = useState(false);
+  const [, setIsLoadingIsibo] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [hasUploadErrors, setHasUploadErrors] = useState(false);
   const [formData, setFormData] = useState({
     taskId: "",
     activityId: "",
-    attendance: [] as Citizen[],
+    attendanceIds: [] as string[],
     comment: "",
     evidenceUrls: [] as string[],
   });
@@ -139,10 +139,10 @@ export function CreateStandaloneReportDialog({
     }));
   };
 
-  const handleAttendanceChange = (attendees: Citizen[]) => {
+  const handleAttendanceChange = (attendeeIds: string[]) => {
     setFormData((prev) => ({
       ...prev,
-      attendance: attendees,
+      attendanceIds: attendeeIds,
     }));
   };
 
@@ -167,7 +167,13 @@ export function CreateStandaloneReportDialog({
     setIsSubmitting(true);
 
     try {
-      await createReport(formData);
+      await createReport({
+        activityId: formData.activityId,
+        taskId: formData.taskId,
+        attendanceIds: formData.attendanceIds,
+        comment: formData.comment,
+        evidenceUrls: formData.evidenceUrls,
+      });
       toast.success("Report submitted successfully");
       setIsOpen(false);
       onReportCreated();
@@ -176,12 +182,12 @@ export function CreateStandaloneReportDialog({
       setFormData({
         taskId: "",
         activityId: "",
-        attendance: [],
+        attendanceIds: [],
         comment: "",
         evidenceUrls: [],
       });
-    } catch (error: any) {
-      if (error.message) {
+    } catch (error: unknown) {
+      if (error instanceof Error) {
         toast.error(error.message);
       } else {
         toast.error("Failed to submit report");
@@ -269,7 +275,7 @@ export function CreateStandaloneReportDialog({
               <div className="col-span-3">
                 <AttendanceSelector
                   isiboMembers={isiboMembers}
-                  selectedAttendees={formData.attendance}
+                  selectedAttendeeIds={formData.attendanceIds}
                   onAttendanceChange={handleAttendanceChange}
                 />
               </div>

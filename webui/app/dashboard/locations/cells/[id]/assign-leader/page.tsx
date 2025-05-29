@@ -139,7 +139,7 @@ function CreateLeaderModal({
       onLeaderCreated();
 
       // Get the latest users after refresh
-      const response = await getUsers("", UserRole.CELL_LEADER, 1, 100);
+      const response = await getUsers({ role: UserRole.CELL_LEADER, page: 1, size: 100 });
 
       // Find the newly created user by email (most reliable way to find them)
       const newUser = response.items.find(
@@ -340,7 +340,7 @@ export default function AssignLeaderPage({
     const fetchUsers = async () => {
       try {
         // Get all users without role filter
-        const response = await getUsers("", "", 1, 10);
+        const response = await getUsers({ role: "", page: 1, size: 10 });
 
         // Filter users with appropriate role on the client side
         const filteredByRole = response.items.filter(
@@ -376,7 +376,7 @@ export default function AssignLeaderPage({
     setIsLoading(true);
     try {
       // Get all users without role filter
-      const response = await getUsers("", "", 1, 10);
+      const response = await getUsers({ role: "", page: 1, size: 10 });
 
       // Filter users with appropriate role on the client side
       const filteredByRole = response.items.filter(
@@ -436,7 +436,7 @@ export default function AssignLeaderPage({
 
     try {
       const nextPage = currentPage + 1;
-      const response = await getUsers("", "", nextPage, 10);
+      const response = await getUsers({ role: UserRole.CITIZEN, page: nextPage, size: 10 });
 
       // Filter users with appropriate role
       const filteredByRole = response.items.filter(

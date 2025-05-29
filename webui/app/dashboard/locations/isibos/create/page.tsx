@@ -20,7 +20,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Cell, getCells } from "@/lib/api/cells";
-import { Citizen, createIsibo } from "@/lib/api/isibos";
+import { createIsibo } from "@/lib/api/isibos";
+
+// Simple interface for member data during creation
+interface MemberData {
+  names: string;
+  email: string;
+  phone: string;
+}
 import { getVillages, Village } from "@/lib/api/villages";
 import { useUser } from "@/lib/contexts/user-context";
 import { Permission } from "@/lib/permissions";
@@ -35,7 +42,7 @@ export default function CreateIsiboPage() {
   const [formData, setFormData] = useState({
     name: "",
     villageId: "",
-    members: [] as Citizen[],
+    members: [] as MemberData[],
   });
   const [villages, setVillages] = useState<Village[]>([]);
   const [cells, setCells] = useState<Cell[]>([]);
@@ -140,7 +147,7 @@ export default function CreateIsiboPage() {
   };
 
   // New member state
-  const [newMember, setNewMember] = useState<Citizen>({
+  const [newMember, setNewMember] = useState<MemberData>({
     names: "",
     email: "",
     phone: "",
