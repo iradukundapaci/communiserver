@@ -20,10 +20,20 @@ interface ActivityStats {
 }
 
 interface CoreMetrics {
-  userStats: any[];
-  locationStats: any;
+  userStats: Array<{
+    role: string;
+    count: number;
+  }>;
+  locationStats: {
+    totalCells: number;
+    totalVillages: number;
+    totalIsibos: number;
+  };
   activityStats: ActivityStats;
-  reportStats: any;
+  reportStats: {
+    totalReports: number;
+    recentReports: number;
+  };
 }
 
 export function ActivityStatusOverview() {
@@ -36,7 +46,7 @@ export function ActivityStatusOverview() {
       try {
         setIsLoading(true);
         setError(null);
-        
+
         const token = localStorage.getItem('accessToken');
         const response = await fetch('/api/v1/analytics/core-metrics?timeRange=30d', {
           headers: {
@@ -190,7 +200,7 @@ export function ActivityStatusOverview() {
               {activityData.map((item) => {
                 const IconComponent = item.icon;
                 const percentage = item.total > 0 ? (item.count / item.total) * 100 : 0;
-                
+
                 return (
                   <div key={item.label} className="flex items-center space-x-4">
                     <div className={`p-2 rounded-lg ${item.color} text-white`}>
@@ -233,7 +243,7 @@ export function ActivityStatusOverview() {
               {taskData.map((item) => {
                 const IconComponent = item.icon;
                 const percentage = item.total > 0 ? (item.count / item.total) * 100 : 0;
-                
+
                 return (
                   <div key={item.label} className="flex items-center space-x-4">
                     <div className={`p-2 rounded-lg ${item.color} text-white`}>

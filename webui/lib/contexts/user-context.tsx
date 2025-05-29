@@ -1,7 +1,7 @@
 "use client";
 
 import { getProfile, User } from "@/lib/api/users";
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, { createContext, useCallback, useContext, useEffect, useState } from "react";
 
 interface UserContextType {
   user: User | null;
@@ -19,7 +19,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   const [error, setError] = useState<Error | null>(null);
 
   // Function to fetch user profile
-  const fetchUserProfile = async () => {
+  const fetchUserProfile = useCallback(async () => {
     try {
       setIsLoading(true);
       setError(null);
@@ -53,7 +53,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [user]);
 
   // Function to refresh user profile
   const refreshUser = async () => {
@@ -69,7 +69,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   // Fetch user profile on mount
   useEffect(() => {
     fetchUserProfile();
-  }, []);
+  }, [fetchUserProfile]);
 
   // We're removing the pathname-based refresh to avoid infinite loops
 

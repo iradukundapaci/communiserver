@@ -11,7 +11,7 @@ export interface PDFReportData {
 export interface PDFSection {
   title: string;
   type: 'text' | 'table' | 'metrics' | 'chart';
-  content: any;
+  content: unknown;
 }
 
 export interface PDFMetric {
@@ -157,13 +157,18 @@ export class PDFGenerator {
     this.currentY += rows * (boxHeight + spacing) + 10;
   }
 
-  private addTableSection(data: any[]) {
-    if (!data || data.length === 0) return;
+  private addTableSection(data: unknown) {
+    if (!Array.isArray(data) || data.length === 0) return;
 
     this.checkPageBreak(40);
 
-    const headers = Object.keys(data[0]);
-    const rows = data.map(item => headers.map(header => item[header]?.toString() || ''));
+    const headers = Object.keys(data[0] as Record<string, unknown>);
+    const rows = data.map((item: unknown) =>
+      headers.map(header => {
+        const record = item as Record<string, unknown>;
+        return record[header]?.toString() || '';
+      })
+    );
 
     // Use simple text-based table
     this.addSimpleTable(headers, rows);
@@ -238,10 +243,10 @@ export class PDFGenerator {
 
       switch (section.type) {
         case 'text':
-          this.addTextSection(section.content);
+          this.addTextSection(section.content as string);
           break;
         case 'metrics':
-          this.addMetricsSection(section.content);
+          this.addMetricsSection(section.content as PDFMetric[]);
           break;
         case 'table':
           this.addTableSection(section.content);

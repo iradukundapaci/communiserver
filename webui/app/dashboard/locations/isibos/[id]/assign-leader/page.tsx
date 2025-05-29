@@ -133,8 +133,8 @@ function CreateLeaderModal({
         villageId: villageId,
         isiboId: isiboId,
       });
-    } catch (error: any) {
-      if (error.message) {
+    } catch (error: unknown) {
+      if (error instanceof Error) {
         toast.error(error.message);
       } else {
         toast.error("Failed to create isibo leader");
@@ -289,8 +289,8 @@ export default function AssignLeaderPage({
         setFilteredUsers(filteredByRole);
         setTotalPages(response.meta.totalPages);
         setCurrentPage(1);
-      } catch (error: any) {
-        if (error.message) {
+      } catch (error: unknown) {
+        if (error instanceof Error) {
           toast.error(error.message);
         } else {
           toast.error("Failed to fetch users");
@@ -325,8 +325,8 @@ export default function AssignLeaderPage({
       setFilteredUsers(filteredByRole);
       setTotalPages(response.meta.totalPages);
       setCurrentPage(1);
-    } catch (error: any) {
-      if (error.message) {
+    } catch (error: unknown) {
+      if (error instanceof Error) {
         toast.error(error.message);
       } else {
         toast.error("Failed to fetch users");
@@ -404,8 +404,8 @@ export default function AssignLeaderPage({
       }
 
       setCurrentPage(nextPage);
-    } catch (error: any) {
-      if (error.message) {
+    } catch (error: unknown) {
+      if (error instanceof Error) {
         toast.error(error.message);
       } else {
         toast.error("Failed to load more users");

@@ -79,8 +79,8 @@ export function EditReportDialog({
       toast.success("Report updated successfully");
       setIsOpen(false);
       onReportUpdated();
-    } catch (error: any) {
-      if (error.message) {
+    } catch (error: unknown) {
+      if (error instanceof Error) {
         toast.error(error.message);
       } else {
         toast.error("Failed to update report");

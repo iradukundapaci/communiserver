@@ -14,7 +14,7 @@ interface PermissionGateProps {
 
 /**
  * Component that conditionally renders its children based on user permissions
- * 
+ *
  * @param permission Single permission to check
  * @param anyPermissions Array of permissions where any one is sufficient
  * @param allPermissions Array of permissions where all are required
@@ -28,24 +28,27 @@ export function PermissionGate({
   children,
   fallback = null,
 }: PermissionGateProps) {
+  // Call all hooks unconditionally to follow Rules of Hooks
+  // Use a default permission that exists when no permission is provided
+  const hasPermission = usePermission(permission || Permission.VIEW_PROFILE);
+  const hasAnyPermission = useHasAnyPermission(anyPermissions || []);
+  const hasAllPermissions = useHasAllPermissions(allPermissions || []);
+
   // Check for a single permission
   if (permission) {
-    const hasPermission = usePermission(permission);
     return hasPermission ? <>{children}</> : <>{fallback}</>;
   }
-  
+
   // Check for any of the permissions
   if (anyPermissions) {
-    const hasAnyPermission = useHasAnyPermission(anyPermissions);
     return hasAnyPermission ? <>{children}</> : <>{fallback}</>;
   }
-  
+
   // Check for all of the permissions
   if (allPermissions) {
-    const hasAllPermissions = useHasAllPermissions(allPermissions);
     return hasAllPermissions ? <>{children}</> : <>{fallback}</>;
   }
-  
+
   // If no permission checks are specified, render the children
   return <>{children}</>;
 }

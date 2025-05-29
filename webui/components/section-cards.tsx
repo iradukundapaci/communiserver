@@ -13,8 +13,42 @@ import {
 } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 
+interface CoreMetrics {
+  userStats: Array<{
+    role: string;
+    count: number;
+    percentage: number;
+  }>;
+  locationStats: {
+    totalCells: number;
+    totalVillages: number;
+    totalIsibos: number;
+    villagesWithLeaders: number;
+    villagesWithoutLeaders: number;
+    leadershipCoveragePercentage: number;
+  };
+  activityStats: {
+    totalActivities: number;
+    completedActivities: number;
+    activeActivities: number;
+    pendingActivities: number;
+    totalTasks: number;
+    completedTasks: number;
+    activeTasks: number;
+    pendingTasks: number;
+    taskCompletionRate: number;
+  };
+  reportStats: {
+    totalReports: number;
+    recentReports: number;
+    reportsWithEvidence: number;
+    evidencePercentage: number;
+    averageAttendance: number;
+  };
+}
+
 export function SectionCards() {
-  const [coreMetrics, setCoreMetrics] = React.useState<any>(null);
+  const [coreMetrics, setCoreMetrics] = React.useState<CoreMetrics | null>(null);
   const [isLoading, setIsLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
 

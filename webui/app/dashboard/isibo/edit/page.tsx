@@ -16,7 +16,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { IsiboMember, getIsiboById, updateIsibo } from "@/lib/api/isibos";
 import { User, getUsers, createCitizen, CreateCitizenInput } from "@/lib/api/users";
 import { useUser } from "@/lib/contexts/user-context";
-import { ArrowLeft, Plus, UserPlus } from "lucide-react";
+import { ArrowLeft, UserPlus } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -159,8 +159,12 @@ export default function EditMyIsiboPage() {
       });
       // Refresh available citizens
       await fetchAvailableCitizens();
-    } catch (error: any) {
-      toast.error(error.message || "Failed to create citizen");
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        toast.error(error.message);
+      } else {
+        toast.error("Failed to create citizen");
+      }
     }
   };
 
@@ -380,7 +384,7 @@ export default function EditMyIsiboPage() {
                   </div>
                 ) : (
                   <p className="text-sm text-muted-foreground py-4">
-                    No available citizens found. Create new citizens using the "Create Citizen" button above.
+                    No available citizens found. Create new citizens using the &quot;Create Citizen&quot; button above.
                   </p>
                 )}
               </div>

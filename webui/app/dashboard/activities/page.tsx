@@ -43,7 +43,6 @@ import { Permission } from "@/lib/permissions";
 import { format } from "date-fns";
 import { Pencil, PlusCircle, RefreshCw, Search, Trash2 } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
-import * as React from "react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { ActivitiesPDFButton } from "@/components/pdf-report-button";

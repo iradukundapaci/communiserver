@@ -16,7 +16,7 @@ import { useUser } from "@/lib/contexts/user-context";
 
 interface PDFReportButtonProps {
   pageType: ReportConfig['pageType'];
-  data: any;
+  data: unknown;
   title?: string;
   subtitle?: string;
   variant?: "default" | "outline" | "secondary" | "ghost";
@@ -133,7 +133,7 @@ export function PDFReportButton({
 }
 
 // Specialized components for each page type
-export function DashboardPDFButton({ data, className }: { data: any; className?: string }) {
+export function DashboardPDFButton({ data, className }: { data: unknown; className?: string }) {
   return (
     <PDFReportButton
       pageType="dashboard"
@@ -146,7 +146,7 @@ export function DashboardPDFButton({ data, className }: { data: any; className?:
   );
 }
 
-export function ActivitiesPDFButton({ data, className }: { data: any; className?: string }) {
+export function ActivitiesPDFButton({ data, className }: { data: unknown; className?: string }) {
   return (
     <PDFReportButton
       pageType="activities"
@@ -158,7 +158,7 @@ export function ActivitiesPDFButton({ data, className }: { data: any; className?
   );
 }
 
-export function LocationsPDFButton({ data, className }: { data: any; className?: string }) {
+export function LocationsPDFButton({ data, className }: { data: unknown; className?: string }) {
   return (
     <PDFReportButton
       pageType="locations"
@@ -170,7 +170,7 @@ export function LocationsPDFButton({ data, className }: { data: any; className?:
   );
 }
 
-export function ReportsPDFButton({ data, className }: { data: any; className?: string }) {
+export function ReportsPDFButton({ data, className }: { data: unknown; className?: string }) {
   return (
     <PDFReportButton
       pageType="reports"
@@ -182,7 +182,7 @@ export function ReportsPDFButton({ data, className }: { data: any; className?: s
   );
 }
 
-export function UsersPDFButton({ data, className }: { data: any; className?: string }) {
+export function UsersPDFButton({ data, className }: { data: unknown; className?: string }) {
   return (
     <PDFReportButton
       pageType="users"

@@ -45,11 +45,11 @@ export default function EditIsiboPage({
     members: [] as import("@/lib/api/users").User[],
   });
   const [villages, setVillages] = useState<Village[]>([]);
-  const [cells, setCells] = useState<Cell[]>([]);
+  const [, setCells] = useState<Cell[]>([]);
   const [selectedCellId, setSelectedCellId] = useState<string>("");
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const [isCellsLoading, setIsCellsLoading] = useState(true);
+  const [, setIsCellsLoading] = useState(true);
 
   useEffect(() => {
     fetchCells();
@@ -135,13 +135,13 @@ export default function EditIsiboPage({
           // Continue with the isibo data even if we can't get the cells
         }
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       // Check if the error is related to the houses property
-      if (error.message && error.message.includes("houses")) {
+      if (error instanceof Error && error.message.includes("houses")) {
         toast.error(
           "The backend needs to be updated to remove house references. Please contact the administrator."
         );
-      } else if (error.message) {
+      } else if (error instanceof Error) {
         toast.error(error.message);
       } else {
         toast.error("Failed to fetch isibo");

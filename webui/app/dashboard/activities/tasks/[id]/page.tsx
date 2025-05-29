@@ -36,7 +36,7 @@ export default function TaskDetailPage() {
   const id = params.id as string;
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const [task, setTask] = useState<Task | null>(null);
+  const [, setTask] = useState<Task | null>(null);
   const [activities, setActivities] = useState<Activity[]>([]);
   const [formData, setFormData] = useState({
     title: "",
@@ -45,7 +45,7 @@ export default function TaskDetailPage() {
     isiboId: "",
     status: TaskStatus.PENDING,
   });
-  const [isibos, setIsibos] = useState<any[]>([]);
+  const [isibos, setIsibos] = useState<Array<{ id: string; name: string }>>([]);
 
   useEffect(() => {
     const fetchTask = async () => {
@@ -61,8 +61,8 @@ export default function TaskDetailPage() {
           isiboId: taskData.isibo?.id || "",
           status: taskData.status,
         });
-      } catch (error: any) {
-        if (error.message) {
+      } catch (error: unknown) {
+        if (error instanceof Error) {
           toast.error(error.message);
         } else {
           toast.error("Failed to fetch task");
@@ -133,8 +133,8 @@ export default function TaskDetailPage() {
       await updateTask(id, taskData);
       toast.success("Task updated successfully");
       router.push("/dashboard/activities?tab=tasks");
-    } catch (error: any) {
-      if (error.message) {
+    } catch (error: unknown) {
+      if (error instanceof Error) {
         toast.error(error.message);
       } else {
         toast.error("Failed to update task");

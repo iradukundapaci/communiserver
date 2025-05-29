@@ -123,8 +123,8 @@ export default function IsibosPage() {
       if (!user?.cell?.id && response.items && response.items.length > 0) {
         setSelectedCellId(response.items[0].id);
       }
-    } catch (error: any) {
-      if (error.message) {
+    } catch (error: unknown) {
+      if (error instanceof Error) {
         toast.error(error.message);
       } else {
         toast.error("Failed to fetch cells");
@@ -180,8 +180,8 @@ export default function IsibosPage() {
         setSelectedIsiboId("");
         setIsibos([]);
       }
-    } catch (error: any) {
-      if (error.message) {
+    } catch (error: unknown) {
+      if (error instanceof Error) {
         toast.error(error.message);
       } else {
         toast.error("Failed to fetch villages");
@@ -210,9 +210,9 @@ export default function IsibosPage() {
       setIsibos(response.items || []);
       setTotalPages(response.meta?.totalPages || 1);
       setItemsPerPage(response.meta?.itemsPerPage || 10);
-    } catch (error: any) {
+    } catch (error: unknown) {
       // Display a more specific error message if available
-      if (error.message) {
+      if (error instanceof Error) {
         toast.error(error.message);
       } else {
         toast.error("Failed to fetch isibos");

@@ -29,7 +29,7 @@ import { useUser } from "@/lib/contexts/user-context";
 import { Pencil, PlusCircle, RefreshCw, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import * as React from "react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 
 interface CreateTaskDialogProps {
@@ -259,7 +259,7 @@ export default function TasksTab() {
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
 
-  const fetchTasks = async (
+  const fetchTasks = useCallback(async (
     activityId: string = selectedActivityId,
     page: number = 1,
     resetTasks: boolean = true
@@ -296,21 +296,21 @@ export default function TasksTab() {
       setIsSearching(false);
       setIsLoadingMore(false);
     }
-  };
+  }, [selectedActivityId, user.user?.role, user.user?.isibo?.id]);
 
-  const fetchActivities = async () => {
+  const fetchActivities = useCallback(async () => {
     try {
       const response = await getActivities(1, 100);
       setActivities(response.items);
     } catch (error) {
       console.error("Failed to fetch activities:", error);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchTasks("", 1, true);
     fetchActivities();
-  }, []);
+  }, [fetchTasks, fetchActivities]);
 
   // Function to handle search if needed in the future
 

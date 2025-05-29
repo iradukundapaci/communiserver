@@ -15,9 +15,26 @@ interface UserRoleStats {
 
 interface CoreMetrics {
   userStats: UserRoleStats[];
-  locationStats: any;
-  activityStats: any;
-  reportStats: any;
+  locationStats: {
+    totalCells: number;
+    totalVillages: number;
+    totalIsibos: number;
+  };
+  activityStats: {
+    totalActivities: number;
+    completedActivities: number;
+    activeActivities: number;
+    pendingActivities: number;
+    totalTasks: number;
+    completedTasks: number;
+    activeTasks: number;
+    pendingTasks: number;
+    taskCompletionRate: number;
+  };
+  reportStats: {
+    totalReports: number;
+    recentReports: number;
+  };
 }
 
 export function UserRoleDistribution() {
@@ -30,7 +47,7 @@ export function UserRoleDistribution() {
       try {
         setIsLoading(true);
         setError(null);
-        
+
         const token = localStorage.getItem('accessToken');
         const response = await fetch('/api/v1/analytics/core-metrics?timeRange=30d', {
           headers: {
@@ -86,7 +103,7 @@ export function UserRoleDistribution() {
   };
 
   const formatRoleName = (role: string) => {
-    return role.split('_').map(word => 
+    return role.split('_').map(word =>
       word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
     ).join(' ');
   };
@@ -154,7 +171,7 @@ export function UserRoleDistribution() {
           {coreMetrics.userStats.map((roleStats) => {
             const IconComponent = getRoleIcon(roleStats.role);
             const colorClass = getRoleColor(roleStats.role);
-            
+
             return (
               <div key={roleStats.role} className="flex items-center space-x-4">
                 <div className={`p-2 rounded-lg ${colorClass} text-white`}>
@@ -174,8 +191,8 @@ export function UserRoleDistribution() {
                       </span>
                     </div>
                   </div>
-                  <Progress 
-                    value={roleStats.percentage} 
+                  <Progress
+                    value={roleStats.percentage}
                     className="h-2"
                   />
                 </div>
@@ -183,7 +200,7 @@ export function UserRoleDistribution() {
             );
           })}
         </div>
-        
+
         {/* Summary Stats */}
         <div className="mt-6 pt-4 border-t">
           <div className="grid grid-cols-2 gap-4 text-center">

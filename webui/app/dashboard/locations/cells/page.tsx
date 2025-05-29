@@ -42,7 +42,7 @@ export default function CellsPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
-  const [totalItems, setTotalItems] = useState(0);
+  const [, setTotalItems] = useState(0);
 
   // Confirmation dialog state
   const [isRemoveLeaderDialogOpen, setIsRemoveLeaderDialogOpen] =

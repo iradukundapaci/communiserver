@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { Area, AreaChart, CartesianGrid, XAxis } from "recharts";
-import { useAnalytics } from "@/hooks/use-analytics";
+
 import { Skeleton } from "@/components/ui/skeleton";
 
 import {
@@ -53,7 +53,12 @@ const chartConfig = {
 export function ChartAreaInteractive() {
   const isMobile = useIsMobile();
   const [timeRange, setTimeRange] = React.useState<"7d" | "30d" | "90d">("30d");
-  const [timeSeriesData, setTimeSeriesData] = React.useState<any[]>([]);
+  const [timeSeriesData, setTimeSeriesData] = React.useState<Array<{
+    date: string;
+    activities: number;
+    tasks: number;
+    reports: number;
+  }>>([]);
   const [isLoading, setIsLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
 

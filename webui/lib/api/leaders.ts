@@ -196,6 +196,6 @@ export async function searchUsers(
   size: number = 10
 ): Promise<PaginatedResponse<User>> {
   // Use the getUsers function from the users API service
-  const { getUsers } = require("./users");
-  return getUsers(query, role, page, size);
+  const { getUsers } = await import("./users");
+  return getUsers({ q: query, role, page, size });
 }

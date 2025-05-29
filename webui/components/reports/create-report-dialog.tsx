@@ -35,7 +35,7 @@ export function CreateReportDialog({
   const { user } = useUser();
   const [isOpen, setIsOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isLoadingIsibo, setIsLoadingIsibo] = useState(false);
+  const [, setIsLoadingIsibo] = useState(false);
   const [isiboMembers, setIsiboMembers] = useState<IsiboMember[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [hasUploadErrors, setHasUploadErrors] = useState(false);
@@ -113,8 +113,8 @@ export function CreateReportDialog({
         comment: "",
         evidenceUrls: [],
       });
-    } catch (error: any) {
-      if (error.message) {
+    } catch (error: unknown) {
+      if (error instanceof Error) {
         toast.error(error.message);
       } else {
         toast.error("Failed to submit report");

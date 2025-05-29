@@ -114,8 +114,8 @@ export default function VillagesPage() {
       if (!user?.cell?.id && response.items && response.items.length > 0) {
         setSelectedCellId(response.items[0].id);
       }
-    } catch (error: any) {
-      if (error.message) {
+    } catch (error: unknown) {
+      if (error instanceof Error) {
         toast.error(error.message);
       } else {
         toast.error("Failed to fetch cells");

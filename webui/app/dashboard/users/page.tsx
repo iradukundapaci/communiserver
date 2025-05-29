@@ -82,8 +82,8 @@ export default function UsersPage() {
 
       setTotalPages(response.meta.totalPages);
       setCurrentPage(page);
-    } catch (error: any) {
-      if (error.message) {
+    } catch (error: unknown) {
+      if (error instanceof Error) {
         toast.error(error.message);
       } else {
         toast.error("Failed to fetch users");
@@ -162,8 +162,12 @@ export default function UsersPage() {
       });
       // Refresh the users list
       handleRefresh();
-    } catch (error: any) {
-      toast.error(error.message || "Failed to create citizen");
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        toast.error(error.message);
+      } else {
+        toast.error("Failed to create citizen");
+      }
     } finally {
       setIsCreating(false);
     }

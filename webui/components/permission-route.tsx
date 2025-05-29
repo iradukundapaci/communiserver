@@ -16,7 +16,7 @@ interface PermissionRouteProps {
 
 /**
  * Component that protects routes based on user permissions
- * 
+ *
  * @param permission Single permission to check
  * @param anyPermissions Array of permissions where any one is sufficient
  * @param allPermissions Array of permissions where all are required
@@ -32,30 +32,32 @@ export function PermissionRoute({
 }: PermissionRouteProps) {
   const router = useRouter();
   const { isLoading } = useAuth();
-  
-  // Check for a single permission
-  const hasPermission = permission ? usePermission(permission) : true;
-  
-  // Check for any of the permissions
-  const hasAnyPermission = anyPermissions ? useHasAnyPermission(anyPermissions) : true;
-  
-  // Check for all of the permissions
-  const hasAllPermissions = allPermissions ? useHasAllPermissions(allPermissions) : true;
-  
+
+  // Call all hooks unconditionally to follow Rules of Hooks
+  // Use a default permission that exists when no permission is provided
+  const hasPermission = usePermission(permission || Permission.VIEW_PROFILE);
+  const hasAnyPermission = useHasAnyPermission(anyPermissions || []);
+  const hasAllPermissions = useHasAllPermissions(allPermissions || []);
+
+  // Determine if user is authorized based on provided permissions
+  const singlePermissionCheck = permission ? hasPermission : true;
+  const anyPermissionCheck = anyPermissions ? hasAnyPermission : true;
+  const allPermissionCheck = allPermissions ? hasAllPermissions : true;
+
   // Combine all permission checks
-  const isAuthorized = hasPermission && hasAnyPermission && hasAllPermissions;
-  
+  const isAuthorized = singlePermissionCheck && anyPermissionCheck && allPermissionCheck;
+
   useEffect(() => {
     // Wait until auth is loaded before redirecting
     if (!isLoading && !isAuthorized) {
       router.push(fallbackUrl);
     }
   }, [isAuthorized, router, fallbackUrl, isLoading]);
-  
+
   // If still loading or not authorized, don't render anything
   if (isLoading || !isAuthorized) {
     return null;
   }
-  
+
   return <>{children}</>;
 }

@@ -42,7 +42,7 @@ export default function ActivityDetailPage() {
   const id = params.id as string;
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const [activity, setActivity] = useState<Activity | null>(null);
+  const [, setActivity] = useState<Activity | null>(null);
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -100,8 +100,8 @@ export default function ActivityDetailPage() {
           villageId: activityData.village?.id || "",
           tasks: tasks,
         });
-      } catch (error: any) {
-        if (error.message) {
+      } catch (error: unknown) {
+        if (error instanceof Error) {
           toast.error(error.message);
         } else {
           toast.error("Failed to fetch activity");
@@ -269,8 +269,8 @@ export default function ActivityDetailPage() {
       await updateActivity(id, activityData);
       toast.success("Activity updated successfully");
       router.push("/dashboard/activities");
-    } catch (error: any) {
-      if (error.message) {
+    } catch (error: unknown) {
+      if (error instanceof Error) {
         toast.error(error.message);
       } else {
         toast.error("Failed to update activity");
