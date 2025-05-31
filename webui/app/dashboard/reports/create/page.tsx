@@ -50,7 +50,7 @@ export default function CreateReportPage() {
     if (user?.isibo?.id) {
       fetchIsiboMembers(user.isibo.id);
     }
-  }, [user]);
+  }, [user?.id, user?.isibo?.id, user?.village?.id]); // Only depend on specific user properties
 
   // Fetch tasks when activity is selected
   useEffect(() => {

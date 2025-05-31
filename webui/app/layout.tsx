@@ -19,7 +19,6 @@ export const metadata: Metadata = {
 };
 
 // Import the providers
-import { UserInitializer } from "@/components/user-initializer";
 import { AuthProvider } from "@/contexts/auth-context";
 import { UserProvider } from "@/lib/contexts/user-context";
 
@@ -35,7 +34,6 @@ export default function RootLayout({
       >
         <AuthProvider>
           <UserProvider>
-            <UserInitializer />
             {children}
           </UserProvider>
         </AuthProvider>

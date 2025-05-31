@@ -26,10 +26,13 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 export default function ProfilePage() {
-  const { user, refreshUser } = useUser();
+  const { user, manualRefresh } = useUser();
   const [isLoading, setIsLoading] = useState(false);
   const [isibos, setIsibos] = useState<Isibo[]>([]);
   const [isLoadingIsibos, setIsLoadingIsibos] = useState(false);
+
+  // Note: No automatic fetching to prevent infinite loops
+  // Users can manually refresh if needed
 
   const [formData, setFormData] = useState({
     names: user?.names || "",
@@ -54,7 +57,7 @@ export default function ProfilePage() {
         isiboId: user?.isibo?.id || "",
       });
     }
-  }, [user]);
+  }, [user?.id, user?.names, user?.email, user?.phone, user?.isibo?.id]); // Only depend on specific user properties
 
   // Fetch isibos when user's village changes or on component mount
   useEffect(() => {
@@ -109,7 +112,7 @@ export default function ProfilePage() {
     try {
       setIsLoading(true);
       await updateUserProfile(formData);
-      await refreshUser(); // Refresh the user context
+      await manualRefresh(); // Refresh the user context
       toast.success("Profile updated successfully");
     } catch (error) {
       console.error("Profile update error:", error);

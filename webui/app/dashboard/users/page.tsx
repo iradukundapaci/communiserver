@@ -108,7 +108,7 @@ export default function UsersPage() {
         villageId: user.village?.id || "",
       }));
     }
-  }, [user]);
+  }, [user?.id, user?.cell?.id, user?.village?.id]); // Only depend on specific user properties
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();

@@ -80,7 +80,7 @@ function CreateTaskDialog({ onTaskCreated }: CreateTaskDialogProps) {
 
       fetchData();
     }
-  }, [user]);
+  }, [user?.id, user?.village?.id, user?.isibo?.id]); // Only depend on specific user properties
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>

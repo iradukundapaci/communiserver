@@ -102,7 +102,7 @@ export default function TaskDetailPage() {
     if (user) {
       fetchData();
     }
-  }, [user]);
+  }, [user?.id, user?.village?.id]); // Only depend on specific user properties
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>

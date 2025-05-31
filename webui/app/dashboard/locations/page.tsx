@@ -34,7 +34,7 @@ export default function LocationsRedirect() {
 
     // Use replace instead of push to avoid adding to history
     router.replace(redirectPath);
-  }, [user, router]);
+  }, [user?.id, user?.role, router]); // Only depend on specific user properties
 
   // Show a loading indicator while redirecting
   return (

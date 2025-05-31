@@ -144,7 +144,7 @@ export default function ActivityDetailPage() {
     if (user) {
       fetchLocations();
     }
-  }, [user]);
+  }, [user?.id, user?.cell?.id, user?.village?.id]); // Only depend on specific user properties
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>

@@ -8,15 +8,19 @@ import { ActivityStatusOverview } from "@/components/analytics/activity-status-o
 import { EngagementMetrics } from "@/components/analytics/engagement-metrics";
 import { RecentActivitiesTimeline } from "@/components/analytics/recent-activities-timeline";
 import { DashboardPDFButton } from "@/components/pdf-report-button";
-import { useLoadUser } from "@/hooks/use-load-user";
+
 import { useAnalytics } from "@/hooks/use-analytics";
+import { useUser } from "@/lib/contexts/user-context";
 import { Button } from "@/components/ui/button";
 import { RefreshCw } from "lucide-react";
 import { toast } from "sonner";
+import { useEffect } from "react";
 
 export default function Page() {
-  // Load the user data when the dashboard page mounts
-  useLoadUser();
+  const { manualRefresh } = useUser();
+
+  // Note: No automatic fetching to prevent infinite loops
+  // Users can manually refresh if needed
 
   const {
     coreMetrics,

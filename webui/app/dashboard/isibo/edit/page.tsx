@@ -96,7 +96,7 @@ export default function EditMyIsiboPage() {
     }
 
     fetchData();
-  }, [user, router]);
+  }, [user?.id, user?.role, user?.isibo?.id, router]); // Only depend on specific user properties
 
   const fetchAvailableCitizens = async () => {
     try {

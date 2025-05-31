@@ -74,7 +74,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Check authentication on initial load
   useEffect(() => {
     checkAuth();
-  }, [checkAuth]);
+  }, []); // Remove checkAuth dependency to prevent infinite loop
 
   // Set up token refresh interval
   useEffect(() => {
