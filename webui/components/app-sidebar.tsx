@@ -6,8 +6,6 @@ import {
   IconClipboardList,
   IconDashboard,
   IconInnerShadowTop,
-  IconMessage,
-  IconNotification,
   IconUsers,
 } from "@tabler/icons-react";
 import * as React from "react";
@@ -54,16 +52,6 @@ const data = {
       title: "Reports",
       url: "/dashboard/reports",
       icon: IconClipboardList,
-    },
-    {
-      title: "Notifications",
-      url: "/notifications",
-      icon: IconNotification,
-    },
-    {
-      title: "Chat",
-      url: "/chat",
-      icon: IconMessage,
     },
   ],
 };

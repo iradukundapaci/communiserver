@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useAuth } from "@/contexts/auth-context";
+import { useUser } from "@/lib/contexts/user-context";
 import { loginUser, storeAuthTokens } from "@/lib/api/auth";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
@@ -20,7 +20,7 @@ export function LoginForm({ className, onToggle, ...props }: LoginFormProps) {
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
-  const { checkAuth } = useAuth();
+  const { loginAndFetchUser } = useUser();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -36,12 +36,12 @@ export function LoginForm({ className, onToggle, ...props }: LoginFormProps) {
       const tokens = await loginUser({ email, password });
       storeAuthTokens(tokens);
 
-      // Check authentication and update auth context
-      await checkAuth();
+      // Clear old user data and fetch fresh user profile after successful login
+      await loginAndFetchUser();
 
       toast.success("Logged in successfully");
 
-      // Redirect based on user role (this would be implemented later)
+      // Redirect to dashboard
       router.push("/dashboard");
     } catch (error) {
       toast.error(

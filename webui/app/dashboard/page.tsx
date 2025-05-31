@@ -10,17 +10,11 @@ import { RecentActivitiesTimeline } from "@/components/analytics/recent-activiti
 import { DashboardPDFButton } from "@/components/pdf-report-button";
 
 import { useAnalytics } from "@/hooks/use-analytics";
-import { useUser } from "@/lib/contexts/user-context";
 import { Button } from "@/components/ui/button";
 import { RefreshCw } from "lucide-react";
 import { toast } from "sonner";
-import { useEffect } from "react";
 
 export default function Page() {
-  const { manualRefresh } = useUser();
-
-  // Note: No automatic fetching to prevent infinite loops
-  // Users can manually refresh if needed
 
   const {
     coreMetrics,

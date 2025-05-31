@@ -7,6 +7,9 @@ import {
   IconNotification,
   IconUserCircle,
 } from "@tabler/icons-react"
+import { useUser } from "@/lib/contexts/user-context"
+import { clearAuthTokens } from "@/lib/api/auth"
+import { useRouter } from "next/navigation"
 
 import {
   Avatar,
@@ -39,6 +42,23 @@ export function NavUser({
   }
 }) {
   const { isMobile } = useSidebar()
+  const { clearUser } = useUser()
+  const router = useRouter()
+
+  // Handle logout
+  const handleLogout = () => {
+    // Clear auth tokens and user data
+    clearAuthTokens();
+    clearUser();
+
+    // Redirect to home page
+    router.push("/");
+
+    // Show success message
+    import("sonner").then(({ toast }) => {
+      toast.success("Logged out successfully");
+    });
+  };
 
   return (
     <SidebarMenu>
@@ -98,7 +118,7 @@ export function NavUser({
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>
+            <DropdownMenuItem onClick={handleLogout}>
               <IconLogout />
               Log out
             </DropdownMenuItem>

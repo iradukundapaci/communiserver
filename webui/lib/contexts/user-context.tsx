@@ -71,6 +71,7 @@ interface UserContextType {
   hasValidToken: () => boolean;
   fetchUserForPage: (pageName: string) => Promise<void>;
   manualRefresh: () => Promise<void>;
+  loginAndFetchUser: () => Promise<void>;
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
@@ -161,6 +162,18 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     await fetchUserProfile(true);
   };
 
+  // Function specifically for login flow - clears old data and fetches fresh user
+  const loginAndFetchUser = async () => {
+    console.log("🔑 loginAndFetchUser() called - LOGIN FLOW");
+
+    // Clear any existing user data first
+    setUser(null);
+    localStorage.removeItem("user");
+
+    // Force fetch fresh user data
+    await fetchUserProfile(true);
+  };
+
   // Function to clear user profile (for logout)
   const clearUser = () => {
     setUser(null);
@@ -198,6 +211,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         hasValidToken,
         fetchUserForPage,
         manualRefresh,
+        loginAndFetchUser,
       }}
     >
       {children}

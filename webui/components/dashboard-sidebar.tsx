@@ -1,8 +1,9 @@
 "use client";
 
 import { PermissionGate } from "@/components/permission-gate";
-import { useAuth } from "@/contexts/auth-context";
+import { useUser } from "@/lib/contexts/user-context";
 import { Permission } from "@/lib/permissions";
+import { clearAuthTokens } from "@/lib/api/auth";
 import {
   IconBuilding,
   IconCalendarEvent,
@@ -27,7 +28,7 @@ import {
 export function DashboardSidebar(
   props: React.ComponentPropsWithoutRef<typeof SidebarGroup>
 ) {
-  const { logout } = useAuth();
+  const { clearUser } = useUser();
   const router = useRouter();
 
   // Handle navigation
@@ -37,7 +38,17 @@ export function DashboardSidebar(
 
   // Handle logout
   const handleLogout = () => {
-    logout();
+    // Clear auth tokens and user data
+    clearAuthTokens();
+    clearUser();
+
+    // Redirect to home page
+    router.push("/");
+
+    // Show success message
+    import("sonner").then(({ toast }) => {
+      toast.success("Logged out successfully");
+    });
   };
 
   return (

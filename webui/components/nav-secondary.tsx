@@ -1,6 +1,7 @@
 "use client";
 
-import { useAuth } from "@/contexts/auth-context";
+import { useUser } from "@/lib/contexts/user-context";
+import { clearAuthTokens } from "@/lib/api/auth";
 import { IconLogout, IconSettings, IconUserCircle } from "@tabler/icons-react";
 import { useRouter } from "next/navigation";
 import * as React from "react";
@@ -16,8 +17,8 @@ import {
 export function NavSecondary(
   props: React.ComponentPropsWithoutRef<typeof SidebarGroup>
 ) {
-  // Get the logout function from auth context
-  const { logout } = useAuth();
+  // Get the clearUser function from user context
+  const { clearUser } = useUser();
   const router = useRouter();
 
   // Handle navigation
@@ -27,7 +28,17 @@ export function NavSecondary(
 
   // Handle logout
   const handleLogout = () => {
-    logout();
+    // Clear auth tokens and user data
+    clearAuthTokens();
+    clearUser();
+
+    // Redirect to home page
+    router.push("/");
+
+    // Show success message
+    import("sonner").then(({ toast }) => {
+      toast.success("Logged out successfully");
+    });
   };
 
   return (
