@@ -19,14 +19,22 @@ export async function GET(request: NextRequest) {
     const page = searchParams.get("page") || "1";
     const size = searchParams.get("size") || "10";
     const q = searchParams.get("q") || "";
+    const status = searchParams.get("status") || "";
     const villageId = searchParams.get("villageId") || "";
+    const cellId = searchParams.get("cellId") || "";
 
     let url = `${API_URL}/api/v1/activities?page=${page}&size=${size}`;
     if (q) {
       url += `&q=${encodeURIComponent(q)}`;
     }
+    if (status) {
+      url += `&status=${encodeURIComponent(status)}`;
+    }
     if (villageId) {
       url += `&villageId=${encodeURIComponent(villageId)}`;
+    }
+    if (cellId) {
+      url += `&cellId=${encodeURIComponent(cellId)}`;
     }
 
     const response = await fetch(url, {

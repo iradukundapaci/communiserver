@@ -99,6 +99,92 @@ export async function getVillages(
 }
 
 /**
+ * Get all villages for public use (no authentication required)
+ * @returns Promise with villages list
+ */
+export async function getPublicVillages(): Promise<Village[]> {
+  try {
+    const response = await fetch("/api/v1/villages/public", {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || "Failed to fetch public villages");
+    }
+
+    const data: ApiResponse<Village[]> = await response.json();
+    return data.payload;
+  } catch (error) {
+    console.error("Get public villages error:", error);
+    throw error;
+  }
+}
+
+/**
+ * Search villages by name (public endpoint)
+ * @param query Search query
+ * @param cellId Optional cell ID to filter by
+ * @returns Promise with matching villages
+ */
+export async function searchVillages(query: string, cellId?: string): Promise<Village[]> {
+  try {
+    let url = `/api/v1/villages/search?q=${encodeURIComponent(query)}`;
+    if (cellId) {
+      url += `&cellId=${encodeURIComponent(cellId)}`;
+    }
+
+    const response = await fetch(url, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || "Failed to search villages");
+    }
+
+    const data: ApiResponse<Village[]> = await response.json();
+    return data.payload;
+  } catch (error) {
+    console.error("Search villages error:", error);
+    throw error;
+  }
+}
+
+/**
+ * Get villages by cell ID (public endpoint)
+ * @param cellId Cell ID
+ * @returns Promise with villages in the cell
+ */
+export async function getVillagesByCell(cellId: string): Promise<Village[]> {
+  try {
+    const response = await fetch(`/api/v1/villages/by-cell/${cellId}`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || "Failed to fetch villages by cell");
+    }
+
+    const data: ApiResponse<Village[]> = await response.json();
+    return data.payload;
+  } catch (error) {
+    console.error("Get villages by cell error:", error);
+    throw error;
+  }
+}
+
+/**
  * Get a village by ID
  * @param id Village ID
  * @returns Promise with village data

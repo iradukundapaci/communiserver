@@ -32,10 +32,14 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   Activity,
   ActivityStatus,
+  ActivityFilters,
   createActivity,
   deleteActivity,
   getActivities,
 } from "@/lib/api/activities";
+import { SearchableSelect, SearchableSelectOption } from "@/components/ui/searchable-select";
+import { searchVillages } from "@/lib/api/villages";
+import { searchIsibos } from "@/lib/api/isibos";
 import { getIsibos } from "@/lib/api/isibos";
 import { getVillages } from "@/lib/api/villages";
 import { useUser } from "@/lib/contexts/user-context";
@@ -143,6 +147,35 @@ function CreateActivityDialog({
     []
   );
   const [isibos, setIsibos] = useState<Array<{ id: string; name: string }>>([]);
+
+  // Search functions for dynamic loading
+  const handleVillageSearch = async (query: string): Promise<SearchableSelectOption[]> => {
+    try {
+      const results = await searchVillages(query);
+      return results.map(village => ({
+        value: village.id,
+        label: village.name,
+        searchTerms: [village.name]
+      }));
+    } catch (error) {
+      console.error("Error searching villages:", error);
+      return [];
+    }
+  };
+
+  const handleIsiboSearch = async (query: string): Promise<SearchableSelectOption[]> => {
+    try {
+      const results = await searchIsibos(query, formData.villageId || undefined);
+      return results.map(isibo => ({
+        value: isibo.id,
+        label: isibo.name,
+        searchTerms: [isibo.name]
+      }));
+    } catch (error) {
+      console.error("Error searching isibos:", error);
+      return [];
+    }
+  };
 
   useEffect(() => {
     const fetchLocations = async () => {
@@ -405,23 +438,17 @@ function CreateActivityDialog({
               <Label htmlFor="villageId" className="text-right">
                 Village
               </Label>
-              <Select
-                value={formData.villageId}
-                onValueChange={(value) =>
-                  handleSelectChange("villageId", value)
-                }
-              >
-                <SelectTrigger className="col-span-3">
-                  <SelectValue placeholder="Select village" />
-                </SelectTrigger>
-                <SelectContent>
-                  {villages.map((village) => (
-                    <SelectItem key={village.id} value={village.id}>
-                      {village.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="col-span-3">
+                <SearchableSelect
+                  onSearch={handleVillageSearch}
+                  value={formData.villageId}
+                  onValueChange={(value) => handleSelectChange("villageId", value)}
+                  placeholder="Search and select village..."
+                  searchPlaceholder="Type to search villages..."
+                  emptyMessage="No villages found"
+                  className="w-full"
+                />
+              </div>
             </div>
 
             <div className="border-t pt-4 mt-4">
@@ -493,23 +520,17 @@ function CreateActivityDialog({
                   <Label htmlFor="isiboId" className="text-right">
                     Isibo
                   </Label>
-                  <Select
-                    value={currentTask.isiboId}
-                    onValueChange={(value) =>
-                      handleTaskSelectChange("isiboId", value)
-                    }
-                  >
-                    <SelectTrigger className="col-span-3">
-                      <SelectValue placeholder="Select isibo" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {isibos.map((isibo) => (
-                        <SelectItem key={isibo.id} value={isibo.id}>
-                          {isibo.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <div className="col-span-3">
+                    <SearchableSelect
+                      onSearch={handleIsiboSearch}
+                      value={currentTask.isiboId}
+                      onValueChange={(value) => handleTaskSelectChange("isiboId", value)}
+                      placeholder="Search and select isibo..."
+                      searchPlaceholder="Type to search isibos..."
+                      emptyMessage="No isibos found"
+                      className="w-full"
+                    />
+                  </div>
                 </div>
 
                 <div className="flex justify-end">
@@ -558,15 +579,19 @@ function ActivitiesTab() {
     try {
       setIsLoading(true);
 
+      // Build filters object
+      const filters: ActivityFilters = {
+        page,
+        size: 10,
+        q: query || undefined,
+      };
+
       // For isibo leaders, only fetch activities in their village
-      let response;
       if (user?.role === "ISIBO_LEADER" && user?.village?.id) {
-        // Filter activities by village ID
-        response = await getActivities(page, 10, query, user.village.id);
-      } else {
-        // For other roles, fetch all activities
-        response = await getActivities(page, 10, query);
+        filters.villageId = user.village.id;
       }
+
+      const response = await getActivities(filters);
 
       if (resetActivities) {
         setActivities(response.items);

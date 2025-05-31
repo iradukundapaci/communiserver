@@ -23,6 +23,22 @@ export interface Activity {
   village?: {
     id: string;
     name: string;
+    cell?: {
+      id: string;
+      name: string;
+      sector?: {
+        id: string;
+        name: string;
+        district?: {
+          id: string;
+          name: string;
+          province?: {
+            id: string;
+            name: string;
+          };
+        };
+      };
+    };
   };
   tasks?: Task[];
 }
@@ -86,6 +102,16 @@ export interface UpdateTaskInput {
   isiboId?: string;
 }
 
+// Filtering interfaces
+export interface ActivityFilters {
+  q?: string; // Search query
+  status?: ActivityStatus;
+  villageId?: string;
+  cellId?: string;
+  page?: number;
+  size?: number;
+}
+
 export interface PaginatedResponse<T> {
   items: T[];
   meta: {
@@ -103,18 +129,12 @@ interface ApiResponse<T> {
 }
 
 /**
- * Get all activities with pagination
- * @param page Page number
- * @param size Items per page
- * @param search Search query
- * @param villageId Optional village ID to filter activities
+ * Get all activities with pagination and filtering
+ * @param filters Activity filters
  * @returns Promise with paginated activities
  */
 export async function getActivities(
-  page: number = 1,
-  size: number = 10,
-  search?: string,
-  villageId?: string
+  filters: ActivityFilters = {}
 ): Promise<PaginatedResponse<Activity>> {
   try {
     const tokens = getAuthTokens();
@@ -123,12 +143,20 @@ export async function getActivities(
       throw new Error("Not authenticated");
     }
 
+    const { page = 1, size = 10, q, status, villageId, cellId } = filters;
+
     let url = `/api/v1/activities?page=${page}&size=${size}`;
-    if (search) {
-      url += `&q=${encodeURIComponent(search)}`;
+    if (q) {
+      url += `&q=${encodeURIComponent(q)}`;
+    }
+    if (status) {
+      url += `&status=${encodeURIComponent(status)}`;
     }
     if (villageId) {
       url += `&villageId=${encodeURIComponent(villageId)}`;
+    }
+    if (cellId) {
+      url += `&cellId=${encodeURIComponent(cellId)}`;
     }
 
     const response = await fetch(url, {
@@ -149,6 +177,52 @@ export async function getActivities(
     return data.payload;
   } catch (error) {
     console.error("Get activities error:", error);
+    throw error;
+  }
+}
+
+/**
+ * Get public activities (no authentication required)
+ * @param filters Activity filters
+ * @returns Promise with paginated activities
+ */
+export async function getPublicActivities(
+  filters: ActivityFilters = {}
+): Promise<PaginatedResponse<Activity>> {
+  try {
+    const { page = 1, size = 20, q, status, villageId, cellId } = filters;
+
+    let url = `/api/v1/activities/public?page=${page}&size=${size}`;
+    if (q) {
+      url += `&q=${encodeURIComponent(q)}`;
+    }
+    if (status) {
+      url += `&status=${encodeURIComponent(status)}`;
+    }
+    if (villageId) {
+      url += `&villageId=${encodeURIComponent(villageId)}`;
+    }
+    if (cellId) {
+      url += `&cellId=${encodeURIComponent(cellId)}`;
+    }
+
+    const response = await fetch(url, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || "Failed to fetch public activities");
+    }
+
+    const data: ApiResponse<PaginatedResponse<Activity>> =
+      await response.json();
+    return data.payload;
+  } catch (error) {
+    console.error("Get public activities error:", error);
     throw error;
   }
 }

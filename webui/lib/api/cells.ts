@@ -96,6 +96,59 @@ export async function getCells(
 }
 
 /**
+ * Get all cells for public use (no authentication required)
+ * @returns Promise with cells list
+ */
+export async function getPublicCells(): Promise<Cell[]> {
+  try {
+    const response = await fetch("/api/v1/cells/public", {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || "Failed to fetch public cells");
+    }
+
+    const data: ApiResponse<Cell[]> = await response.json();
+    return data.payload;
+  } catch (error) {
+    console.error("Get public cells error:", error);
+    throw error;
+  }
+}
+
+/**
+ * Search cells by name (public endpoint)
+ * @param query Search query
+ * @returns Promise with matching cells
+ */
+export async function searchCells(query: string): Promise<Cell[]> {
+  try {
+    const response = await fetch(`/api/v1/cells/search?q=${encodeURIComponent(query)}`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || "Failed to search cells");
+    }
+
+    const data: ApiResponse<Cell[]> = await response.json();
+    return data.payload;
+  } catch (error) {
+    console.error("Search cells error:", error);
+    throw error;
+  }
+}
+
+/**
  * Get a cell by ID
  * @param id Cell ID
  * @returns Promise with cell data

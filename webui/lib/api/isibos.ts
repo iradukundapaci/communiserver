@@ -113,6 +113,80 @@ export async function getIsibos(
 }
 
 /**
+ * Search isibos by name
+ * @param query Search query
+ * @param villageId Optional village ID to filter by
+ * @returns Promise with matching isibos
+ */
+export async function searchIsibos(query: string, villageId?: string): Promise<Isibo[]> {
+  try {
+    const tokens = getAuthTokens();
+
+    if (!tokens) {
+      throw new Error("Not authenticated");
+    }
+
+    let url = `/api/v1/isibos/search?q=${encodeURIComponent(query)}`;
+    if (villageId) {
+      url += `&villageId=${encodeURIComponent(villageId)}`;
+    }
+
+    const response = await fetch(url, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${tokens.accessToken}`,
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || "Failed to search isibos");
+    }
+
+    const data: ApiResponse<Isibo[]> = await response.json();
+    return data.payload;
+  } catch (error) {
+    console.error("Search isibos error:", error);
+    throw error;
+  }
+}
+
+/**
+ * Get isibos by village ID
+ * @param villageId Village ID
+ * @returns Promise with isibos in the village
+ */
+export async function getIsibosByVillage(villageId: string): Promise<Isibo[]> {
+  try {
+    const tokens = getAuthTokens();
+
+    if (!tokens) {
+      throw new Error("Not authenticated");
+    }
+
+    const response = await fetch(`/api/v1/isibos/by-village/${villageId}`, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${tokens.accessToken}`,
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || "Failed to fetch isibos by village");
+    }
+
+    const data: ApiResponse<Isibo[]> = await response.json();
+    return data.payload;
+  } catch (error) {
+    console.error("Get isibos by village error:", error);
+    throw error;
+  }
+}
+
+/**
  * Get an isibo by ID
  * @param id Isibo ID
  * @returns Promise with isibo data
