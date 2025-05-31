@@ -77,7 +77,6 @@ export class CellsController {
   }
 
   @GetOperation("", "Get all cells")
-  @IsAuthorized()
   @PaginatedOkResponse(FetchCellDto.Output)
   @ErrorResponses(UnauthorizedResponse, ForbiddenResponse)
   async getAllCells(@Query() fetchCellDto: FetchCellDto.Input) {

@@ -46,7 +46,6 @@ export class TasksController {
   }
 
   @GetOperation("", "Get all tasks")
-  @IsAuthorized()
   @ErrorResponses(UnauthorizedResponse, ForbiddenResponse)
   async findAll(
     @Query() dto: FetchTaskDTO.Input,
@@ -56,7 +55,6 @@ export class TasksController {
   }
 
   @GetOperation(":id", "Get a task by id")
-  @IsAuthorized()
   @ErrorResponses(UnauthorizedResponse, ForbiddenResponse, NotFoundResponse)
   async findOne(
     @Param("id") id: string,

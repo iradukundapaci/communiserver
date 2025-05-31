@@ -84,7 +84,6 @@ export class VillagesController {
   }
 
   @GetOperation("", "Get all villages")
-  @IsAuthorized()
   @PaginatedOkResponse(FetchVillageDto.Output)
   @ErrorResponses(UnauthorizedResponse, ForbiddenResponse, NotFoundResponse)
   async getAllVillages(@Query() fetchVillageDto: FetchVillageDto.Input) {

@@ -51,8 +51,6 @@ export class ActivitiesController {
   }
 
   @GetOperation("", "Get all activities")
-  @IsAuthorized()
-  @ErrorResponses(UnauthorizedResponse, ForbiddenResponse)
   async findAll(
     @Query() DTO: FetchActivityDTO.Input,
   ): Promise<GenericResponse<{ items: FetchActivityDTO.Output[]; meta: any }>> {
@@ -61,7 +59,6 @@ export class ActivitiesController {
   }
 
   @GetOperation(":id", "Get an activity by id")
-  @IsAuthorized()
   @ErrorResponses(UnauthorizedResponse, ForbiddenResponse, NotFoundResponse)
   async findOne(@Param("id") id: string): Promise<GenericResponse<Activity>> {
     const activity = await this.activitiesService.findOne(id);

@@ -82,7 +82,6 @@ export class IsibosController {
   }
 
   @GetOperation("", "Get all isibos in a village")
-  @IsAuthorized()
   @PaginatedOkResponse(FetchIsiboDto.Output)
   @ErrorResponses(UnauthorizedResponse, ForbiddenResponse, NotFoundResponse)
   async getAllIsibos(@Query() fetchIsiboDto: FetchIsiboDto.Input) {
