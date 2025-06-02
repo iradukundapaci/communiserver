@@ -81,7 +81,7 @@ export default function TaskDetailPage() {
     const fetchData = async () => {
       try {
         // Fetch activities
-        const activitiesResponse = await getActivities(1, 100);
+        const activitiesResponse = await getActivities({ page: 1, size: 100 });
         setActivities(activitiesResponse.items);
 
         // Fetch isibos based on user's village

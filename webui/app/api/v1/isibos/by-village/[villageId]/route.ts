@@ -1,14 +1,15 @@
+import { getAuthTokens } from "@/lib/api/auth";
 import { NextRequest, NextResponse } from "next/server";
-import { getAuthTokens } from "@/lib/auth";
 
 // API endpoint URL
 const API_URL = process.env.API_URL || "http://localhost:8000";
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { villageId: string } }
+  context: { params: Promise<{ villageId: string }> }
 ) {
   try {
+    const params = await context.params;
     const villageId = params.villageId;
 
     if (!villageId) {

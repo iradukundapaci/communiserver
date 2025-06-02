@@ -148,9 +148,11 @@ export default function ActivitiesPage() {
       [ActivityStatus.UPCOMING]: "bg-blue-100 text-blue-800",
       [ActivityStatus.ONGOING]: "bg-green-100 text-green-800",
       [ActivityStatus.ACTIVE]: "bg-green-100 text-green-800",
+      [ActivityStatus.INACTIVE]: "bg-gray-100 text-gray-800",
       [ActivityStatus.COMPLETED]: "bg-gray-100 text-gray-800",
       [ActivityStatus.CANCELLED]: "bg-red-100 text-red-800",
       [ActivityStatus.POSTPONED]: "bg-yellow-100 text-yellow-800",
+      [ActivityStatus.RESCHEDULED]: "bg-purple-100 text-purple-800",
       [ActivityStatus.PENDING]: "bg-orange-100 text-orange-800",
     };
     return colors[status] || "bg-gray-100 text-gray-800";

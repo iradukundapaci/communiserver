@@ -53,7 +53,7 @@ function CreateTaskDialog({ onTaskCreated }: CreateTaskDialogProps) {
     const fetchData = async () => {
       try {
         // Fetch activities
-        const activitiesResponse = await getActivities(1, 100);
+        const activitiesResponse = await getActivities({ page: 1, size: 100 });
         setActivities(activitiesResponse.items);
 
         // Fetch isibos based on user's village
@@ -300,7 +300,7 @@ export default function TasksTab() {
 
   const fetchActivities = useCallback(async () => {
     try {
-      const response = await getActivities(1, 100);
+      const response = await getActivities({ page: 1, size: 100 });
       setActivities(response.items);
     } catch (error) {
       console.error("Failed to fetch activities:", error);

@@ -63,7 +63,11 @@ export default function CreateReportPage() {
     try {
       setIsLoadingActivities(true);
       // For isibo leaders, fetch activities for their village
-      const response = await getActivities(1, 100, "", user?.village?.id);
+      const response = await getActivities({
+        page: 1,
+        size: 100,
+        villageId: user?.village?.id
+      });
       setActivities(response.items);
     } catch (error) {
       console.error("Failed to fetch activities:", error);

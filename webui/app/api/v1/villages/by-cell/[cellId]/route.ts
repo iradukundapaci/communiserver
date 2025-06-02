@@ -5,9 +5,10 @@ const API_URL = process.env.API_URL || "http://localhost:8000";
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { cellId: string } }
+  context: { params: Promise<{ cellId: string }> }
 ) {
   try {
+    const params = await context.params;
     const cellId = params.cellId;
 
     if (!cellId) {

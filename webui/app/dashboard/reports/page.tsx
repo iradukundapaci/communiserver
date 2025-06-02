@@ -90,7 +90,7 @@ export default function ReportsPage() {
 
   const fetchActivities = async () => {
     try {
-      const response = await getActivities(1, 100);
+      const response = await getActivities({ page: 1, size: 100 });
       setActivities(response.items);
     } catch (error) {
       console.error("Failed to fetch activities:", error);

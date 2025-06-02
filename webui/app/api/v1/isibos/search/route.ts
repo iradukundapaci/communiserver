@@ -1,5 +1,5 @@
+import { getAuthTokens } from "@/lib/api/auth";
 import { NextRequest, NextResponse } from "next/server";
-import { getAuthTokens } from "@/lib/auth";
 
 // API endpoint URL
 const API_URL = process.env.API_URL || "http://localhost:8000";
