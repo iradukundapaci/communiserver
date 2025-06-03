@@ -1,5 +1,4 @@
-import { IsEnum, IsOptional, IsString, IsUUID } from "class-validator";
-import { EActivityStatus } from "../enum/EActivityStatus";
+import { IsEnum, IsNumber, IsOptional, IsString, IsUUID } from "class-validator";
 import { ETaskStatus } from "../enum/ETaskStatus";
 
 export namespace UpdateActivityDTO {
@@ -15,10 +14,6 @@ export namespace UpdateActivityDTO {
     @IsString()
     @IsOptional()
     date?: string;
-
-    @IsEnum(EActivityStatus)
-    @IsOptional()
-    status?: EActivityStatus;
 
     @IsUUID()
     @IsOptional()
@@ -48,13 +43,44 @@ export namespace UpdateActivityDTO {
     @IsString()
     @IsOptional()
     isiboId?: string;
+
+    @IsNumber()
+    @IsOptional()
+    estimatedCost?: number;
+
+    @IsNumber()
+    @IsOptional()
+    actualCost?: number;
+
+    @IsNumber()
+    @IsOptional()
+    expectedParticipants?: number;
+
+    @IsNumber()
+    @IsOptional()
+    actualParticipants?: number;
+
+    @IsNumber()
+    @IsOptional()
+    totalEstimatedCost?: number;
+
+    @IsNumber()
+    @IsOptional()
+    totalActualCost?: number;
+
+    @IsNumber()
+    @IsOptional()
+    expectedFinancialImpact?: number;
+
+    @IsNumber()
+    @IsOptional()
+    actualFinancialImpact?: number;
   }
 
   export class Output {
     id: string;
     title: string;
     description: string;
-    status: EActivityStatus;
     date: Date;
     tasks: Task[];
     village?: {

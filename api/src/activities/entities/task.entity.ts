@@ -16,6 +16,30 @@ export class Task extends AbstractEntity {
   @Column({ length: 50 })
   status: ETaskStatus = ETaskStatus.PENDING;
 
+  @Column()
+  estimatedCost: number = 0;
+
+  @Column()
+  actualCost: number = 0;
+
+  @Column()
+  expectedParticipants: number = 0;
+
+  @Column()
+  actualParticipants: number = 0;
+
+  @Column()
+  totalEstimatedCost: number = 0;
+  
+  @Column()
+  totalActualCost: number = 0;
+  
+  @Column()
+  expectedFinancialImpact: number = 0;
+
+  @Column()
+  actualFinancialImpact: number = 0;
+
   @ManyToOne(() => Activity, (activity) => activity.tasks)
   @JoinColumn({ name: "activity_id" })
   @Index()

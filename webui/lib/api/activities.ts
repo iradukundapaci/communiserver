@@ -19,7 +19,6 @@ export interface Activity {
   title: string;
   description: string;
   date: Date;
-  status: ActivityStatus;
   village?: {
     id: string;
     name: string;
@@ -60,6 +59,14 @@ export interface Task {
   title: string;
   description: string;
   status: TaskStatus;
+  estimatedCost: number;
+  actualCost: number;
+  expectedParticipants: number;
+  actualParticipants: number;
+  totalEstimatedCost: number;
+  totalActualCost: number;
+  expectedFinancialImpact: number;
+  actualFinancialImpact: number;
   activity: {
     id: string;
     title: string;
@@ -82,7 +89,6 @@ export interface UpdateActivityInput {
   title?: string;
   description?: string;
   date?: string;
-  status?: ActivityStatus;
   villageId?: string;
   tasks?: UpdateTaskInput[];
 }
@@ -92,6 +98,10 @@ export interface CreateTaskInput {
   description: string;
   activityId: string;
   isiboId: string;
+  estimatedCost?: number;
+  expectedParticipants?: number;
+  totalEstimatedCost?: number;
+  expectedFinancialImpact?: number;
 }
 
 export interface UpdateTaskInput {
@@ -100,12 +110,19 @@ export interface UpdateTaskInput {
   description?: string;
   status?: TaskStatus;
   isiboId?: string;
+  estimatedCost?: number;
+  actualCost?: number;
+  expectedParticipants?: number;
+  actualParticipants?: number;
+  totalEstimatedCost?: number;
+  totalActualCost?: number;
+  expectedFinancialImpact?: number;
+  actualFinancialImpact?: number;
 }
 
 // Filtering interfaces
 export interface ActivityFilters {
   q?: string; // Search query
-  status?: ActivityStatus;
   villageId?: string;
   cellId?: string;
   page?: number;
@@ -143,14 +160,11 @@ export async function getActivities(
       throw new Error("Not authenticated");
     }
 
-    const { page = 1, size = 10, q, status, villageId, cellId } = filters;
+    const { page = 1, size = 10, q, villageId, cellId } = filters;
 
     let url = `/api/v1/activities?page=${page}&size=${size}`;
     if (q) {
       url += `&q=${encodeURIComponent(q)}`;
-    }
-    if (status) {
-      url += `&status=${encodeURIComponent(status)}`;
     }
     if (villageId) {
       url += `&villageId=${encodeURIComponent(villageId)}`;
@@ -190,14 +204,11 @@ export async function getPublicActivities(
   filters: ActivityFilters = {}
 ): Promise<PaginatedResponse<Activity>> {
   try {
-    const { page = 1, size = 20, q, status, villageId, cellId } = filters;
+    const { page = 1, size = 20, q, villageId, cellId } = filters;
 
     let url = `/api/v1/activities/public?page=${page}&size=${size}`;
     if (q) {
       url += `&q=${encodeURIComponent(q)}`;
-    }
-    if (status) {
-      url += `&status=${encodeURIComponent(status)}`;
     }
     if (villageId) {
       url += `&villageId=${encodeURIComponent(villageId)}`;

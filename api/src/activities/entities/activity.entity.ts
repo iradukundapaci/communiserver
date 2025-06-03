@@ -8,7 +8,6 @@ import {
   ManyToOne,
   OneToMany,
 } from "typeorm";
-import { EActivityStatus } from "../enum/EActivityStatus";
 import { Task } from "./task.entity";
 
 @Entity("activities")
@@ -22,9 +21,6 @@ export class Activity extends AbstractEntity {
 
   @Column({ type: "timestamptz" })
   date: Date;
-
-  @Column({ length: 50 })
-  status: EActivityStatus = EActivityStatus.PENDING;
 
   @OneToMany(() => Task, (task) => task.activity, {
     cascade: true,

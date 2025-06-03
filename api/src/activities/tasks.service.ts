@@ -59,6 +59,14 @@ export class TasksService {
       title: createTaskDTO.title,
       description: createTaskDTO.description,
       status: ETaskStatus.PENDING,
+      estimatedCost: createTaskDTO.estimatedCost || 0,
+      actualCost: 0, // Always 0 during creation
+      expectedParticipants: createTaskDTO.expectedParticipants || 0,
+      actualParticipants: 0, // Always 0 during creation
+      totalEstimatedCost: createTaskDTO.totalEstimatedCost || 0,
+      totalActualCost: 0, // Always 0 during creation
+      expectedFinancialImpact: createTaskDTO.expectedFinancialImpact || 0,
+      actualFinancialImpact: 0, // Always 0 during creation
       activity,
       isibo,
     });
@@ -71,6 +79,14 @@ export class TasksService {
       title: savedTask.title,
       description: savedTask.description,
       status: savedTask.status,
+      estimatedCost: savedTask.estimatedCost,
+      actualCost: savedTask.actualCost,
+      expectedParticipants: savedTask.expectedParticipants,
+      actualParticipants: savedTask.actualParticipants,
+      totalEstimatedCost: savedTask.totalEstimatedCost,
+      totalActualCost: savedTask.totalActualCost,
+      expectedFinancialImpact: savedTask.expectedFinancialImpact,
+      actualFinancialImpact: savedTask.actualFinancialImpact,
       isibo: savedTask.isibo
         ? {
             id: savedTask.isibo.id,
@@ -127,6 +143,14 @@ export class TasksService {
           title: task.title,
           description: task.description,
           status: task.status,
+          estimatedCost: task.estimatedCost,
+          actualCost: task.actualCost,
+          expectedParticipants: task.expectedParticipants,
+          actualParticipants: task.actualParticipants,
+          totalEstimatedCost: task.totalEstimatedCost,
+          totalActualCost: task.totalActualCost,
+          expectedFinancialImpact: task.expectedFinancialImpact,
+          actualFinancialImpact: task.actualFinancialImpact,
           // Include only necessary isibo data
           isibo: task.isibo
             ? {
@@ -163,6 +187,14 @@ export class TasksService {
       title: task.title,
       description: task.description,
       status: task.status,
+      estimatedCost: task.estimatedCost,
+      actualCost: task.actualCost,
+      expectedParticipants: task.expectedParticipants,
+      actualParticipants: task.actualParticipants,
+      totalEstimatedCost: task.totalEstimatedCost,
+      totalActualCost: task.totalActualCost,
+      expectedFinancialImpact: task.expectedFinancialImpact,
+      actualFinancialImpact: task.actualFinancialImpact,
       isibo: task.isibo
         ? {
             id: task.isibo.id,
@@ -255,6 +287,32 @@ export class TasksService {
       task.status = updateTaskDTO.status;
     }
 
+    // Update financial fields
+    if (updateTaskDTO.estimatedCost !== undefined) {
+      task.estimatedCost = updateTaskDTO.estimatedCost;
+    }
+    if (updateTaskDTO.actualCost !== undefined) {
+      task.actualCost = updateTaskDTO.actualCost;
+    }
+    if (updateTaskDTO.expectedParticipants !== undefined) {
+      task.expectedParticipants = updateTaskDTO.expectedParticipants;
+    }
+    if (updateTaskDTO.actualParticipants !== undefined) {
+      task.actualParticipants = updateTaskDTO.actualParticipants;
+    }
+    if (updateTaskDTO.totalEstimatedCost !== undefined) {
+      task.totalEstimatedCost = updateTaskDTO.totalEstimatedCost;
+    }
+    if (updateTaskDTO.totalActualCost !== undefined) {
+      task.totalActualCost = updateTaskDTO.totalActualCost;
+    }
+    if (updateTaskDTO.expectedFinancialImpact !== undefined) {
+      task.expectedFinancialImpact = updateTaskDTO.expectedFinancialImpact;
+    }
+    if (updateTaskDTO.actualFinancialImpact !== undefined) {
+      task.actualFinancialImpact = updateTaskDTO.actualFinancialImpact;
+    }
+
     const updatedTask = await this.taskRepository.save(task);
 
     // Create a clean object without circular references
@@ -263,6 +321,14 @@ export class TasksService {
       title: updatedTask.title,
       description: updatedTask.description,
       status: updatedTask.status,
+      estimatedCost: updatedTask.estimatedCost,
+      actualCost: updatedTask.actualCost,
+      expectedParticipants: updatedTask.expectedParticipants,
+      actualParticipants: updatedTask.actualParticipants,
+      totalEstimatedCost: updatedTask.totalEstimatedCost,
+      totalActualCost: updatedTask.totalActualCost,
+      expectedFinancialImpact: updatedTask.expectedFinancialImpact,
+      actualFinancialImpact: updatedTask.actualFinancialImpact,
       isibo: updatedTask.isibo
         ? {
             id: updatedTask.isibo.id,

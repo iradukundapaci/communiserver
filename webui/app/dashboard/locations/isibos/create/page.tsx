@@ -12,17 +12,9 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Cell, getCells } from "@/lib/api/cells";
 import { createIsibo } from "@/lib/api/isibos";
 
-// Simple interface for member data during creation
 interface MemberData {
   names: string;
   email: string;
@@ -44,8 +36,8 @@ export default function CreateIsiboPage() {
     villageId: "",
     members: [] as MemberData[],
   });
-  const [villages, setVillages] = useState<Village[]>([]);
-  const [cells, setCells] = useState<Cell[]>([]);
+  const [, setVillages] = useState<Village[]>([]);
+  const [, setCells] = useState<Cell[]>([]);
   const [selectedCellId, setSelectedCellId] = useState<string>("");
   const [isLoading, setIsLoading] = useState(false);
   const [isVillagesLoading, setIsVillagesLoading] = useState(true);
@@ -64,14 +56,13 @@ export default function CreateIsiboPage() {
   const fetchCells = async () => {
     try {
       setIsCellsLoading(true);
-      const response = await getCells(1, 100); // Get all cells
+      const response = await getCells(1, 100);
       setCells(response.items || []);
 
-      // If user is a village leader, pre-select their cell
       if (user?.role === "VILLAGE_LEADER" && user?.cell?.id) {
         setSelectedCellId(user.cell.id);
       }
-      // Otherwise, select the first cell by default
+
       else if (response.items && response.items.length > 0) {
         setSelectedCellId(response.items[0].id);
       }
@@ -88,10 +79,9 @@ export default function CreateIsiboPage() {
 
     try {
       setIsVillagesLoading(true);
-      const response = await getVillages(selectedCellId, 1, 100); // Get all villages for the selected cell
+      const response = await getVillages(selectedCellId, 1, 100);
       setVillages(response.items || []);
 
-      // If user is a village leader, pre-select their village
       if (
         user?.role === "VILLAGE_LEADER" &&
         user?.village?.id &&
@@ -102,7 +92,7 @@ export default function CreateIsiboPage() {
           villageId: user?.village?.id || "",
         }));
       }
-      // Otherwise, select the first village by default
+
       else if (response.items && response.items.length > 0) {
         setFormData((prev) => ({
           ...prev,
@@ -262,25 +252,18 @@ export default function CreateIsiboPage() {
 
               <div className="space-y-2 max-w-xs">
                 <Label htmlFor="cellId">Cell</Label>
-                <Select
-                  value={selectedCellId}
-                  onValueChange={handleCellChange}
+                <Input
+                  id="cellId"
+                  type="text"
+                  value={user?.role === "VILLAGE_LEADER" && user?.cell?.name ? user.cell.name : ''}
+                  onChange={(e) => handleCellChange(e.target.value)}
+                  placeholder="Enter cell name"
                   disabled={
                     isCellsLoading ||
                     (user?.role === "VILLAGE_LEADER" && Boolean(user?.cell?.id))
                   }
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select a cell" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {cells.map((cell) => (
-                      <SelectItem key={cell.id} value={cell.id}>
-                        {cell.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  className="w-full"
+                />
                 {user?.role === "VILLAGE_LEADER" && user?.cell?.id && (
                   <p className="text-sm text-muted-foreground mt-1">
                     Cell is locked to your assigned cell
@@ -290,27 +273,18 @@ export default function CreateIsiboPage() {
 
               <div className="space-y-2 max-w-xs">
                 <Label htmlFor="villageId">Village</Label>
-                <Select
-                  value={formData.villageId}
-                  onValueChange={handleVillageChange}
+                <Input
+                  id="villageId"
+                  type="text"
+                  value={user?.role === "VILLAGE_LEADER" && user?.village?.name ? user.village.name : ''}
+                  onChange={(e) => handleVillageChange(e.target.value)}
+                  placeholder="Enter village name"
                   disabled={
                     isVillagesLoading ||
-                    villages.length === 0 ||
-                    (user?.role === "VILLAGE_LEADER" &&
-                      Boolean(user?.village?.id))
+                    (user?.role === "VILLAGE_LEADER" && Boolean(user?.village?.id))
                   }
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select a village" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {villages.map((village) => (
-                      <SelectItem key={village.id} value={village.id}>
-                        {village.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  className="w-full"
+                />
                 {user?.role === "VILLAGE_LEADER" && user?.village?.id && (
                   <p className="text-sm text-muted-foreground mt-1">
                     Village is locked to your assigned village

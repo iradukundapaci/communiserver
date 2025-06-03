@@ -1,15 +1,10 @@
-import { IsEnum, IsOptional, IsUUID } from "class-validator";
+import { IsOptional, IsUUID } from "class-validator";
 import { PaginationDto } from "src/__shared__/dto/pagination.dto";
-import { EActivityStatus } from "../enum/EActivityStatus";
 
 export namespace FetchActivityDTO {
   export class Input extends PaginationDto {
     @IsOptional()
     q?: string;
-
-    @IsEnum(EActivityStatus)
-    @IsOptional()
-    status?: EActivityStatus;
 
     @IsUUID()
     @IsOptional()
@@ -29,7 +24,6 @@ export namespace FetchActivityDTO {
     title: string;
     description: string;
     date: Date;
-    status: EActivityStatus;
     village?: {
       id: string;
       name: string;
@@ -39,6 +33,14 @@ export namespace FetchActivityDTO {
       title: string;
       description: string;
       status: string;
+      estimatedCost: number;
+      actualCost: number;
+      expectedParticipants: number;
+      actualParticipants: number;
+      totalEstimatedCost: number;
+      totalActualCost: number;
+      expectedFinancialImpact: number;
+      actualFinancialImpact: number;
       isibo?: {
         id: string;
         name: string;

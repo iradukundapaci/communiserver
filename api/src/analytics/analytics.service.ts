@@ -10,7 +10,6 @@ import { Village } from '../locations/entities/village.entity';
 import { Cell } from '../locations/entities/cell.entity';
 import { Isibo } from '../locations/entities/isibo.entity';
 import { UserRole } from '../__shared__/enums/user-role.enum';
-import { EActivityStatus } from '../activities/enum/EActivityStatus';
 import { ETaskStatus } from '../activities/enum/ETaskStatus';
 import {
   CoreMetricsDto,
@@ -152,9 +151,9 @@ export class AnalyticsService {
       pendingTasks,
     ] = await Promise.all([
       activityQuery.getCount(),
-      activityQuery.clone().where('activity.status = :status', { status: EActivityStatus.ACTIVE }).getCount(),
-      activityQuery.clone().where('activity.status = :status', { status: EActivityStatus.COMPLETED }).getCount(),
-      activityQuery.clone().where('activity.status = :status', { status: EActivityStatus.PENDING }).getCount(),
+      activityQuery.clone().where('activity.status = :status', { status: "ACTIVE" }).getCount(),
+      activityQuery.clone().where('activity.status = :status', { status: "COMPLETED" }).getCount(),
+      activityQuery.clone().where('activity.status = :status', { status: "PENDING" }).getCount(),
       taskQuery.getCount(),
       taskQuery.clone().where('task.status = :status', { status: ETaskStatus.ACTIVE }).getCount(),
       taskQuery.clone().where('task.status = :status', { status: ETaskStatus.COMPLETED }).getCount(),

@@ -15,6 +15,7 @@ export namespace FetchProfileDto {
     isIsiboLeader: boolean;
     isVillageLeader: boolean;
     isCellLeader: boolean;
+    profileID: string;
   }
 
   class Location {

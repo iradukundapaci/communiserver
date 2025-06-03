@@ -48,7 +48,6 @@ export class UsersController {
     @GetUser() user: User,
   ): Promise<GenericResponse<FetchProfileDto.Output>> {
     const loggedinUser = await this.usersService.getProfile(user.id);
-
     return new GenericResponse("Profile retrieved successfully", loggedinUser);
   }
 

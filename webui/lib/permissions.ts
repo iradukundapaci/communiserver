@@ -58,45 +58,46 @@ export enum Permission {
   ADD_TASK_REPORT = "ADD_TASK_REPORT",
   TAKE_ATTENDANCE = "TAKE_ATTENDANCE",
 
-  // Citizen permissions
   VIEW_PROFILE = "VIEW_PROFILE",
 }
 
 // Define permission mapping for each role
 export const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
   [UserRole.ADMIN]: [
-    // Admin can do everything
-    ...Object.values(Permission),
+    Permission.VIEW_NOTIFICATIONS,
+    Permission.VIEW_PROFILE,
+    Permission.VIEW_CELL,
+    Permission.VIEW_CELL_ANALYTICS,
+    Permission.CREATE_VILLAGE_LEADER,
+    Permission.VIEW_CELL_ACTIVITY,
+    Permission.VIEW_ALL_CELLS,
+    Permission.VIEW_ALL_VILLAGES,
+    Permission.VIEW_LEADERS,
+    Permission.VIEW_ALL_ISIBOS,
+    Permission.VIEW_LEADERS,
+    Permission.MANAGE_LEADERS,
+    Permission.ASSIGN_CELL_LEADERS,
+    Permission.DEASSIGN_CELL_LEADERS,
+    Permission.CREATE_CELL_LEADER,
   ],
 
   [UserRole.CELL_LEADER]: [
-    // Global permissions
     Permission.VIEW_NOTIFICATIONS,
     Permission.VIEW_PROFILE,
-
-    // Cell leader specific permissions
     Permission.VIEW_CELL,
     Permission.ASSIGN_VILLAGE_LEADERS,
     Permission.DEASSIGN_VILLAGE_LEADERS,
     Permission.VIEW_CELL_ANALYTICS,
     Permission.CREATE_VILLAGE_LEADER,
     Permission.VIEW_CELL_ACTIVITY,
-    Permission.CREATE_VILLAGE,
-    Permission.UPDATE_VILLAGE,
-    Permission.DELETE_VILLAGE,
     Permission.VIEW_ALL_VILLAGES,
     Permission.VIEW_LEADERS,
-
-    // Additional permissions to view lower-level locations
-    Permission.VIEW_ALL_ISIBOS, // Allow cell leaders to view isibos
+    Permission.VIEW_ALL_ISIBOS,
   ],
 
   [UserRole.VILLAGE_LEADER]: [
-    // Global permissions
     Permission.VIEW_NOTIFICATIONS,
     Permission.VIEW_PROFILE,
-
-    // Village leader specific permissions
     Permission.VIEW_VILLAGE,
     Permission.ASSIGN_ISIBO_LEADERS,
     Permission.DEASSIGN_ISIBO_LEADERS,
@@ -114,11 +115,8 @@ export const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
   ],
 
   [UserRole.ISIBO_LEADER]: [
-    // Global permissions
     Permission.VIEW_NOTIFICATIONS,
     Permission.VIEW_PROFILE,
-
-    // Isibo leader specific permissions
     Permission.VIEW_ISIBO,
     Permission.UPDATE_ISIBO,
     Permission.VIEW_ISIBO_ANALYTICS,
@@ -127,7 +125,7 @@ export const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     Permission.ADD_TASK_REPORT,
     Permission.TAKE_ATTENDANCE,
     Permission.CREATE_CITIZEN,
-    Permission.VIEW_LEADERS, // Allow isibo leaders to view users (citizens in their isibo)
+    Permission.VIEW_LEADERS,
   ],
 
   [UserRole.CITIZEN]: [Permission.VIEW_NOTIFICATIONS, Permission.VIEW_PROFILE],

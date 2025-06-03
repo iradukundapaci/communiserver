@@ -22,9 +22,51 @@ export class Report extends AbstractEntity {
   })
   attendance: Profile[];
 
+  @Column({ type: "int", nullable: true })
+  totalExpectedParticipants?: number;
+
+  @Column({ type: "int", nullable: true })
+  totalPresentParticipants?: number;
+
+  @Column({ type: "int", nullable: true })
+  youthParticipants?: number;
+
+  @Column({ type: "decimal", precision: 10, scale: 2, default: 0 })
+  estimatedCost: number = 0;
+
+  @Column({ type: "decimal", precision: 10, scale: 2, default: 0 })
+  actualCost: number = 0;
+
+  @Column({ type: "int", default: 0 })
+  expectedParticipants: number = 0;
+
+  @Column({ type: "int", default: 0 })
+  actualParticipants: number = 0;
+
+  @Column({ type: "decimal", precision: 10, scale: 2, default: 0 })
+  totalEstimatedCost: number = 0;
+
+  @Column({ type: "decimal", precision: 10, scale: 2, default: 0 })
+  totalActualCost: number = 0;
+
+  @Column({ type: "decimal", precision: 10, scale: 2, default: 0 })
+  expectedFinancialImpact: number = 0;
+
+  @Column({ type: "decimal", precision: 10, scale: 2, default: 0 })
+  actualFinancialImpact: number = 0;
+
   @Column("text", { nullable: true })
-  comment: string;
+  comment?: string;
 
   @Column("text", { array: true, nullable: true })
-  evidenceUrls: string[];
+  materialsUsed?: string[];
+
+  @Column("text", { nullable: true })
+  challengesFaced?: string;
+
+  @Column("text", { nullable: true })
+  suggestions?: string;
+
+  @Column("text", { array: true, nullable: true })
+  evidenceUrls?: string[];
 }

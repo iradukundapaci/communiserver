@@ -16,7 +16,7 @@ import { FetchActivityDTO } from "./dto/fetch-activity.dto";
 import { UpdateActivityDTO } from "./dto/update-activity.dto";
 import { Activity } from "./entities/activity.entity";
 import { Task } from "./entities/task.entity";
-import { EActivityStatus } from "./enum/EActivityStatus";
+
 import { ETaskStatus } from "./enum/ETaskStatus";
 
 @Injectable()
@@ -47,7 +47,6 @@ export class ActivitiesService {
       title: createActivityDTO.title,
       description: createActivityDTO.description,
       date: new Date(createActivityDTO.date),
-      status: EActivityStatus.PENDING,
       village,
     });
 
@@ -74,6 +73,14 @@ export class ActivitiesService {
         task.title = taskDto.title;
         task.description = taskDto.description;
         task.status = ETaskStatus.PENDING;
+        task.estimatedCost = taskDto.estimatedCost || 0;
+        task.actualCost = 0; // Always 0 during creation
+        task.expectedParticipants = taskDto.expectedParticipants || 0;
+        task.actualParticipants = 0; // Always 0 during creation
+        task.totalEstimatedCost = taskDto.totalEstimatedCost || 0;
+        task.totalActualCost = 0; // Always 0 during creation
+        task.expectedFinancialImpact = taskDto.expectedFinancialImpact || 0;
+        task.actualFinancialImpact = 0; // Always 0 during creation
         task.activity = activity; // Set the activity reference
 
         // Find isibo
@@ -98,13 +105,20 @@ export class ActivitiesService {
       title: savedActivity.title,
       description: savedActivity.description,
       date: savedActivity.date,
-      status: savedActivity.status,
       tasks: savedActivity.tasks
         ? savedActivity.tasks.map((task) => ({
             id: task.id,
             title: task.title,
             description: task.description,
             status: task.status,
+            estimatedCost: task.estimatedCost,
+            actualCost: task.actualCost,
+            expectedParticipants: task.expectedParticipants,
+            actualParticipants: task.actualParticipants,
+            totalEstimatedCost: task.totalEstimatedCost,
+            totalActualCost: task.totalActualCost,
+            expectedFinancialImpact: task.expectedFinancialImpact,
+            actualFinancialImpact: task.actualFinancialImpact,
           }))
         : [],
     };
@@ -166,11 +180,7 @@ export class ActivitiesService {
       );
     }
 
-    if (DTO.status) {
-      queryBuilder.andWhere("activity.status = :status", {
-        status: DTO.status,
-      });
-    }
+
 
     if (DTO.villageId) {
       queryBuilder.andWhere("village.id = :villageId", {
@@ -192,7 +202,6 @@ export class ActivitiesService {
           title: activity.title,
           description: activity.description,
           date: activity.date,
-          status: activity.status,
           village: activity.village
             ? {
                 id: activity.village.id,
@@ -205,6 +214,14 @@ export class ActivitiesService {
                 title: task.title,
                 description: task.description,
                 status: task.status,
+                estimatedCost: task.estimatedCost,
+                actualCost: task.actualCost,
+                expectedParticipants: task.expectedParticipants,
+                actualParticipants: task.actualParticipants,
+                totalEstimatedCost: task.totalEstimatedCost,
+                totalActualCost: task.totalActualCost,
+                expectedFinancialImpact: task.expectedFinancialImpact,
+                actualFinancialImpact: task.actualFinancialImpact,
                 isibo: task.isibo
                   ? {
                       id: task.isibo.id,
@@ -229,7 +246,6 @@ export class ActivitiesService {
       title: activity.title,
       description: activity.description,
       date: activity.date,
-      status: activity.status,
       village: activity.village
         ? {
             id: activity.village.id,
@@ -242,6 +258,14 @@ export class ActivitiesService {
             title: task.title,
             description: task.description,
             status: task.status,
+            estimatedCost: task.estimatedCost,
+            actualCost: task.actualCost,
+            expectedParticipants: task.expectedParticipants,
+            actualParticipants: task.actualParticipants,
+            totalEstimatedCost: task.totalEstimatedCost,
+            totalActualCost: task.totalActualCost,
+            expectedFinancialImpact: task.expectedFinancialImpact,
+            actualFinancialImpact: task.actualFinancialImpact,
             isibo: task.isibo
               ? {
                   id: task.isibo.id,
@@ -295,9 +319,7 @@ export class ActivitiesService {
       activity.date = new Date(updateActivityDTO.date);
     }
 
-    if (updateActivityDTO.status) {
-      activity.status = updateActivityDTO.status;
-    }
+
 
     // Handle tasks if provided
     if (updateActivityDTO.tasks) {
@@ -350,8 +372,33 @@ export class ActivitiesService {
               existingTask.status = taskDto.status;
             }
 
-            // Store the original isibo ID before any changes
-            const originalIsiboId = existingTask.isibo?.id;
+            // Update financial fields
+            if (taskDto.estimatedCost !== undefined) {
+              existingTask.estimatedCost = taskDto.estimatedCost;
+            }
+            if (taskDto.actualCost !== undefined) {
+              existingTask.actualCost = taskDto.actualCost;
+            }
+            if (taskDto.expectedParticipants !== undefined) {
+              existingTask.expectedParticipants = taskDto.expectedParticipants;
+            }
+            if (taskDto.actualParticipants !== undefined) {
+              existingTask.actualParticipants = taskDto.actualParticipants;
+            }
+            if (taskDto.totalEstimatedCost !== undefined) {
+              existingTask.totalEstimatedCost = taskDto.totalEstimatedCost;
+            }
+            if (taskDto.totalActualCost !== undefined) {
+              existingTask.totalActualCost = taskDto.totalActualCost;
+            }
+            if (taskDto.expectedFinancialImpact !== undefined) {
+              existingTask.expectedFinancialImpact = taskDto.expectedFinancialImpact;
+            }
+            if (taskDto.actualFinancialImpact !== undefined) {
+              existingTask.actualFinancialImpact = taskDto.actualFinancialImpact;
+            }
+
+
 
             // Update isibo if provided
             if (taskDto.isiboId) {
@@ -442,7 +489,6 @@ export class ActivitiesService {
       title: savedActivity.title,
       description: savedActivity.description,
       date: savedActivity.date,
-      status: savedActivity.status,
       village: savedActivity.village
         ? {
             id: savedActivity.village.id,
@@ -455,6 +501,14 @@ export class ActivitiesService {
             title: task.title,
             description: task.description,
             status: task.status,
+            estimatedCost: task.estimatedCost,
+            actualCost: task.actualCost,
+            expectedParticipants: task.expectedParticipants,
+            actualParticipants: task.actualParticipants,
+            totalEstimatedCost: task.totalEstimatedCost,
+            totalActualCost: task.totalActualCost,
+            expectedFinancialImpact: task.expectedFinancialImpact,
+            actualFinancialImpact: task.actualFinancialImpact,
             isibo: task.isibo
               ? {
                   id: task.isibo.id,

@@ -25,18 +25,25 @@ export interface IsiboMember {
   };
 }
 
+export interface Citizen {
+  names: string;
+  email: string;
+  phone: string;
+}
+
 export interface CreateIsiboInput {
   name: string;
   villageId: string;
   leaderId?: string;
-  memberIds?: string[];
+  members?: Citizen[]; // Array of citizen data to create
 }
 
 export interface UpdateIsiboInput {
   name?: string;
   villageId?: string;
   leaderId?: string;
-  memberIds?: string[];
+  newMembers?: Citizen[]; // New citizens to create
+  existingMemberIds?: string[]; // Existing member profile IDs to keep
 }
 
 export interface AssignIsiboLeaderInput {

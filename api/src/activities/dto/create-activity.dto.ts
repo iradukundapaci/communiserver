@@ -1,5 +1,4 @@
-import { IsNotEmpty, IsOptional, IsString, IsUUID } from "class-validator";
-import { EActivityStatus } from "../enum/EActivityStatus";
+import { IsNotEmpty, IsNumber, IsOptional, IsString, IsUUID } from "class-validator";
 
 export namespace CreateActivityDTO {
   export class Input {
@@ -39,13 +38,28 @@ export namespace CreateActivityDTO {
     @IsString()
     @IsNotEmpty()
     isiboId: string;
+
+    @IsNumber()
+    @IsOptional()
+    estimatedCost?: number;
+
+    @IsNumber()
+    @IsOptional()
+    expectedParticipants?: number;
+
+    @IsNumber()
+    @IsOptional()
+    totalEstimatedCost?: number;
+
+    @IsNumber()
+    @IsOptional()
+    expectedFinancialImpact?: number;
   }
 
   export class Output {
     id: string;
     title: string;
     description: string;
-    status: EActivityStatus;
     date: Date;
     tasks: Task[];
   }

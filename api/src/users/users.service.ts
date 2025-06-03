@@ -500,6 +500,7 @@ export class UsersService {
       isIsiboLeader: userProfile.profile.isIsiboLeader,
       isVillageLeader: userProfile.profile.isVillageLeader,
       isCellLeader: userProfile.profile.isCellLeader,
+      profileID: userProfile.profile.id,
     });
   }
 
@@ -632,6 +633,7 @@ export class UsersService {
         phone: user.phone,
         role: user.role,
         activated: user.activated,
+        profileID: user.profile.id,
         isibo: user.profile.isibo ? {
           id: user.profile.isibo.id,
           name: user.profile.isibo.name,

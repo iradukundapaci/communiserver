@@ -25,29 +25,13 @@ export namespace FetchUserDto {
   }
 
   export class UserItem {
-    @Expose()
-    @ApiProperty()
     id: string;
-
-    @Expose()
-    @ApiProperty()
     names: string;
-
-    @Expose()
-    @ApiProperty()
     email: string;
-
-    @Expose()
-    @ApiProperty()
     phone: string;
-
-    @Expose()
-    @ApiProperty({ enum: UserRole })
     role: UserRole;
-
-    @Expose()
-    @ApiProperty()
     activated: boolean;
+    profileID: string;
   }
 
   export class Output {

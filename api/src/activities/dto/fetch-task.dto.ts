@@ -22,6 +22,14 @@ export namespace FetchTaskDTO {
     title: string;
     description: string;
     status: ETaskStatus;
+    estimatedCost: number;
+    actualCost: number;
+    expectedParticipants: number;
+    actualParticipants: number;
+    totalEstimatedCost: number;
+    totalActualCost: number;
+    expectedFinancialImpact: number;
+    actualFinancialImpact: number;
     isibo: {
       id: string;
       names: string;

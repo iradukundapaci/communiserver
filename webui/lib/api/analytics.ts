@@ -21,14 +21,15 @@ export interface LocationStats {
 
 export interface ActivityStats {
   totalActivities: number;
-  activeActivities: number;
-  completedActivities: number;
-  pendingActivities: number;
-  totalTasks: number;
+  activitiesWithReports: number; // Activities that have at least one report
+  activitiesWithoutReports: number; // Activities without any reports
+  totalTasks: number; // Total tasks across all activities
   activeTasks: number;
   completedTasks: number;
   pendingTasks: number;
+  cancelledTasks: number;
   taskCompletionRate: number;
+  activityReportingRate: number; // Percentage of activities with reports
 }
 
 export interface ReportStats {
@@ -89,6 +90,42 @@ export interface AnalyticsQuery {
   locationId?: string;
 }
 
+// New analytics data structure for updated dashboard
+export interface ModernAnalyticsData {
+  activities: {
+    total: number;
+    withReports: number; // Activities that have at least one report
+    withoutReports: number; // Activities without any reports
+    totalTasks: number; // Total tasks across all activities
+  };
+  tasks: {
+    total: number;
+    completed: number;
+    ongoing: number;
+    pending: number;
+    cancelled: number;
+  };
+  financial: {
+    totalEstimatedCost: number;
+    totalActualCost: number;
+    totalEstimatedImpact: number;
+    totalActualImpact: number;
+    costVariance: number;
+    impactVariance: number;
+  };
+  participation: {
+    totalExpectedParticipants: number;
+    totalActualParticipants: number;
+    totalYouthParticipants: number;
+    participationRate: number;
+  };
+  reports: {
+    total: number;
+    thisMonth: number;
+    lastMonth: number;
+  };
+}
+
 class AnalyticsAPI {
   private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
     const token = localStorage.getItem('accessToken');
@@ -145,6 +182,49 @@ class AnalyticsAPI {
   async getDashboardSummary(query: AnalyticsQuery = {}): Promise<DashboardSummary> {
     const queryString = this.buildQueryString(query);
     return this.request<DashboardSummary>(`/dashboard-summary${queryString}`);
+  }
+
+  async getModernAnalytics(query: AnalyticsQuery = {}): Promise<ModernAnalyticsData> {
+    const queryString = this.buildQueryString(query);
+    return this.request<ModernAnalyticsData>(`/modern-dashboard${queryString}`);
+  }
+
+  // Generate sample data for development
+  generateSampleModernAnalytics(): ModernAnalyticsData {
+    return {
+      activities: {
+        total: 45,
+        withReports: 32,
+        withoutReports: 13,
+        totalTasks: 128,
+      },
+      tasks: {
+        total: 128,
+        completed: 89,
+        ongoing: 25,
+        pending: 12,
+        cancelled: 2,
+      },
+      financial: {
+        totalEstimatedCost: 2500000, // 2.5M RWF
+        totalActualCost: 2750000, // 2.75M RWF
+        totalEstimatedImpact: 5000000, // 5M RWF
+        totalActualImpact: 5200000, // 5.2M RWF
+        costVariance: 10, // 10% over budget
+        impactVariance: 4, // 4% over expected impact
+      },
+      participation: {
+        totalExpectedParticipants: 1200,
+        totalActualParticipants: 1050,
+        totalYouthParticipants: 420,
+        participationRate: 87.5, // 87.5%
+      },
+      reports: {
+        total: 89,
+        thisMonth: 23,
+        lastMonth: 18,
+      },
+    };
   }
 }
 

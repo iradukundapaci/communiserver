@@ -17,7 +17,22 @@ export interface Report {
     };
   };
   attendance?: ReportAttendee[];
+  totalExpectedParticipants?: number;
+  totalPresentParticipants?: number;
+  youthParticipants?: number;
+  // Task financial data (copied for easy access)
+  estimatedCost: number;
+  actualCost: number;
+  expectedParticipants: number;
+  actualParticipants: number;
+  totalEstimatedCost: number;
+  totalActualCost: number;
+  expectedFinancialImpact: number;
+  actualFinancialImpact: number;
   comment?: string;
+  materialsUsed?: string[];
+  challengesFaced?: string;
+  suggestions?: string;
   evidenceUrls?: string[];
   createdAt: Date;
   updatedAt: Date;
@@ -38,7 +53,22 @@ export interface CreateReportInput {
   activityId: string;
   taskId: string;
   attendanceIds?: string[];
+  totalExpectedParticipants?: number;
+  totalPresentParticipants?: number;
+  youthParticipants?: number;
+  // Task financial data (copied from task)
+  estimatedCost?: number;
+  actualCost?: number;
+  expectedParticipants?: number;
+  actualParticipants?: number;
+  totalEstimatedCost?: number;
+  totalActualCost?: number;
+  expectedFinancialImpact?: number;
+  actualFinancialImpact?: number;
   comment?: string;
+  materialsUsed?: string[];
+  challengesFaced?: string;
+  suggestions?: string;
   evidenceUrls?: string[];
 }
 
@@ -46,7 +76,22 @@ export interface UpdateReportInput {
   activityId?: string;
   taskId?: string;
   attendanceIds?: string[];
+  totalExpectedParticipants?: number;
+  totalPresentParticipants?: number;
+  youthParticipants?: number;
+  // Task financial data (copied from task)
+  estimatedCost?: number;
+  actualCost?: number;
+  expectedParticipants?: number;
+  actualParticipants?: number;
+  totalEstimatedCost?: number;
+  totalActualCost?: number;
+  expectedFinancialImpact?: number;
+  actualFinancialImpact?: number;
   comment?: string;
+  materialsUsed?: string[];
+  challengesFaced?: string;
+  suggestions?: string;
   evidenceUrls?: string[];
 }
 

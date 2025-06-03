@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsString, IsUUID } from "class-validator";
+import { IsNotEmpty, IsNumber, IsOptional, IsString, IsUUID } from "class-validator";
 
 export namespace CreateTaskDTO {
   export class Input {
@@ -17,6 +17,22 @@ export namespace CreateTaskDTO {
     @IsUUID()
     @IsNotEmpty()
     isiboId: string;
+
+    @IsNumber()
+    @IsOptional()
+    estimatedCost?: number;
+
+    @IsNumber()
+    @IsOptional()
+    expectedParticipants?: number;
+
+    @IsNumber()
+    @IsOptional()
+    totalEstimatedCost?: number;
+
+    @IsNumber()
+    @IsOptional()
+    expectedFinancialImpact?: number;
   }
 
   export class Output {
@@ -24,6 +40,14 @@ export namespace CreateTaskDTO {
     title: string;
     description: string;
     status: string;
+    estimatedCost: number;
+    actualCost: number;
+    expectedParticipants: number;
+    actualParticipants: number;
+    totalEstimatedCost: number;
+    totalActualCost: number;
+    expectedFinancialImpact: number;
+    actualFinancialImpact: number;
     activity: {
       id: string;
       title: string;
