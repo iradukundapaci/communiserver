@@ -45,14 +45,6 @@ export namespace CreateActivityDTO {
 
     @IsNumber()
     @IsOptional()
-    expectedParticipants?: number;
-
-    @IsNumber()
-    @IsOptional()
-    totalEstimatedCost?: number;
-
-    @IsNumber()
-    @IsOptional()
     expectedFinancialImpact?: number;
   }
 

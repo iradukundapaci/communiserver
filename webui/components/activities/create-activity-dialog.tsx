@@ -7,9 +7,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { WideDialog, WideDialogContent, WideDialogTrigger, WideDialogForm } from "@/components/ui/wide-dialog";
 import { createActivity, type CreateActivityInput, type CreateTaskInput } from "@/lib/api/activities";
-import { searchVillages, type Village } from "@/lib/api/locations";
-import { searchIsibos, type Isibo } from "@/lib/api/locations";
-import { useUser } from "@/lib/contexts/user-context";
+import { searchVillages, type Village } from "@/lib/api/villages";
+import { getIsibos, type Isibo } from "@/lib/api/isibos";
 import { IconPlus, IconTrash, IconCalendar } from "@tabler/icons-react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -26,7 +25,6 @@ interface TaskFormData extends Omit<CreateTaskInput, 'activityId'> {
 export function CreateActivityDialog({ onActivityCreated, trigger }: CreateActivityDialogProps) {
   const [open, setOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const { user } = useUser();
 
   // Form state
   const [title, setTitle] = useState("");
@@ -115,8 +113,10 @@ export function CreateActivityDialog({ onActivityCreated, trigger }: CreateActiv
 
   const handleIsiboSearch = async (query: string, villageId?: string) => {
     try {
-      const isibos = await searchIsibos(query, villageId);
-      return isibos.map(isibo => ({
+      if (!villageId) return [];
+
+      const response = await getIsibos(villageId, 1, 50, query);
+      return response.items.map(isibo => ({
         value: isibo.id,
         label: isibo.name,
         data: isibo,
@@ -288,7 +288,7 @@ function TaskForm({ task, villageId, onUpdate, onRemove, onIsiboSearch }: TaskFo
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         <div>
           <Label>Task Title *</Label>
           <Input
@@ -321,7 +321,7 @@ function TaskForm({ task, villageId, onUpdate, onRemove, onIsiboSearch }: TaskFo
           />
         </div>
 
-        <div className="sm:col-span-2">
+        <div className="sm:col-span-2 lg:col-span-4">
           <Label>Description</Label>
           <Textarea
             value={task.description}
@@ -332,14 +332,13 @@ function TaskForm({ task, villageId, onUpdate, onRemove, onIsiboSearch }: TaskFo
         </div>
 
         <div>
-          <Label>Estimated Cost</Label>
+          <Label>Estimated Cost (RWF)</Label>
           <Input
             type="number"
             min="0"
-            step="0.01"
             value={task.estimatedCost || ""}
             onChange={(e) => onUpdate({ estimatedCost: parseFloat(e.target.value) || 0 })}
-            placeholder="0.00"
+            placeholder="0"
           />
         </div>
 
@@ -355,26 +354,24 @@ function TaskForm({ task, villageId, onUpdate, onRemove, onIsiboSearch }: TaskFo
         </div>
 
         <div>
-          <Label>Total Estimated Cost</Label>
+          <Label>Total Estimated Cost (RWF)</Label>
           <Input
             type="number"
             min="0"
-            step="0.01"
             value={task.totalEstimatedCost || ""}
             onChange={(e) => onUpdate({ totalEstimatedCost: parseFloat(e.target.value) || 0 })}
-            placeholder="0.00"
+            placeholder="0"
           />
         </div>
 
         <div>
-          <Label>Expected Financial Impact</Label>
+          <Label>Expected Financial Impact (RWF)</Label>
           <Input
             type="number"
             min="0"
-            step="0.01"
             value={task.expectedFinancialImpact || ""}
             onChange={(e) => onUpdate({ expectedFinancialImpact: parseFloat(e.target.value) || 0 })}
-            placeholder="0.00"
+            placeholder="0"
           />
         </div>
       </div>

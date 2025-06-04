@@ -21,13 +21,11 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import {
   Activity,
-  ActivityStatus,
   TaskStatus,
   getActivityById,
   updateActivity,
 } from "@/lib/api/activities";
 import { getIsibos } from "@/lib/api/isibos";
-import { getVillages } from "@/lib/api/villages";
 import { useUser } from "@/lib/contexts/user-context";
 import { ArrowLeft, Plus, Trash2 } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
@@ -47,13 +45,21 @@ export default function ActivityDetailPage() {
     title: "",
     description: "",
     date: "",
-    status: ActivityStatus.PENDING,
     villageId: "",
     tasks: [] as Array<{
       id?: string;
       title: string;
+      description?: string;
       status?: TaskStatus;
       isiboId: string;
+      estimatedCost?: number;
+      actualCost?: number;
+      expectedParticipants?: number;
+      actualParticipants?: number;
+      totalEstimatedCost?: number;
+      totalActualCost?: number;
+      expectedFinancialImpact?: number;
+      actualFinancialImpact?: number;
     }>,
   });
 
@@ -62,9 +68,17 @@ export default function ActivityDetailPage() {
     title: "",
     description: "",
     isiboId: user?.isibo?.id || "",
+    estimatedCost: 0,
+    actualCost: 0,
+    expectedParticipants: 0,
+    actualParticipants: 0,
+    totalEstimatedCost: 0,
+    totalActualCost: 0,
+    expectedFinancialImpact: 0,
+    actualFinancialImpact: 0,
   });
 
-  const [villages, setVillages] = useState<Array<{ id: string; name: string }>>(
+  const [villages] = useState<Array<{ id: string; name: string }>>(
     []
   );
   const [isibos, setIsibos] = useState<Array<{ id: string; name: string }>>([]);
@@ -75,28 +89,33 @@ export default function ActivityDetailPage() {
         setIsLoading(true);
         const activityData = await getActivityById(id);
         setActivity(activityData);
-
-        // Format date for datetime-local input
         const date = new Date(activityData.date);
 
         const formatDateForInput = (date: Date) => {
-          return date.toISOString().slice(0, 16); // Format: YYYY-MM-DDThh:mm
+          return date.toISOString().slice(0, 16);
         };
 
-        // Map tasks to the format expected by the form
         const tasks =
           activityData.tasks?.map((task) => ({
             id: task.id,
             title: task.title,
+            description: task.description || "",
             status: task.status,
             isiboId: task.isibo?.id || "",
+            estimatedCost: task.estimatedCost || 0,
+            actualCost: task.actualCost || 0,
+            expectedParticipants: task.expectedParticipants || 0,
+            actualParticipants: task.actualParticipants || 0,
+            totalEstimatedCost: task.totalEstimatedCost || 0,
+            totalActualCost: task.totalActualCost || 0,
+            expectedFinancialImpact: task.expectedFinancialImpact || 0,
+            actualFinancialImpact: task.actualFinancialImpact || 0,
           })) || [];
 
         setFormData({
           title: activityData.title,
           description: activityData.description,
           date: formatDateForInput(date),
-          status: activityData.status,
           villageId: activityData.village?.id || "",
           tasks: tasks,
         });
@@ -119,21 +138,9 @@ export default function ActivityDetailPage() {
   useEffect(() => {
     const fetchLocations = async () => {
       try {
-        // Fetch villages based on user's cell
-        if (user?.cell) {
-          const villagesResponse = await getVillages(user.cell.id, 1, 100);
-          setVillages(villagesResponse.items);
-
-          // If user has a village, fetch isibos for that village
-          if (user.village) {
-            const isibosResponse = await getIsibos(user.village.id, 1, 100);
-            setIsibos(isibosResponse.items);
-          }
-        } else {
-          // If user doesn't have a cell, show empty lists
-          setVillages([]);
-          setIsibos([]);
-          toast.error("You need to be assigned to a cell to edit activities");
+        if (user?.village) {
+          const isibosResponse = await getIsibos(user.village.id, 1, 100);
+          setIsibos(isibosResponse.items);
         }
       } catch (error) {
         console.error("Failed to fetch locations:", error);
@@ -144,7 +151,7 @@ export default function ActivityDetailPage() {
     if (user) {
       fetchLocations();
     }
-  }, [user?.id, user?.cell?.id, user?.village?.id]); // Only depend on specific user properties
+  }, [user]);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -215,6 +222,14 @@ export default function ActivityDetailPage() {
       title: "",
       description: "",
       isiboId: "",
+      estimatedCost: 0,
+      actualCost: 0,
+      expectedParticipants: 0,
+      actualParticipants: 0,
+      totalEstimatedCost: 0,
+      totalActualCost: 0,
+      expectedFinancialImpact: 0,
+      actualFinancialImpact: 0,
     });
 
     toast.success("Task added to activity");
@@ -235,34 +250,21 @@ export default function ActivityDetailPage() {
     setIsSaving(true);
 
     try {
-      // Validate date
       if (!formData.date) {
         toast.error("Date is required");
         setIsSaving(false);
         return;
       }
-
-      // Validate date
       const date = new Date(formData.date);
 
-      // Check if date is valid
       if (isNaN(date.getTime())) {
         toast.error("Invalid date format");
         setIsSaving(false);
         return;
       }
 
-      // Validate village
-      if (!formData.villageId) {
-        toast.error("Village is required");
-        setIsSaving(false);
-        return;
-      }
-
-      // Use the string date directly
       const activityData = {
         ...formData,
-        // If there are no tasks, don't include an empty array
         tasks: formData.tasks.length > 0 ? formData.tasks : undefined,
       };
 
@@ -338,49 +340,23 @@ export default function ActivityDetailPage() {
               <Input
                 id="date"
                 name="date"
-                type="datetime-local"
+                type="date"
                 value={formData.date}
                 onChange={handleChange}
                 required
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="status">Status</Label>
-              <Select
-                value={formData.status}
-                onValueChange={(value) => handleSelectChange("status", value)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select status" />
-                </SelectTrigger>
-                <SelectContent>
-                  {Object.values(ActivityStatus).map((status) => (
-                    <SelectItem key={status} value={status}>
-                      {status.charAt(0).toUpperCase() + status.slice(1)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+
             <div className="space-y-2">
               <Label htmlFor="villageId">Village</Label>
-              <Select
-                value={formData.villageId}
-                onValueChange={(value) =>
-                  handleSelectChange("villageId", value)
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select village" />
-                </SelectTrigger>
-                <SelectContent>
-                  {villages.map((village) => (
-                    <SelectItem key={village.id} value={village.id}>
-                      {village.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                <Input
+                  id="villageId"
+                  type="text"
+                  value={user?.role === "VILLAGE_LEADER" && user?.village?.name ? user.village.name : ''}
+                  placeholder="Enter village name"
+                  disabled={true}
+                  className="w-full"
+                />
             </div>
 
             <div className="border-t pt-4 mt-4">
@@ -418,52 +394,171 @@ export default function ActivityDetailPage() {
                 </p>
               )}
 
-              {/* Add task form */}
-              <div className="space-y-4 border p-4 rounded-md">
-                <h5 className="font-medium">Add a Task</h5>
+              {/* Add task form - Scrollable */}
+              <div className="border p-4 rounded-md max-h-96 overflow-y-auto">
+                <h5 className="font-medium mb-4">Add a Task</h5>
 
-                <div className="space-y-2">
-                  <Label htmlFor="taskTitle">Title</Label>
-                  <Input
-                    id="taskTitle"
-                    name="title"
-                    value={currentTask.title}
-                    onChange={handleTaskChange}
-                  />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Left Column - Basic Info */}
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="taskTitle">Title *</Label>
+                      <Input
+                        id="taskTitle"
+                        name="title"
+                        value={currentTask.title}
+                        onChange={handleTaskChange}
+                        placeholder="Enter task title"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="taskDescription">Description *</Label>
+                      <Textarea
+                        id="taskDescription"
+                        name="description"
+                        value={currentTask.description}
+                        onChange={handleTaskChange}
+                        placeholder="Enter task description"
+                        rows={3}
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="isiboId">Isibo</Label>
+                      <Select
+                        value={currentTask.isiboId}
+                        onValueChange={(value) =>
+                          handleTaskSelectChange("isiboId", value)
+                        }
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select isibo" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {isibos.map((isibo) => (
+                            <SelectItem key={isibo.id} value={isibo.id}>
+                              {isibo.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  {/* Right Column - Financial & Participation */}
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="space-y-2">
+                        <Label htmlFor="estimatedCost">Estimated Cost (RWF)</Label>
+                        <Input
+                          id="estimatedCost"
+                          name="estimatedCost"
+                          type="number"
+                          min="0"
+                          value={currentTask.estimatedCost}
+                          onChange={handleTaskChange}
+                          placeholder="0"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="actualCost">Actual Cost (RWF)</Label>
+                        <Input
+                          id="actualCost"
+                          name="actualCost"
+                          type="number"
+                          min="0"
+                          value={currentTask.actualCost}
+                          onChange={handleTaskChange}
+                          placeholder="0"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="space-y-2">
+                        <Label htmlFor="expectedParticipants">Expected Participants</Label>
+                        <Input
+                          id="expectedParticipants"
+                          name="expectedParticipants"
+                          type="number"
+                          min="0"
+                          value={currentTask.expectedParticipants}
+                          onChange={handleTaskChange}
+                          placeholder="0"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="actualParticipants">Actual Participants</Label>
+                        <Input
+                          id="actualParticipants"
+                          name="actualParticipants"
+                          type="number"
+                          min="0"
+                          value={currentTask.actualParticipants}
+                          onChange={handleTaskChange}
+                          placeholder="0"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="space-y-2">
+                        <Label htmlFor="totalEstimatedCost">Total Est. Cost (RWF)</Label>
+                        <Input
+                          id="totalEstimatedCost"
+                          name="totalEstimatedCost"
+                          type="number"
+                          min="0"
+                          value={currentTask.totalEstimatedCost}
+                          onChange={handleTaskChange}
+                          placeholder="0"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="totalActualCost">Total Actual Cost (RWF)</Label>
+                        <Input
+                          id="totalActualCost"
+                          name="totalActualCost"
+                          type="number"
+                          min="0"
+                          value={currentTask.totalActualCost}
+                          onChange={handleTaskChange}
+                          placeholder="0"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="space-y-2">
+                        <Label htmlFor="expectedFinancialImpact">Expected Impact (RWF)</Label>
+                        <Input
+                          id="expectedFinancialImpact"
+                          name="expectedFinancialImpact"
+                          type="number"
+                          min="0"
+                          value={currentTask.expectedFinancialImpact}
+                          onChange={handleTaskChange}
+                          placeholder="0"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="actualFinancialImpact">Actual Impact (RWF)</Label>
+                        <Input
+                          id="actualFinancialImpact"
+                          name="actualFinancialImpact"
+                          type="number"
+                          min="0"
+                          value={currentTask.actualFinancialImpact}
+                          onChange={handleTaskChange}
+                          placeholder="0"
+                        />
+                      </div>
+                    </div>
+                  </div>
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="taskDescription">Description</Label>
-                  <Textarea
-                    id="taskDescription"
-                    name="description"
-                    value={currentTask.description}
-                    onChange={handleTaskChange}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="isiboId">Isibo</Label>
-                  <Select
-                    value={currentTask.isiboId}
-                    onValueChange={(value) =>
-                      handleTaskSelectChange("isiboId", value)
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select isibo" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {isibos.map((isibo) => (
-                        <SelectItem key={isibo.id} value={isibo.id}>
-                          {isibo.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="flex justify-end">
+                <div className="flex justify-end mt-4 pt-4 border-t">
                   <Button type="button" variant="secondary" onClick={addTask}>
                     <Plus className="h-4 w-4 mr-2" />
                     Add Task

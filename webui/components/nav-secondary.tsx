@@ -33,7 +33,7 @@ export function NavSecondary(
     clearUser();
 
     // Redirect to home page
-    router.push("/");
+    router.push("/auth/login");
 
     // Show success message
     import("sonner").then(({ toast }) => {

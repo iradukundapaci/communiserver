@@ -9,14 +9,15 @@ import { Badge } from "@/components/ui/badge";
 
 interface ActivityStats {
   totalActivities: number;
-  activeActivities: number;
-  completedActivities: number;
-  pendingActivities: number;
+  activitiesWithReports: number; // Activities that have at least one report
+  activitiesWithoutReports: number; // Activities without any reports
   totalTasks: number;
   activeTasks: number;
   completedTasks: number;
   pendingTasks: number;
+  cancelledTasks: number;
   taskCompletionRate: number;
+  activityReportingRate: number; // Percentage of activities with reports
 }
 
 interface CoreMetrics {
@@ -123,26 +124,18 @@ export function ActivityStatusOverview() {
 
   const activityData = [
     {
-      label: "Completed",
-      count: activityStats.completedActivities,
+      label: "With Reports",
+      count: activityStats.activitiesWithReports,
       total: activityStats.totalActivities,
       icon: IconCircleCheck,
       color: "bg-green-500",
       textColor: "text-green-600 dark:text-green-400"
     },
     {
-      label: "Active",
-      count: activityStats.activeActivities,
+      label: "Without Reports",
+      count: activityStats.activitiesWithoutReports,
       total: activityStats.totalActivities,
-      icon: IconTrendingUp,
-      color: "bg-blue-500",
-      textColor: "text-blue-600 dark:text-blue-400"
-    },
-    {
-      label: "Pending",
-      count: activityStats.pendingActivities,
-      total: activityStats.totalActivities,
-      icon: IconClock,
+      icon: IconAlertCircle,
       color: "bg-yellow-500",
       textColor: "text-yellow-600 dark:text-yellow-400"
     }
@@ -172,6 +165,14 @@ export function ActivityStatusOverview() {
       icon: IconClock,
       color: "bg-yellow-500",
       textColor: "text-yellow-600 dark:text-yellow-400"
+    },
+    {
+      label: "Cancelled",
+      count: activityStats.cancelledTasks,
+      total: activityStats.totalTasks,
+      icon: IconAlertCircle,
+      color: "bg-red-500",
+      textColor: "text-red-600 dark:text-red-400"
     }
   ];
 
@@ -183,7 +184,7 @@ export function ActivityStatusOverview() {
           Activity & Task Overview
         </CardTitle>
         <CardDescription>
-          Current status breakdown of all activities and tasks
+          Activity reporting status and task completion breakdown
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -269,10 +270,29 @@ export function ActivityStatusOverview() {
             </div>
           </div>
 
-          {/* Overall Performance Indicator */}
-          <div className="pt-4 border-t">
+          {/* Overall Performance Indicators */}
+          <div className="pt-4 border-t space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-sm font-medium">Overall Task Performance</span>
+              <span className="text-sm font-medium">Activity Reporting Rate</span>
+              <div className="flex items-center gap-2">
+                {activityStats.activityReportingRate >= 70 ? (
+                  <IconCircleCheck className="h-4 w-4 text-green-500" />
+                ) : activityStats.activityReportingRate >= 50 ? (
+                  <IconClock className="h-4 w-4 text-yellow-500" />
+                ) : (
+                  <IconAlertCircle className="h-4 w-4 text-red-500" />
+                )}
+                <span className={`text-sm font-medium ${
+                  activityStats.activityReportingRate >= 70 ? 'text-green-600 dark:text-green-400' :
+                  activityStats.activityReportingRate >= 50 ? 'text-yellow-600 dark:text-yellow-400' :
+                  'text-red-600 dark:text-red-400'
+                }`}>
+                  {activityStats.activityReportingRate}%
+                </span>
+              </div>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium">Task Completion Rate</span>
               <div className="flex items-center gap-2">
                 {activityStats.taskCompletionRate >= 70 ? (
                   <IconCircleCheck className="h-4 w-4 text-green-500" />
@@ -286,8 +306,7 @@ export function ActivityStatusOverview() {
                   activityStats.taskCompletionRate >= 50 ? 'text-yellow-600 dark:text-yellow-400' :
                   'text-red-600 dark:text-red-400'
                 }`}>
-                  {activityStats.taskCompletionRate >= 70 ? 'Excellent' :
-                   activityStats.taskCompletionRate >= 50 ? 'Good' : 'Needs Improvement'}
+                  {activityStats.taskCompletionRate}%
                 </span>
               </div>
             </div>

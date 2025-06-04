@@ -1,18 +1,7 @@
 // Activities API service
 import { getAuthTokens } from "./auth";
 
-// Types
-export enum ActivityStatus {
-  ACTIVE = "active",
-  INACTIVE = "inactive",
-  COMPLETED = "completed",
-  CANCELLED = "cancelled",
-  ONGOING = "ongoing",
-  UPCOMING = "upcoming",
-  RESCHEDULED = "rescheduled",
-  POSTPONED = "postponed",
-  PENDING = "pending",
-}
+// Types - ActivityStatus removed as activities no longer have status field
 
 export interface Activity {
   id: string;

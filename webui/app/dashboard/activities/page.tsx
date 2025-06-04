@@ -20,26 +20,15 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Activity,
-  ActivityStatus,
   ActivityFilters,
   createActivity,
   deleteActivity,
   getActivities,
 } from "@/lib/api/activities";
-import { SearchableSelect, SearchableSelectOption } from "@/components/ui/searchable-select";
-import { searchVillages } from "@/lib/api/villages";
-import { searchIsibos } from "@/lib/api/isibos";
 import { getIsibos } from "@/lib/api/isibos";
 import { getVillages } from "@/lib/api/villages";
 import { useUser } from "@/lib/contexts/user-context";
@@ -51,6 +40,8 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { ActivitiesPDFButton } from "@/components/pdf-report-button";
 import TasksTabComponent from "./tasks-tab";
+import { Select } from "@radix-ui/react-select";
+import { SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export default function ActivitiesPage() {
   const searchParams = useSearchParams();
@@ -128,6 +119,10 @@ function CreateActivityDialog({
       title: string;
       description: string;
       isiboId: string;
+      estimatedCost?: number;
+      expectedParticipants?: number;
+      totalEstimatedCost?: number;
+      expectedFinancialImpact?: number;
     }>;
   }>({
     title: "",
@@ -142,40 +137,15 @@ function CreateActivityDialog({
     title: "",
     description: "",
     isiboId: user?.isibo?.id || "",
+    estimatedCost: 0,
+    expectedParticipants: 0,
+    totalEstimatedCost: 0,
+    expectedFinancialImpact: 0,
   });
-  const [villages, setVillages] = useState<Array<{ id: string; name: string }>>(
+  const [, setVillages] = useState<Array<{ id: string; name: string }>>(
     []
   );
   const [isibos, setIsibos] = useState<Array<{ id: string; name: string }>>([]);
-
-  // Search functions for dynamic loading
-  const handleVillageSearch = async (query: string): Promise<SearchableSelectOption[]> => {
-    try {
-      const results = await searchVillages(query);
-      return results.map(village => ({
-        value: village.id,
-        label: village.name,
-        searchTerms: [village.name]
-      }));
-    } catch (error) {
-      console.error("Error searching villages:", error);
-      return [];
-    }
-  };
-
-  const handleIsiboSearch = async (query: string): Promise<SearchableSelectOption[]> => {
-    try {
-      const results = await searchIsibos(query, formData.villageId || undefined);
-      return results.map(isibo => ({
-        value: isibo.id,
-        label: isibo.name,
-        searchTerms: [isibo.name]
-      }));
-    } catch (error) {
-      console.error("Error searching isibos:", error);
-      return [];
-    }
-  };
 
   useEffect(() => {
     const fetchLocations = async () => {
@@ -191,8 +161,6 @@ function CreateActivityDialog({
             setIsibos(isibosResponse.items);
           }
         } else {
-          // If user doesn't have a cell, show empty lists
-          setVillages([]);
           setIsibos([]);
           toast.error("You need to be assigned to a cell to create activities");
         }
@@ -216,7 +184,7 @@ function CreateActivityDialog({
 
       fetchLocations();
     }
-  }, [user?.id, user?.village?.id, user?.isibo?.id]); // Only depend on specific user properties
+  }, [user?.id, user?.village?.id, user?.isibo?.id, user]);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -225,16 +193,6 @@ function CreateActivityDialog({
     setFormData((prev) => ({
       ...prev,
       [name]: value,
-    }));
-  };
-
-  const handleSelectChange = (name: string, value: string) => {
-    // If "NONE" is selected, set the form value to empty string
-    const formValue = value === "NONE" ? "" : value;
-
-    setFormData((prev) => ({
-      ...prev,
-      [name]: formValue,
     }));
   };
 
@@ -287,6 +245,10 @@ function CreateActivityDialog({
       title: "",
       description: "",
       isiboId: "",
+      estimatedCost: 0,
+      expectedParticipants: 0,
+      totalEstimatedCost: 0,
+      expectedFinancialImpact: 0,
     });
 
     toast.success("Task added to activity");
@@ -334,8 +296,6 @@ function CreateActivityDialog({
       // Use the string date directly
       const activityData = {
         ...formData,
-        // If there are no tasks, don't include an empty array
-        // Add dummy activityId that will be replaced by the backend
         tasks:
           formData.tasks.length > 0
             ? formData.tasks.map((task) => ({
@@ -364,6 +324,10 @@ function CreateActivityDialog({
         title: "",
         description: "",
         isiboId: "",
+        estimatedCost: 0,
+        expectedParticipants: 0,
+        totalEstimatedCost: 0,
+        expectedFinancialImpact: 0,
       });
     } catch (error: unknown) {
       if (error instanceof Error) {
@@ -385,15 +349,15 @@ function CreateActivityDialog({
           Create Activity
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[600px]">
+      <DialogContent className="sm:max-w-[800px] max-h-[90vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>Create New Activity</DialogTitle>
           <DialogDescription>
             Fill in the details to create a new activity
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit}>
-          <div className="grid gap-4 py-4">
+        <form onSubmit={handleSubmit} className="flex flex-col flex-1 overflow-hidden">
+          <div className="grid gap-4 py-4 overflow-y-auto flex-1">
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="title" className="text-right">
                 Title
@@ -427,7 +391,7 @@ function CreateActivityDialog({
               <Input
                 id="date"
                 name="date"
-                type="datetime-local"
+                type="date"
                 value={formData.date}
                 onChange={handleChange}
                 className="col-span-3"
@@ -439,13 +403,12 @@ function CreateActivityDialog({
                 Village
               </Label>
               <div className="col-span-3">
-                <SearchableSelect
-                  onSearch={handleVillageSearch}
-                  value={formData.villageId}
-                  onValueChange={(value) => handleSelectChange("villageId", value)}
-                  placeholder="Search and select village..."
-                  searchPlaceholder="Type to search villages..."
-                  emptyMessage="No villages found"
+                <Input
+                  id="villageId"
+                  type="text"
+                  value={user?.role === "VILLAGE_LEADER" && user?.village?.name ? user.village.name : ''}
+                  placeholder="Enter village name"
+                  disabled={true}
                   className="w-full"
                 />
               </div>
@@ -486,62 +449,112 @@ function CreateActivityDialog({
                 </p>
               )}
 
-              {/* Add task form */}
-              <div className="space-y-4 border p-4 rounded-md">
-                <h5 className="font-medium">Add a Task</h5>
+              {/* Add task form - Scrollable */}
+              <div className="border p-4 rounded-md max-h-96 overflow-y-auto">
+                <h5 className="font-medium mb-4">Add a Task</h5>
 
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="taskTitle" className="text-right">
-                    Title
-                  </Label>
-                  <Input
-                    id="taskTitle"
-                    name="title"
-                    value={currentTask.title}
-                    onChange={handleTaskChange}
-                    className="col-span-3"
-                  />
-                </div>
-
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="taskDescription" className="text-right">
-                    Description
-                  </Label>
-                  <Textarea
-                    id="taskDescription"
-                    name="description"
-                    value={currentTask.description}
-                    onChange={handleTaskChange}
-                    className="col-span-3"
-                  />
-                </div>
-
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="isiboId" className="text-right">
-                    Isibo
-                  </Label>
-                  <div className="col-span-3">
-                    <SearchableSelect
-                      onSearch={handleIsiboSearch}
-                      value={currentTask.isiboId}
-                      onValueChange={(value) => handleTaskSelectChange("isiboId", value)}
-                      placeholder="Search and select isibo..."
-                      searchPlaceholder="Type to search isibos..."
-                      emptyMessage="No isibos found"
-                      className="w-full"
+                <div className="space-y-4">
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="taskTitle" className="text-right">
+                      Title
+                    </Label>
+                    <Input
+                      id="taskTitle"
+                      name="title"
+                      value={currentTask.title}
+                      onChange={handleTaskChange}
+                      className="col-span-3"
+                      placeholder="Enter task title"
                     />
                   </div>
-                </div>
 
-                <div className="flex justify-end">
-                  <Button type="button" variant="secondary" onClick={addTask}>
-                    Add Task
-                  </Button>
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="taskDescription" className="text-right">
+                      Description
+                    </Label>
+                    <Textarea
+                      id="taskDescription"
+                      name="description"
+                      value={currentTask.description}
+                      onChange={handleTaskChange}
+                      className="col-span-3"
+                      placeholder="Enter task description"
+                      rows={2}
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="isiboId" className="text-right">
+                      Isibos
+                    </Label>
+                    <div className="space-y-2">
+                      <Select
+                        value={currentTask.isiboId}
+                        onValueChange={(value) =>
+                          handleTaskSelectChange("isiboId", value)
+                        }
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select isibo" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {isibos.map((isibo) => (
+                            <SelectItem key={isibo.id} value={isibo.id}>
+                              {isibo.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  {/* Financial Fields */}
+                  <div className="border-t pt-4">
+                    <h6 className="font-medium mb-3 text-sm">Financial Information</h6>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-4 items-center gap-2">
+                        <Label htmlFor="estimatedCost" className="text-right text-sm">
+                          Estimated Cost
+                        </Label>
+                        <Input
+                          id="estimatedCost"
+                          name="estimatedCost"
+                          type="number"
+                          min="0"
+                          value={currentTask.estimatedCost}
+                          onChange={handleTaskChange}
+                          className="col-span-3"
+                          placeholder="0"
+                        />
+                      </div>
+                      <div className="grid grid-cols-4 items-center gap-2">
+                        <Label htmlFor="expectedFinancialImpact" className="text-right text-sm">
+                          Expected Financial Impact
+                        </Label>
+                        <Input
+                          id="expectedFinancialImpact"
+                          name="expectedFinancialImpact"
+                          type="number"
+                          min="0"
+                          value={currentTask.expectedFinancialImpact}
+                          onChange={handleTaskChange}
+                          className="col-span-3"
+                          placeholder="0"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end pt-4 border-t">
+                    <Button type="button" variant="secondary" onClick={addTask}>
+                      Add Task
+                    </Button>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-          <DialogFooter>
+          <DialogFooter className="flex-shrink-0 mt-4">
             <Button type="submit" disabled={isSubmitting}>
               {isSubmitting ? (
                 <>
@@ -660,21 +673,6 @@ function ActivitiesTab() {
     }
   };
 
-  const getStatusBadgeClass = (status: ActivityStatus) => {
-    switch (status) {
-      case ActivityStatus.ONGOING:
-        return "bg-green-100 text-green-800";
-      case ActivityStatus.COMPLETED:
-        return "bg-blue-100 text-blue-800";
-      case ActivityStatus.CANCELLED:
-        return "bg-red-100 text-red-800";
-      case ActivityStatus.PENDING:
-        return "bg-yellow-100 text-yellow-800";
-      default:
-        return "bg-gray-100 text-gray-800";
-    }
-  };
-
   return (
     <Card>
       <CardHeader>
@@ -695,7 +693,6 @@ function ActivitiesTab() {
               <RefreshCw className="h-4 w-4 mr-2" />
               Refresh
             </Button>
-            {/* Only show create button for admin, cell leader, and village leader */}
             {user?.role !== "ISIBO_LEADER" && (
               <CreateActivityDialog onActivityCreated={handleRefresh} />
             )}
@@ -777,12 +774,8 @@ function ActivitiesTab() {
                         {format(new Date(activity.date), "PPP")}
                       </td>
                       <td className="p-4 whitespace-nowrap">
-                        <span
-                          className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${getStatusBadgeClass(
-                            activity.status
-                          )}`}
-                        >
-                          {activity.status}
+                        <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-blue-100 text-blue-800">
+                          Activity
                         </span>
                       </td>
                       <td className="p-4 whitespace-nowrap">

@@ -54,6 +54,20 @@ export function CreateStandaloneReportDialog({
     attendanceIds: [] as string[],
     comment: "",
     evidenceUrls: [] as string[],
+    totalExpectedParticipants: 0,
+    totalPresentParticipants: 0,
+    youthParticipants: 0,
+    estimatedCost: 0,
+    actualCost: 0,
+    expectedParticipants: 0,
+    actualParticipants: 0,
+    totalEstimatedCost: 0,
+    totalActualCost: 0,
+    expectedFinancialImpact: 0,
+    actualFinancialImpact: 0,
+    materialsUsed: [] as string[],
+    challengesFaced: "",
+    suggestions: "",
   });
 
 
@@ -177,6 +191,20 @@ export function CreateStandaloneReportDialog({
         attendanceIds: formData.attendanceIds,
         comment: formData.comment,
         evidenceUrls: formData.evidenceUrls,
+        totalExpectedParticipants: formData.totalExpectedParticipants,
+        totalPresentParticipants: formData.totalPresentParticipants,
+        youthParticipants: formData.youthParticipants,
+        estimatedCost: formData.estimatedCost,
+        actualCost: formData.actualCost,
+        expectedParticipants: formData.expectedParticipants,
+        actualParticipants: formData.actualParticipants,
+        totalEstimatedCost: formData.totalEstimatedCost,
+        totalActualCost: formData.totalActualCost,
+        expectedFinancialImpact: formData.expectedFinancialImpact,
+        actualFinancialImpact: formData.actualFinancialImpact,
+        materialsUsed: formData.materialsUsed,
+        challengesFaced: formData.challengesFaced,
+        suggestions: formData.suggestions,
       });
       toast.success("Report submitted successfully");
       setIsOpen(false);
@@ -189,6 +217,20 @@ export function CreateStandaloneReportDialog({
         attendanceIds: [],
         comment: "",
         evidenceUrls: [],
+        totalExpectedParticipants: 0,
+        totalPresentParticipants: 0,
+        youthParticipants: 0,
+        estimatedCost: 0,
+        actualCost: 0,
+        expectedParticipants: 0,
+        actualParticipants: 0,
+        totalEstimatedCost: 0,
+        totalActualCost: 0,
+        expectedFinancialImpact: 0,
+        actualFinancialImpact: 0,
+        materialsUsed: [],
+        challengesFaced: "",
+        suggestions: "",
       });
     } catch (error: unknown) {
       if (error instanceof Error) {
@@ -285,19 +327,181 @@ export function CreateStandaloneReportDialog({
               </div>
             </div>
 
-            {/* Comment */}
-            <div className="grid grid-cols-4 items-start gap-4">
-              <Label htmlFor="comment" className="text-right mt-2">
-                Comments
-              </Label>
-              <Textarea
-                id="comment"
-                name="comment"
-                value={formData.comment}
-                onChange={handleChange}
-                className="col-span-3"
-                placeholder="Provide details about the task completion"
-              />
+            {/* Participation Data */}
+            <div className="col-span-4 border-t pt-4">
+              <h4 className="font-medium mb-4">Participation Data</h4>
+              <div className="grid grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="totalExpectedParticipants">Expected Participants</Label>
+                  <Input
+                    id="totalExpectedParticipants"
+                    name="totalExpectedParticipants"
+                    type="number"
+                    min="0"
+                    value={formData.totalExpectedParticipants}
+                    onChange={handleChange}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="totalPresentParticipants">Present Participants</Label>
+                  <Input
+                    id="totalPresentParticipants"
+                    name="totalPresentParticipants"
+                    type="number"
+                    min="0"
+                    value={formData.totalPresentParticipants}
+                    onChange={handleChange}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="youthParticipants">Youth Participants</Label>
+                  <Input
+                    id="youthParticipants"
+                    name="youthParticipants"
+                    type="number"
+                    min="0"
+                    value={formData.youthParticipants}
+                    onChange={handleChange}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Financial Data */}
+            <div className="col-span-4 border-t pt-4">
+              <h4 className="font-medium mb-4">Financial Data</h4>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="estimatedCost">Estimated Cost (RWF)</Label>
+                  <Input
+                    id="estimatedCost"
+                    name="estimatedCost"
+                    type="number"
+                    min="0"
+                    value={formData.estimatedCost}
+                    onChange={handleChange}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="actualCost">Actual Cost (RWF)</Label>
+                  <Input
+                    id="actualCost"
+                    name="actualCost"
+                    type="number"
+                    min="0"
+                    value={formData.actualCost}
+                    onChange={handleChange}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="expectedParticipants">Expected Participants</Label>
+                  <Input
+                    id="expectedParticipants"
+                    name="expectedParticipants"
+                    type="number"
+                    min="0"
+                    value={formData.expectedParticipants}
+                    onChange={handleChange}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="actualParticipants">Actual Participants</Label>
+                  <Input
+                    id="actualParticipants"
+                    name="actualParticipants"
+                    type="number"
+                    min="0"
+                    value={formData.actualParticipants}
+                    onChange={handleChange}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="totalEstimatedCost">Total Estimated Cost (RWF)</Label>
+                  <Input
+                    id="totalEstimatedCost"
+                    name="totalEstimatedCost"
+                    type="number"
+                    min="0"
+                    value={formData.totalEstimatedCost}
+                    onChange={handleChange}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="totalActualCost">Total Actual Cost (RWF)</Label>
+                  <Input
+                    id="totalActualCost"
+                    name="totalActualCost"
+                    type="number"
+                    min="0"
+                    value={formData.totalActualCost}
+                    onChange={handleChange}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="expectedFinancialImpact">Expected Impact (RWF)</Label>
+                  <Input
+                    id="expectedFinancialImpact"
+                    name="expectedFinancialImpact"
+                    type="number"
+                    min="0"
+                    value={formData.expectedFinancialImpact}
+                    onChange={handleChange}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="actualFinancialImpact">Actual Impact (RWF)</Label>
+                  <Input
+                    id="actualFinancialImpact"
+                    name="actualFinancialImpact"
+                    type="number"
+                    min="0"
+                    value={formData.actualFinancialImpact}
+                    onChange={handleChange}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Additional Details */}
+            <div className="col-span-4 border-t pt-4">
+              <h4 className="font-medium mb-4">Additional Details</h4>
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="comment">Comments</Label>
+                  <Textarea
+                    id="comment"
+                    name="comment"
+                    value={formData.comment}
+                    onChange={handleChange}
+                    placeholder="Provide details about the task completion"
+                    rows={3}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="challengesFaced">Challenges Faced</Label>
+                  <Textarea
+                    id="challengesFaced"
+                    name="challengesFaced"
+                    value={formData.challengesFaced}
+                    onChange={handleChange}
+                    placeholder="Describe any challenges encountered"
+                    rows={3}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="suggestions">Suggestions</Label>
+                  <Textarea
+                    id="suggestions"
+                    name="suggestions"
+                    value={formData.suggestions}
+                    onChange={handleChange}
+                    placeholder="Provide suggestions for improvement"
+                    rows={3}
+                  />
+                </div>
+              </div>
             </div>
 
             {/* Evidence Files */}

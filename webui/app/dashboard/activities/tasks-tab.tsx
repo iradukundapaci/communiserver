@@ -52,16 +52,13 @@ function CreateTaskDialog({ onTaskCreated }: CreateTaskDialogProps) {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Fetch activities
         const activitiesResponse = await getActivities({ page: 1, size: 100 });
         setActivities(activitiesResponse.items);
 
-        // Fetch isibos based on user's village
         if (user?.village) {
           const isibosResponse = await getIsibos(user.village.id, 1, 100);
           setIsibos(isibosResponse.items);
         } else {
-          // If user doesn't have a village, show an empty list
           setIsibos([]);
           toast.error("You need to be assigned to a village to create tasks");
         }
@@ -71,7 +68,6 @@ function CreateTaskDialog({ onTaskCreated }: CreateTaskDialogProps) {
       }
     };
 
-    // Update form data when user changes
     if (user) {
       setFormData((prev) => ({
         ...prev,
@@ -80,7 +76,7 @@ function CreateTaskDialog({ onTaskCreated }: CreateTaskDialogProps) {
 
       fetchData();
     }
-  }, [user?.id, user?.village?.id, user?.isibo?.id]); // Only depend on specific user properties
+  }, [user]); 
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -104,7 +100,6 @@ function CreateTaskDialog({ onTaskCreated }: CreateTaskDialogProps) {
     setIsSubmitting(true);
 
     try {
-      // Validate required fields
       if (!formData.activityId) {
         toast.error("Activity is required");
         setIsSubmitting(false);
@@ -122,7 +117,6 @@ function CreateTaskDialog({ onTaskCreated }: CreateTaskDialogProps) {
       setIsOpen(false);
       onTaskCreated();
 
-      // Reset form
       setFormData({
         title: "",
         description: "",
@@ -267,12 +261,10 @@ export default function TasksTab() {
     try {
       setIsLoading(true);
 
-      // For isibo leaders, only fetch tasks for their isibo
       let response;
       if (user.user?.role === "ISIBO_LEADER" && user?.user.isibo?.id) {
         response = await getTasks(activityId, page, 10, user.user.isibo.id);
       } else {
-        // For other roles, fetch all tasks
         response = await getTasks(activityId, page, 10);
       }
 
@@ -462,7 +454,7 @@ export default function TasksTab() {
                         {task.description}
                       </td>
                       <td className="p-4 whitespace-nowrap">
-                        {task.activity.title}
+                        {task.activity?.title || ""}
                       </td>
                       <td className="p-4 whitespace-nowrap">
                         {task.isibo?.names}
@@ -487,7 +479,7 @@ export default function TasksTab() {
                           {user.user?.role === "ISIBO_LEADER" ? (
                             // For isibo leaders, show report button
                             <CreateReportDialog
-                              taskId={task.id}
+                              task={task}
                               activityId={task.activity.id}
                               onReportCreated={handleRefresh}
                             />

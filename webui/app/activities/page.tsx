@@ -9,18 +9,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { SearchableSelect, SearchableSelectOption } from "@/components/ui/searchable-select";
 import { Globe, MapPin, Calendar, Users, Search, Loader2 } from "lucide-react";
 import { useState, useEffect } from "react";
-import { getPublicActivities, Activity, ActivityStatus, ActivityFilters } from "@/lib/api/activities";
+import { getPublicActivities, Activity, ActivityFilters } from "@/lib/api/activities";
 import { searchVillages } from "@/lib/api/villages";
 import { searchCells } from "@/lib/api/cells";
 import { toast } from "sonner";
-
-const statusOptions = [
-  { value: "all", label: "All Statuses" },
-  { value: ActivityStatus.UPCOMING, label: "Upcoming" },
-  { value: ActivityStatus.ONGOING, label: "Ongoing" },
-  { value: ActivityStatus.ACTIVE, label: "Active" },
-  { value: ActivityStatus.COMPLETED, label: "Completed" },
-];
 
 export default function ActivitiesPage() {
   const [activities, setActivities] = useState<Activity[]>([]);
@@ -29,7 +21,6 @@ export default function ActivitiesPage() {
 
   // Filter states
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedStatus, setSelectedStatus] = useState("all");
   const [selectedVillage, setSelectedVillage] = useState("");
   const [selectedCell, setSelectedCell] = useState("");
 
@@ -100,7 +91,6 @@ export default function ActivitiesPage() {
         page: reset ? 1 : currentPage,
         size: 20,
         q: searchTerm || undefined,
-        status: selectedStatus !== "all" ? (selectedStatus as ActivityStatus) : undefined,
         villageId: selectedVillage || undefined,
         cellId: selectedCell || undefined,
       };
@@ -133,7 +123,7 @@ export default function ActivitiesPage() {
     }, 300); // Debounce search
 
     return () => clearTimeout(timeoutId);
-  }, [searchTerm, selectedStatus, selectedVillage, selectedCell]);
+  }, [searchTerm, selectedVillage, selectedCell]);
 
   // Load more activities
   const handleLoadMore = () => {
@@ -143,20 +133,7 @@ export default function ActivitiesPage() {
     }
   };
 
-  const getStatusColor = (status: ActivityStatus) => {
-    const colors = {
-      [ActivityStatus.UPCOMING]: "bg-blue-100 text-blue-800",
-      [ActivityStatus.ONGOING]: "bg-green-100 text-green-800",
-      [ActivityStatus.ACTIVE]: "bg-green-100 text-green-800",
-      [ActivityStatus.INACTIVE]: "bg-gray-100 text-gray-800",
-      [ActivityStatus.COMPLETED]: "bg-gray-100 text-gray-800",
-      [ActivityStatus.CANCELLED]: "bg-red-100 text-red-800",
-      [ActivityStatus.POSTPONED]: "bg-yellow-100 text-yellow-800",
-      [ActivityStatus.RESCHEDULED]: "bg-purple-100 text-purple-800",
-      [ActivityStatus.PENDING]: "bg-orange-100 text-orange-800",
-    };
-    return colors[status] || "bg-gray-100 text-gray-800";
-  };
+
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -232,19 +209,6 @@ export default function ActivitiesPage() {
               </div>
             </div>
             <div className="flex flex-col sm:flex-row gap-4">
-              <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-                <SelectTrigger className="w-48">
-                  <SelectValue placeholder="Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  {statusOptions.map(option => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-
               <SearchableSelect
                 onSearch={handleCellSearch}
                 value={selectedCell}
@@ -320,8 +284,8 @@ export default function ActivitiesPage() {
                   <Card key={activity.id} className="hover:shadow-lg transition-shadow">
                     <CardHeader>
                       <div className="flex justify-between items-start mb-2">
-                        <Badge className={getStatusColor(activity.status)}>
-                          {activity.status.charAt(0).toUpperCase() + activity.status.slice(1)}
+                        <Badge className="bg-blue-100 text-blue-800">
+                          Activity
                         </Badge>
                         <div className="text-sm text-gray-500">
                           {activity.tasks?.length || 0} tasks
