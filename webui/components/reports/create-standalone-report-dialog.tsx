@@ -144,6 +144,30 @@ export function CreateStandaloneReportDialog({
       ...prev,
       [name]: value,
     }));
+
+    // Reset task when activity changes
+    if (name === "activityId") {
+      setFormData((prev) => ({
+        ...prev,
+        taskId: "",
+        estimatedCost: 0,
+        expectedParticipants: 0,
+        expectedFinancialImpact: 0,
+      }));
+    }
+
+    // Auto-fill estimated values when task is selected
+    if (name === "taskId" && value) {
+      const selectedTask = tasks.find(task => task.id === value);
+      if (selectedTask) {
+        setFormData((prev) => ({
+          ...prev,
+          estimatedCost: selectedTask.estimatedCost || 0,
+          expectedParticipants: selectedTask.expectedParticipants || 0,
+          expectedFinancialImpact: selectedTask.expectedFinancialImpact || 0,
+        }));
+      }
+    }
   };
 
   const handleFilesUploaded = (urls: string[]) => {
@@ -190,7 +214,7 @@ export function CreateStandaloneReportDialog({
         estimatedCost: formData.estimatedCost,
         actualCost: formData.actualCost,
         expectedParticipants: formData.expectedParticipants,
-        actualParticipants: formData.actualParticipants,
+        // actualParticipants will be calculated from attendanceIds in backend
         expectedFinancialImpact: formData.expectedFinancialImpact,
         actualFinancialImpact: formData.actualFinancialImpact,
         materialsUsed: formData.materialsUsed,
@@ -320,16 +344,11 @@ export function CreateStandaloneReportDialog({
               <h4 className="font-medium mb-4">Financial Data</h4>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="estimatedCost">Estimated Cost (RWF)</Label>
-                  <Input
-                    id="estimatedCost"
-                    name="estimatedCost"
-                    type="number"
-                    min="0"
-                    value={formData.estimatedCost}
-                    onChange={handleChange}
-                    className="max-w-lg"
-                  />
+                  <Label>Estimated Cost (RWF)</Label>
+                  <div className="p-2 bg-muted rounded-md text-sm">
+                    {formData.estimatedCost.toLocaleString()} RWF
+                    {!formData.taskId && <span className="text-muted-foreground ml-2">(Select task first)</span>}
+                  </div>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="actualCost">Actual Cost (RWF)</Label>
@@ -344,41 +363,25 @@ export function CreateStandaloneReportDialog({
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="expectedParticipants">Expected Participants</Label>
-                  <Input
-                    id="expectedParticipants"
-                    name="expectedParticipants"
-                    type="number"
-                    min="0"
-                    value={formData.expectedParticipants}
-                    onChange={handleChange}
-                    className="max-w-lg"
-                  />
+                  <Label>Expected Participants</Label>
+                  <div className="p-2 bg-muted rounded-md text-sm">
+                    {formData.expectedParticipants} people
+                    {!formData.taskId && <span className="text-muted-foreground ml-2">(Select task first)</span>}
+                  </div>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="actualParticipants">Actual Participants</Label>
-                  <Input
-                    id="actualParticipants"
-                    name="actualParticipants"
-                    type="number"
-                    min="0"
-                    value={formData.actualParticipants}
-                    onChange={handleChange}
-                    className="max-w-lg"
-                  />
+                  <Label>Actual Participants</Label>
+                  <div className="p-2 bg-muted rounded-md text-sm">
+                    {formData.attendanceIds.length} people (from attendance list)
+                  </div>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="expectedFinancialImpact">Expected Impact (RWF)</Label>
-                  <Input
-                    id="expectedFinancialImpact"
-                    name="expectedFinancialImpact"
-                    type="number"
-                    min="0"
-                    value={formData.expectedFinancialImpact}
-                    onChange={handleChange}
-                    className="max-w-lg"
-                  />
+                  <Label>Expected Impact (RWF)</Label>
+                  <div className="p-2 bg-muted rounded-md text-sm">
+                    {formData.expectedFinancialImpact.toLocaleString()} RWF
+                    {!formData.taskId && <span className="text-muted-foreground ml-2">(Select task first)</span>}
+                  </div>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="actualFinancialImpact">Actual Impact (RWF)</Label>

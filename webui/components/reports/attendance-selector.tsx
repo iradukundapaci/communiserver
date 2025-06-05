@@ -46,7 +46,7 @@ export function AttendanceSelector({
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Users className="h-5 w-5" />
-            Isibo Members
+            Isibo Members ({selectedAttendeeIds.length} selected)
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -81,40 +81,7 @@ export function AttendanceSelector({
         </CardContent>
       </Card>
 
-      {/* Selected Attendees Summary */}
-      {selectedAttendeeIds.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Selected Attendees ({selectedAttendeeIds.length})</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="max-h-48 overflow-y-auto space-y-2 pr-2">
-              {getSelectedMembers().map((member) => (
-                <div
-                  key={member.id}
-                  className="flex items-center justify-between p-3 bg-muted rounded-lg"
-                >
-                  <div className="flex flex-col">
-                    <span className="font-medium">{member.names}</span>
-                    <span className="text-sm text-muted-foreground">
-                      {member.user.email} • {member.user.phone}
-                    </span>
-                    <span className="text-xs text-blue-600">Isibo Member</span>
-                  </div>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleMemberToggle(member.id, false)}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
+
     </div>
   );
 }

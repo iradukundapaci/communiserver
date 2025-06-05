@@ -48,7 +48,6 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { LocationsPDFButton } from "@/components/pdf-report-button";
-import { ConfirmationDialog } from "@/components/confirmation-dialog";
 
 export default function VillagesPage() {
   const router = useRouter();

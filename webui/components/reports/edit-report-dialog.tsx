@@ -150,16 +150,10 @@ export function EditReportDialog({
               <h4 className="font-medium mb-4">Financial Data</h4>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="estimatedCost">Estimated Cost (RWF)</Label>
-                  <Input
-                    id="estimatedCost"
-                    name="estimatedCost"
-                    type="number"
-                    min="0"
-                    value={formData.estimatedCost}
-                    onChange={handleChange}
-                    className="max-w-lg"
-                  />
+                  <Label>Estimated Cost (RWF)</Label>
+                  <div className="p-2 bg-muted rounded-md text-sm">
+                    {formData.estimatedCost.toLocaleString()} RWF
+                  </div>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="actualCost">Actual Cost (RWF)</Label>
@@ -174,41 +168,23 @@ export function EditReportDialog({
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="expectedParticipants">Expected Participants</Label>
-                  <Input
-                    id="expectedParticipants"
-                    name="expectedParticipants"
-                    type="number"
-                    min="0"
-                    value={formData.expectedParticipants}
-                    onChange={handleChange}
-                    className="max-w-lg"
-                  />
+                  <Label>Expected Participants</Label>
+                  <div className="p-2 bg-muted rounded-md text-sm">
+                    {formData.expectedParticipants} people
+                  </div>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="actualParticipants">Actual Participants</Label>
-                  <Input
-                    id="actualParticipants"
-                    name="actualParticipants"
-                    type="number"
-                    min="0"
-                    value={formData.actualParticipants}
-                    onChange={handleChange}
-                    className="max-w-lg"
-                  />
+                  <Label>Actual Participants</Label>
+                  <div className="p-2 bg-muted rounded-md text-sm">
+                    {formData.actualParticipants} people (calculated from attendance)
+                  </div>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="expectedFinancialImpact">Expected Impact (RWF)</Label>
-                  <Input
-                    id="expectedFinancialImpact"
-                    name="expectedFinancialImpact"
-                    type="number"
-                    min="0"
-                    value={formData.expectedFinancialImpact}
-                    onChange={handleChange}
-                    className="max-w-lg"
-                  />
+                  <Label>Expected Impact (RWF)</Label>
+                  <div className="p-2 bg-muted rounded-md text-sm">
+                    {formData.expectedFinancialImpact.toLocaleString()} RWF
+                  </div>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="actualFinancialImpact">Actual Impact (RWF)</Label>

@@ -42,6 +42,9 @@ export class TasksService {
       throw new NotFoundException("Isibo not found");
     }
 
+    // Auto-calculate expected participants based on isibo member count
+    const expectedParticipants = createTaskDTO.expectedParticipants || isibo.members?.length || 0;
+
     const existingTask = await this.taskRepository.findOne({
       where: {
         activity: { id: createTaskDTO.activityId },
@@ -61,7 +64,7 @@ export class TasksService {
       status: ETaskStatus.PENDING,
       estimatedCost: createTaskDTO.estimatedCost || 0,
       actualCost: 0, // Always 0 during creation
-      expectedParticipants: createTaskDTO.expectedParticipants || 0,
+      expectedParticipants: expectedParticipants,
       actualParticipants: 0, // Always 0 during creation
       expectedFinancialImpact: createTaskDTO.expectedFinancialImpact || 0,
       actualFinancialImpact: 0, // Always 0 during creation

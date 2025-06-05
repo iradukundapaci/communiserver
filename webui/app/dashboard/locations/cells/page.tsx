@@ -33,7 +33,6 @@ import { Pencil, PlusCircle, Trash2, UserMinus, UserPlus } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { ConfirmationDialog } from "@/components/confirmation-dialog";
 
 export default function CellsPage() {
   const router = useRouter();

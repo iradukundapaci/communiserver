@@ -365,3 +365,32 @@ export async function deleteActivity(id: string): Promise<string> {
     throw error;
   }
 }
+
+export async function updateTask(taskId: string, input: UpdateTaskInput): Promise<Task> {
+  try {
+    const tokens = getTokens();
+    if (!tokens) {
+      throw new Error("No authentication tokens found");
+    }
+
+    const response = await fetch(`${API_BASE_URL}/activities/tasks/${taskId}`, {
+      method: "PUT",
+      headers: {
+        Authorization: `Bearer ${tokens.accessToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(input),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || "Failed to update task");
+    }
+
+    const data: ApiResponse<Task> = await response.json();
+    return data.data;
+  } catch (error) {
+    console.error("Update task error:", error);
+    throw error;
+  }
+}

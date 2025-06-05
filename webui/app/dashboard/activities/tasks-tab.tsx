@@ -46,6 +46,8 @@ function CreateTaskDialog({ onTaskCreated }: CreateTaskDialogProps) {
     description: "",
     activityId: "",
     isiboId: user?.isibo?.id || "",
+    estimatedCost: 0,
+    expectedFinancialImpact: 0,
   });
   const [activities, setActivities] = useState<Activity[]>([]);
   const [isibos, setIsibos] = useState<{ id: string; name: string }[]>([]);
@@ -123,6 +125,8 @@ function CreateTaskDialog({ onTaskCreated }: CreateTaskDialogProps) {
         description: "",
         activityId: "",
         isiboId: "",
+        estimatedCost: 0,
+        expectedFinancialImpact: 0,
       });
     } catch (error: unknown) {
       if (error instanceof Error) {
@@ -220,6 +224,36 @@ function CreateTaskDialog({ onTaskCreated }: CreateTaskDialogProps) {
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="estimatedCost" className="text-right">
+                Estimated Cost
+              </Label>
+              <Input
+                id="estimatedCost"
+                name="estimatedCost"
+                type="number"
+                min="0"
+                step="0.01"
+                value={formData.estimatedCost}
+                onChange={handleChange}
+                className="col-span-3"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="expectedFinancialImpact" className="text-right">
+                Expected Financial Impact
+              </Label>
+              <Input
+                id="expectedFinancialImpact"
+                name="expectedFinancialImpact"
+                type="number"
+                min="0"
+                step="0.01"
+                value={formData.expectedFinancialImpact}
+                onChange={handleChange}
+                className="col-span-3"
+              />
             </div>
           </div>
           <DialogFooter>

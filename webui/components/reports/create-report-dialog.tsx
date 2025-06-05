@@ -36,13 +36,9 @@ export function CreateReportDialog({
   // Form state with new fields
   const [attendanceIds, setAttendanceIds] = useState<string[]>([]);
 
-  // Task financial data (pre-filled from task, can be updated)
-  const [estimatedCost, setEstimatedCost] = useState<number>(task.estimatedCost || 0);
-  const [actualCost, setActualCost] = useState<number>(task.actualCost || 0);
-  const [expectedParticipants, setExpectedParticipants] = useState<number>(task.expectedParticipants || 0);
-  const [actualParticipants, setActualParticipants] = useState<number>(task.actualParticipants || 0);
-  const [expectedFinancialImpact, setExpectedFinancialImpact] = useState<number>(task.expectedFinancialImpact || 0);
-  const [actualFinancialImpact, setActualFinancialImpact] = useState<number>(task.actualFinancialImpact || 0);
+  // Only actual values are editable - estimated values come from task
+  const [actualCost, setActualCost] = useState<number>(0);
+  const [actualFinancialImpact, setActualFinancialImpact] = useState<number>(0);
 
   const [comment, setComment] = useState("");
   const [materialsUsed, setMaterialsUsed] = useState<string[]>([]);
@@ -68,12 +64,8 @@ export function CreateReportDialog({
 
   const resetForm = () => {
     setAttendanceIds([]);
-    setEstimatedCost(task.estimatedCost || 0);
-    setActualCost(task.actualCost || 0);
-    setExpectedParticipants(task.expectedParticipants || 0);
-    setActualParticipants(task.actualParticipants || 0);
-    setExpectedFinancialImpact(task.expectedFinancialImpact || 0);
-    setActualFinancialImpact(task.actualFinancialImpact || 0);
+    setActualCost(0);
+    setActualFinancialImpact(0);
     setComment("");
     setMaterialsUsed([]);
     setChallengesFaced("");
@@ -95,12 +87,12 @@ export function CreateReportDialog({
         activityId,
         taskId: task.id,
         attendanceIds: attendanceIds.length > 0 ? attendanceIds : undefined,
-        // Include task financial data
-        estimatedCost,
+        // Use task estimated values and form actual values
+        estimatedCost: task.estimatedCost || 0,
         actualCost,
-        expectedParticipants,
-        actualParticipants,
-        expectedFinancialImpact,
+        expectedParticipants: task.expectedParticipants || 0,
+        // actualParticipants will be calculated from attendanceIds in backend
+        expectedFinancialImpact: task.expectedFinancialImpact || 0,
         actualFinancialImpact,
         comment: comment || undefined,
         materialsUsed: materialsUsed.length > 0 ? materialsUsed : undefined,
@@ -154,100 +146,52 @@ export function CreateReportDialog({
             </>
           }
         >
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Left Column - Participation & Financial Data */}
-            <div className="space-y-6">
+          <div className="max-h-[60vh] overflow-y-auto pr-2">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Left Column - Financial Data & Attendance */}
+              <div className="space-y-6">
+                <div>
+                  <h3 className="text-lg font-medium mb-4">Financial Information</h3>
+                  <div className="grid grid-cols-1 gap-4">
+                    <div>
+                      <Label htmlFor="actualCost">Actual Cost</Label>
+                      <Input
+                        id="actualCost"
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={actualCost}
+                        onChange={(e) => setActualCost(parseFloat(e.target.value) || 0)}
+                        className="max-w-lg"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="actualFinancialImpact">Actual Financial Impact</Label>
+                      <Input
+                        id="actualFinancialImpact"
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={actualFinancialImpact}
+                        onChange={(e) => setActualFinancialImpact(parseFloat(e.target.value) || 0)}
+                        className="max-w-lg"
+                      />
+                    </div>
+                  </div>
+                </div>
 
-
-              <div>
-                <h3 className="text-lg font-medium mb-4">Financial Information</h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="estimatedCost">Estimated Cost</Label>
-                    <Input
-                      id="estimatedCost"
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      value={estimatedCost}
-                      onChange={(e) => setEstimatedCost(parseFloat(e.target.value) || 0)}
-                      className="max-w-lg"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="actualCost">Actual Cost</Label>
-                    <Input
-                      id="actualCost"
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      value={actualCost}
-                      onChange={(e) => setActualCost(parseFloat(e.target.value) || 0)}
-                      className="max-w-lg"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="expectedParticipants">Expected Participants</Label>
-                    <Input
-                      id="expectedParticipants"
-                      type="number"
-                      min="0"
-                      value={expectedParticipants}
-                      onChange={(e) => setExpectedParticipants(parseInt(e.target.value) || 0)}
-                      className="max-w-lg"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="actualParticipants">Actual Participants</Label>
-                    <Input
-                      id="actualParticipants"
-                      type="number"
-                      min="0"
-                      value={actualParticipants}
-                      onChange={(e) => setActualParticipants(parseInt(e.target.value) || 0)}
-                      className="max-w-lg"
-                    />
-                  </div>
-
-                  <div>
-                    <Label htmlFor="expectedFinancialImpact">Expected Financial Impact</Label>
-                    <Input
-                      id="expectedFinancialImpact"
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      value={expectedFinancialImpact}
-                      onChange={(e) => setExpectedFinancialImpact(parseFloat(e.target.value) || 0)}
-                      className="max-w-lg"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="actualFinancialImpact">Actual Financial Impact</Label>
-                    <Input
-                      id="actualFinancialImpact"
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      value={actualFinancialImpact}
-                      onChange={(e) => setActualFinancialImpact(parseFloat(e.target.value) || 0)}
-                      className="max-w-lg"
-                    />
-                  </div>
+                <div>
+                  <h3 className="text-lg font-medium mb-4">Attendance</h3>
+                  <AttendanceSelector
+                    isiboMembers={isiboMembers}
+                    selectedAttendeeIds={attendanceIds}
+                    onAttendanceChange={setAttendanceIds}
+                  />
                 </div>
               </div>
 
-              <div>
-                <h3 className="text-lg font-medium mb-4">Attendance</h3>
-                <AttendanceSelector
-                  isiboMembers={isiboMembers}
-                  selectedAttendeeIds={attendanceIds}
-                  onAttendanceChange={setAttendanceIds}
-                />
-              </div>
-            </div>
-
-            {/* Right Column - Report Details & Files */}
-            <div className="space-y-6">
+              {/* Right Column - Report Details & Files */}
+              <div className="space-y-6">
               <div>
                 <h3 className="text-lg font-medium mb-4">Report Details</h3>
                 <div className="space-y-4">
@@ -313,6 +257,7 @@ export function CreateReportDialog({
                 />
               </div>
             </div>
+          </div>
           </div>
         </WideDialogForm>
       </WideDialogContent>

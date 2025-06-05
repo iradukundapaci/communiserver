@@ -35,6 +35,9 @@ export class ReportsService {
       );
     }
 
+    // Auto-calculate actual participants from attendance list
+    const actualParticipants = dto.attendanceIds ? dto.attendanceIds.length : 0;
+
     const report = this.reportRepository.create({
       task: { id: dto.taskId },
       activity: { id: dto.activityId },
@@ -42,7 +45,7 @@ export class ReportsService {
       estimatedCost: dto.estimatedCost || 0,
       actualCost: dto.actualCost || 0,
       expectedParticipants: dto.expectedParticipants || 0,
-      actualParticipants: dto.actualParticipants || 0,
+      actualParticipants: actualParticipants,
       expectedFinancialImpact: dto.expectedFinancialImpact || 0,
       actualFinancialImpact: dto.actualFinancialImpact || 0,
       comment: dto.comment,
@@ -147,11 +150,16 @@ export class ReportsService {
       throw new NotFoundException("Report not found.");
     }
 
+    // Auto-calculate actual participants from attendance list if attendance is being updated
+    if (dto.attendanceIds !== undefined) {
+      report.actualParticipants = dto.attendanceIds.length;
+    }
+
     // Update task financial data
     if (dto.estimatedCost !== undefined) report.estimatedCost = dto.estimatedCost;
     if (dto.actualCost !== undefined) report.actualCost = dto.actualCost;
     if (dto.expectedParticipants !== undefined) report.expectedParticipants = dto.expectedParticipants;
-    if (dto.actualParticipants !== undefined) report.actualParticipants = dto.actualParticipants;
+    // Don't allow manual override of actualParticipants - it's calculated from attendance
     if (dto.expectedFinancialImpact !== undefined) report.expectedFinancialImpact = dto.expectedFinancialImpact;
     if (dto.actualFinancialImpact !== undefined) report.actualFinancialImpact = dto.actualFinancialImpact;
     if (dto.comment !== undefined) report.comment = dto.comment;
