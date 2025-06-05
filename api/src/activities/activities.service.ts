@@ -77,8 +77,6 @@ export class ActivitiesService {
         task.actualCost = 0; // Always 0 during creation
         task.expectedParticipants = 0;
         task.actualParticipants = 0; // Always 0 during creation
-        task.totalEstimatedCost = 0;
-        task.totalActualCost = 0; // Always 0 during creation
         task.expectedFinancialImpact = taskDto.expectedFinancialImpact || 0;
         task.actualFinancialImpact = 0; // Always 0 during creation
         task.activity = activity; // Set the activity reference
@@ -115,8 +113,6 @@ export class ActivitiesService {
             actualCost: task.actualCost,
             expectedParticipants: task.expectedParticipants,
             actualParticipants: task.actualParticipants,
-            totalEstimatedCost: task.totalEstimatedCost,
-            totalActualCost: task.totalActualCost,
             expectedFinancialImpact: task.expectedFinancialImpact,
             actualFinancialImpact: task.actualFinancialImpact,
           }))
@@ -218,8 +214,6 @@ export class ActivitiesService {
                 actualCost: task.actualCost,
                 expectedParticipants: task.expectedParticipants,
                 actualParticipants: task.actualParticipants,
-                totalEstimatedCost: task.totalEstimatedCost,
-                totalActualCost: task.totalActualCost,
                 expectedFinancialImpact: task.expectedFinancialImpact,
                 actualFinancialImpact: task.actualFinancialImpact,
                 isibo: task.isibo
@@ -262,8 +256,6 @@ export class ActivitiesService {
             actualCost: task.actualCost,
             expectedParticipants: task.expectedParticipants,
             actualParticipants: task.actualParticipants,
-            totalEstimatedCost: task.totalEstimatedCost,
-            totalActualCost: task.totalActualCost,
             expectedFinancialImpact: task.expectedFinancialImpact,
             actualFinancialImpact: task.actualFinancialImpact,
             isibo: task.isibo
@@ -385,12 +377,6 @@ export class ActivitiesService {
             if (taskDto.actualParticipants !== undefined) {
               existingTask.actualParticipants = taskDto.actualParticipants;
             }
-            if (taskDto.totalEstimatedCost !== undefined) {
-              existingTask.totalEstimatedCost = taskDto.totalEstimatedCost;
-            }
-            if (taskDto.totalActualCost !== undefined) {
-              existingTask.totalActualCost = taskDto.totalActualCost;
-            }
             if (taskDto.expectedFinancialImpact !== undefined) {
               existingTask.expectedFinancialImpact = taskDto.expectedFinancialImpact;
             }
@@ -505,8 +491,6 @@ export class ActivitiesService {
             actualCost: task.actualCost,
             expectedParticipants: task.expectedParticipants,
             actualParticipants: task.actualParticipants,
-            totalEstimatedCost: task.totalEstimatedCost,
-            totalActualCost: task.totalActualCost,
             expectedFinancialImpact: task.expectedFinancialImpact,
             actualFinancialImpact: task.actualFinancialImpact,
             isibo: task.isibo

@@ -20,18 +20,253 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
   Activity,
   TaskStatus,
   getActivityById,
   updateActivity,
 } from "@/lib/api/activities";
+import { deleteTask, updateTask } from "@/lib/api/tasks";
 import { getIsibos } from "@/lib/api/isibos";
 import { useUser } from "@/lib/contexts/user-context";
-import { ArrowLeft, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Edit } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import * as React from "react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+
+// Task Edit Form Component
+interface TaskEditFormProps {
+  taskData: any;
+  isibos: Array<{ id: string; name: string }>;
+  onSave: (data: any) => void;
+  onCancel: () => void;
+}
+
+function TaskEditForm({ taskData, isibos, onSave, onCancel }: TaskEditFormProps) {
+  const [formData, setFormData] = useState(taskData);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData((prev: any) => ({
+      ...prev,
+      [name]: name.includes('Cost') || name.includes('Participants') || name.includes('Impact')
+        ? Number(value) || 0
+        : value,
+    }));
+  };
+
+  const handleSelectChange = (name: string, value: string) => {
+    setFormData((prev: any) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onSave(formData);
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Left Column - Basic Info */}
+        <div className="space-y-4">
+          <h5 className="font-medium text-sm text-gray-700 border-b pb-2">Basic Information</h5>
+
+          <div className="space-y-2">
+            <Label htmlFor="edit-title">Title *</Label>
+            <Input
+              id="edit-title"
+              name="title"
+              value={formData.title || ""}
+              onChange={handleChange}
+              placeholder="Enter task title"
+              required
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="edit-isiboId">Isibo</Label>
+            <Select
+              value={formData.isiboId || ""}
+              onValueChange={(value) => handleSelectChange("isiboId", value)}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select isibo" />
+              </SelectTrigger>
+              <SelectContent>
+                {isibos.map((isibo) => (
+                  <SelectItem key={isibo.id} value={isibo.id}>
+                    {isibo.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="edit-status">Status</Label>
+            <Select
+              value={formData.status || "pending"}
+              onValueChange={(value) => handleSelectChange("status", value)}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="pending">Pending</SelectItem>
+                <SelectItem value="active">Active</SelectItem>
+                <SelectItem value="ongoing">Ongoing</SelectItem>
+                <SelectItem value="upcoming">Upcoming</SelectItem>
+                <SelectItem value="completed">Completed</SelectItem>
+                <SelectItem value="cancelled">Cancelled</SelectItem>
+                <SelectItem value="postponed">Postponed</SelectItem>
+                <SelectItem value="rescheduled">Rescheduled</SelectItem>
+                <SelectItem value="inactive">Inactive</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        {/* Middle Column - Financial Data */}
+        <div className="space-y-4">
+          <h5 className="font-medium text-sm text-gray-700 border-b pb-2">Financial Information</h5>
+
+          <div className="space-y-2">
+            <Label htmlFor="edit-estimatedCost">Estimated Cost (RWF)</Label>
+            <Input
+              id="edit-estimatedCost"
+              name="estimatedCost"
+              type="number"
+              min="0"
+              value={formData.estimatedCost || 0}
+              onChange={handleChange}
+              placeholder="0"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="edit-actualCost">Actual Cost (RWF)</Label>
+            <Input
+              id="edit-actualCost"
+              name="actualCost"
+              type="number"
+              min="0"
+              value={formData.actualCost || 0}
+              onChange={handleChange}
+              placeholder="0"
+            />
+          </div>
+        </div>
+
+        {/* Third Column - Participation Data */}
+        <div className="space-y-4">
+          <h5 className="font-medium text-sm text-gray-700 border-b pb-2">Participation</h5>
+
+          <div className="space-y-2">
+            <Label htmlFor="edit-expectedParticipants">Expected Participants</Label>
+            <Input
+              id="edit-expectedParticipants"
+              name="expectedParticipants"
+              type="number"
+              min="0"
+              value={formData.expectedParticipants || 0}
+              onChange={handleChange}
+              placeholder="0"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="edit-actualParticipants">Actual Participants</Label>
+            <Input
+              id="edit-actualParticipants"
+              name="actualParticipants"
+              type="number"
+              min="0"
+              value={formData.actualParticipants || 0}
+              onChange={handleChange}
+              placeholder="0"
+            />
+          </div>
+        </div>
+
+        {/* Fourth Column - Impact Data */}
+        <div className="space-y-4">
+          <h5 className="font-medium text-sm text-gray-700 border-b pb-2">Financial Impact</h5>
+
+          <div className="space-y-2">
+            <Label htmlFor="edit-expectedFinancialImpact">Expected Impact (RWF)</Label>
+            <Input
+              id="edit-expectedFinancialImpact"
+              name="expectedFinancialImpact"
+              type="number"
+              min="0"
+              value={formData.expectedFinancialImpact || 0}
+              onChange={handleChange}
+              placeholder="0"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="edit-actualFinancialImpact">Actual Impact (RWF)</Label>
+            <Input
+              id="edit-actualFinancialImpact"
+              name="actualFinancialImpact"
+              type="number"
+              min="0"
+              value={formData.actualFinancialImpact || 0}
+              onChange={handleChange}
+              placeholder="0"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Description Section - Spans 2 columns */}
+      <div className="lg:col-span-2 space-y-2">
+        <Label htmlFor="edit-description">Description *</Label>
+        <Textarea
+          id="edit-description"
+          name="description"
+          value={formData.description || ""}
+          onChange={handleChange}
+          placeholder="Enter task description"
+          rows={3}
+          required
+          className="w-full"
+        />
+      </div>
+
+      <DialogFooter>
+        <Button type="button" variant="outline" onClick={onCancel}>
+          Cancel
+        </Button>
+        <Button type="submit">
+          Save Changes
+        </Button>
+      </DialogFooter>
+    </form>
+  );
+}
 
 export default function ActivityDetailPage() {
   const { user } = useUser();
@@ -56,8 +291,6 @@ export default function ActivityDetailPage() {
       actualCost?: number;
       expectedParticipants?: number;
       actualParticipants?: number;
-      totalEstimatedCost?: number;
-      totalActualCost?: number;
       expectedFinancialImpact?: number;
       actualFinancialImpact?: number;
     }>,
@@ -72,14 +305,25 @@ export default function ActivityDetailPage() {
     actualCost: 0,
     expectedParticipants: 0,
     actualParticipants: 0,
-    totalEstimatedCost: 0,
-    totalActualCost: 0,
     expectedFinancialImpact: 0,
     actualFinancialImpact: 0,
   });
 
   // Removed unused villages state
   const [isibos, setIsibos] = useState<Array<{ id: string; name: string }>>([]);
+
+  // State for confirmation dialogs and task editing
+  const [deleteConfirmation, setDeleteConfirmation] = useState<{
+    isOpen: boolean;
+    taskIndex: number;
+    taskId?: string;
+  }>({ isOpen: false, taskIndex: -1 });
+
+  const [editingTask, setEditingTask] = useState<{
+    isOpen: boolean;
+    taskIndex: number;
+    taskData: any;
+  }>({ isOpen: false, taskIndex: -1, taskData: null });
 
   useEffect(() => {
     const fetchActivity = async () => {
@@ -90,7 +334,7 @@ export default function ActivityDetailPage() {
         const date = new Date(activityData.date);
 
         const formatDateForInput = (date: Date) => {
-          return date.toISOString().slice(0, 16);
+          return date.toISOString().slice(0, 10);
         };
 
         const tasks =
@@ -104,8 +348,6 @@ export default function ActivityDetailPage() {
             actualCost: task.actualCost || 0,
             expectedParticipants: task.expectedParticipants || 0,
             actualParticipants: task.actualParticipants || 0,
-            totalEstimatedCost: task.totalEstimatedCost || 0,
-            totalActualCost: task.totalActualCost || 0,
             expectedFinancialImpact: task.expectedFinancialImpact || 0,
             actualFinancialImpact: task.actualFinancialImpact || 0,
           })) || [];
@@ -216,8 +458,6 @@ export default function ActivityDetailPage() {
       actualCost: 0,
       expectedParticipants: 0,
       actualParticipants: 0,
-      totalEstimatedCost: 0,
-      totalActualCost: 0,
       expectedFinancialImpact: 0,
       actualFinancialImpact: 0,
     });
@@ -225,14 +465,81 @@ export default function ActivityDetailPage() {
     toast.success("Task added to activity");
   };
 
-  // Remove a task from the tasks array
-  const removeTask = (index: number) => {
-    setFormData((prev) => ({
-      ...prev,
-      tasks: prev.tasks.filter((_, i) => i !== index),
-    }));
+  // Show confirmation dialog for task removal
+  const showDeleteConfirmation = (index: number) => {
+    const task = formData.tasks[index];
+    setDeleteConfirmation({
+      isOpen: true,
+      taskIndex: index,
+      taskId: task.id,
+    });
+  };
 
-    toast.success("Task removed from activity");
+  // Remove a task from the tasks array and database
+  const removeTask = async (index: number, taskId?: string) => {
+    try {
+      // If task has an ID, delete from database
+      if (taskId) {
+        await deleteTask(taskId);
+        toast.success("Task deleted from database");
+      }
+
+      // Remove from local state
+      setFormData((prev) => ({
+        ...prev,
+        tasks: prev.tasks.filter((_, i) => i !== index),
+      }));
+
+      if (!taskId) {
+        toast.success("Task removed from activity");
+      }
+    } catch (error) {
+      console.error("Error deleting task:", error);
+      toast.error("Failed to delete task");
+    }
+  };
+
+  // Handle confirmed task deletion
+  const handleConfirmedDelete = async () => {
+    await removeTask(deleteConfirmation.taskIndex, deleteConfirmation.taskId);
+    setDeleteConfirmation({ isOpen: false, taskIndex: -1 });
+  };
+
+  // Show edit dialog for task
+  const showEditTask = (index: number) => {
+    const task = formData.tasks[index];
+    setEditingTask({
+      isOpen: true,
+      taskIndex: index,
+      taskData: { ...task },
+    });
+  };
+
+  // Handle task update
+  const handleTaskUpdate = async (updatedTaskData: any) => {
+    try {
+      const taskIndex = editingTask.taskIndex;
+      const task = formData.tasks[taskIndex];
+
+      // If task has an ID, update in database
+      if (task.id) {
+        await updateTask(task.id, updatedTaskData);
+        toast.success("Task updated successfully");
+      }
+
+      // Update local state
+      setFormData((prev) => ({
+        ...prev,
+        tasks: prev.tasks.map((t, i) =>
+          i === taskIndex ? { ...t, ...updatedTaskData } : t
+        ),
+      }));
+
+      setEditingTask({ isOpen: false, taskIndex: -1, taskData: null });
+    } catch (error) {
+      console.error("Error updating task:", error);
+      toast.error("Failed to update task");
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -312,6 +619,7 @@ export default function ActivityDetailPage() {
                 onChange={handleChange}
                 placeholder="Enter activity title"
                 required
+                className="max-w-lg"
               />
             </div>
             <div className="space-y-2">
@@ -323,6 +631,8 @@ export default function ActivityDetailPage() {
                 onChange={handleChange}
                 placeholder="Enter activity description"
                 required
+                rows={3}
+                className="max-w-lg"
               />
             </div>
             <div className="space-y-2">
@@ -334,6 +644,7 @@ export default function ActivityDetailPage() {
                 value={formData.date}
                 onChange={handleChange}
                 required
+                className="max-w-lg"
               />
             </div>
 
@@ -345,7 +656,7 @@ export default function ActivityDetailPage() {
                   value={user?.role === "VILLAGE_LEADER" && user?.village?.name ? user.village.name : ''}
                   placeholder="Enter village name"
                   disabled={true}
-                  className="w-full"
+                  className="max-w-lg"
                 />
             </div>
 
@@ -358,23 +669,40 @@ export default function ActivityDetailPage() {
                   {formData.tasks.map((task, index) => (
                     <div
                       key={index}
-                      className="flex items-center justify-between p-2 border rounded-md"
+                      className="flex items-center justify-between p-3 border rounded-md bg-gray-50"
                     >
-                      <div>
+                      <div className="flex-1">
                         <p className="font-medium">{task.title}</p>
                         <p className="text-sm text-muted-foreground">
                           {isibos.find((isibo) => isibo.id === task.isiboId)
                             ?.name || "Unknown Isibo"}
                         </p>
+                        <p className="text-xs text-muted-foreground">
+                          Status: {(task.status || "pending").charAt(0).toUpperCase() + (task.status || "pending").slice(1)} |
+                          Est. Cost: {task.estimatedCost || 0} RWF |
+                          Expected: {task.expectedParticipants || 0} participants
+                        </p>
                       </div>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => removeTask(index)}
-                        type="button"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => showEditTask(index)}
+                          type="button"
+                          title="Edit task"
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => showDeleteConfirmation(index)}
+                          type="button"
+                          title="Delete task"
+                        >
+                          <Trash2 className="h-4 w-4 text-red-500" />
+                        </Button>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -492,32 +820,7 @@ export default function ActivityDetailPage() {
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-2">
-                      <div className="space-y-2">
-                        <Label htmlFor="totalEstimatedCost">Total Est. Cost (RWF)</Label>
-                        <Input
-                          id="totalEstimatedCost"
-                          name="totalEstimatedCost"
-                          type="number"
-                          min="0"
-                          value={currentTask.totalEstimatedCost}
-                          onChange={handleTaskChange}
-                          placeholder="0"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="totalActualCost">Total Actual Cost (RWF)</Label>
-                        <Input
-                          id="totalActualCost"
-                          name="totalActualCost"
-                          type="number"
-                          min="0"
-                          value={currentTask.totalActualCost}
-                          onChange={handleTaskChange}
-                          placeholder="0"
-                        />
-                      </div>
-                    </div>
+
 
                     <div className="grid grid-cols-2 gap-2">
                       <div className="space-y-2">
@@ -571,6 +874,53 @@ export default function ActivityDetailPage() {
           </CardFooter>
         </form>
       </Card>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteConfirmation.isOpen} onOpenChange={(open) =>
+        setDeleteConfirmation(prev => ({ ...prev, isOpen: open }))
+      }>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Task</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this task? This action cannot be undone.
+              {deleteConfirmation.taskId && " The task will be permanently removed from the database."}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmedDelete}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Edit Task Dialog */}
+      <Dialog open={editingTask.isOpen} onOpenChange={(open) =>
+        setEditingTask(prev => ({ ...prev, isOpen: open }))
+      }>
+        <DialogContent className="max-w-[95vw] w-[95vw] max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Edit Task</DialogTitle>
+            <DialogDescription>
+              Update the task details below.
+            </DialogDescription>
+          </DialogHeader>
+
+          {editingTask.taskData && (
+            <TaskEditForm
+              taskData={editingTask.taskData}
+              isibos={isibos}
+              onSave={handleTaskUpdate}
+              onCancel={() => setEditingTask({ isOpen: false, taskIndex: -1, taskData: null })}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

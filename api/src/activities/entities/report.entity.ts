@@ -1,6 +1,13 @@
 import { AbstractEntity } from "src/__shared__/entities/abstract.entity";
 import { Profile } from "src/users/entities/profile.entity";
-import { Column, Entity, JoinColumn, JoinTable, ManyToMany, ManyToOne } from "typeorm";
+import {
+  Column,
+  Entity,
+  JoinColumn,
+  JoinTable,
+  ManyToMany,
+  ManyToOne,
+} from "typeorm";
 import { Activity } from "./activity.entity";
 import { Task } from "./task.entity";
 
@@ -22,15 +29,6 @@ export class Report extends AbstractEntity {
   })
   attendance: Profile[];
 
-  @Column({ type: "int", nullable: true })
-  totalExpectedParticipants?: number;
-
-  @Column({ type: "int", nullable: true })
-  totalPresentParticipants?: number;
-
-  @Column({ type: "int", nullable: true })
-  youthParticipants?: number;
-
   @Column({ type: "decimal", precision: 10, scale: 2, default: 0 })
   estimatedCost: number = 0;
 
@@ -42,12 +40,6 @@ export class Report extends AbstractEntity {
 
   @Column({ type: "int", default: 0 })
   actualParticipants: number = 0;
-
-  @Column({ type: "decimal", precision: 10, scale: 2, default: 0 })
-  totalEstimatedCost: number = 0;
-
-  @Column({ type: "decimal", precision: 10, scale: 2, default: 0 })
-  totalActualCost: number = 0;
 
   @Column({ type: "decimal", precision: 10, scale: 2, default: 0 })
   expectedFinancialImpact: number = 0;

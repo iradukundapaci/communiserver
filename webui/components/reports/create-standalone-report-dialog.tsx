@@ -55,15 +55,10 @@ export function CreateStandaloneReportDialog({
     attendanceIds: [] as string[],
     comment: "",
     evidenceUrls: [] as string[],
-    totalExpectedParticipants: 0,
-    totalPresentParticipants: 0,
-    youthParticipants: 0,
     estimatedCost: 0,
     actualCost: 0,
     expectedParticipants: 0,
     actualParticipants: 0,
-    totalEstimatedCost: 0,
-    totalActualCost: 0,
     expectedFinancialImpact: 0,
     actualFinancialImpact: 0,
     materialsUsed: [] as string[],
@@ -192,15 +187,10 @@ export function CreateStandaloneReportDialog({
         attendanceIds: formData.attendanceIds,
         comment: formData.comment,
         evidenceUrls: formData.evidenceUrls,
-        totalExpectedParticipants: formData.totalExpectedParticipants,
-        totalPresentParticipants: formData.totalPresentParticipants,
-        youthParticipants: formData.youthParticipants,
         estimatedCost: formData.estimatedCost,
         actualCost: formData.actualCost,
         expectedParticipants: formData.expectedParticipants,
         actualParticipants: formData.actualParticipants,
-        totalEstimatedCost: formData.totalEstimatedCost,
-        totalActualCost: formData.totalActualCost,
         expectedFinancialImpact: formData.expectedFinancialImpact,
         actualFinancialImpact: formData.actualFinancialImpact,
         materialsUsed: formData.materialsUsed,
@@ -218,15 +208,10 @@ export function CreateStandaloneReportDialog({
         attendanceIds: [],
         comment: "",
         evidenceUrls: [],
-        totalExpectedParticipants: 0,
-        totalPresentParticipants: 0,
-        youthParticipants: 0,
         estimatedCost: 0,
         actualCost: 0,
         expectedParticipants: 0,
         actualParticipants: 0,
-        totalEstimatedCost: 0,
-        totalActualCost: 0,
         expectedFinancialImpact: 0,
         actualFinancialImpact: 0,
         materialsUsed: [],
@@ -328,45 +313,7 @@ export function CreateStandaloneReportDialog({
               </div>
             </div>
 
-            {/* Participation Data */}
-            <div className="col-span-4 border-t pt-4">
-              <h4 className="font-medium mb-4">Participation Data</h4>
-              <div className="grid grid-cols-3 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="totalExpectedParticipants">Expected Participants</Label>
-                  <Input
-                    id="totalExpectedParticipants"
-                    name="totalExpectedParticipants"
-                    type="number"
-                    min="0"
-                    value={formData.totalExpectedParticipants}
-                    onChange={handleChange}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="totalPresentParticipants">Present Participants</Label>
-                  <Input
-                    id="totalPresentParticipants"
-                    name="totalPresentParticipants"
-                    type="number"
-                    min="0"
-                    value={formData.totalPresentParticipants}
-                    onChange={handleChange}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="youthParticipants">Youth Participants</Label>
-                  <Input
-                    id="youthParticipants"
-                    name="youthParticipants"
-                    type="number"
-                    min="0"
-                    value={formData.youthParticipants}
-                    onChange={handleChange}
-                  />
-                </div>
-              </div>
-            </div>
+
 
             {/* Financial Data */}
             <div className="col-span-4 border-t pt-4">
@@ -416,28 +363,7 @@ export function CreateStandaloneReportDialog({
                     onChange={handleChange}
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="totalEstimatedCost">Total Estimated Cost (RWF)</Label>
-                  <Input
-                    id="totalEstimatedCost"
-                    name="totalEstimatedCost"
-                    type="number"
-                    min="0"
-                    value={formData.totalEstimatedCost}
-                    onChange={handleChange}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="totalActualCost">Total Actual Cost (RWF)</Label>
-                  <Input
-                    id="totalActualCost"
-                    name="totalActualCost"
-                    type="number"
-                    min="0"
-                    value={formData.totalActualCost}
-                    onChange={handleChange}
-                  />
-                </div>
+
                 <div className="space-y-2">
                   <Label htmlFor="expectedFinancialImpact">Expected Impact (RWF)</Label>
                   <Input

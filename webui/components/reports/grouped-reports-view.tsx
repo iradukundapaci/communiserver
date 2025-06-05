@@ -262,15 +262,7 @@ export function GroupedReportsView({
                                   </div>
                                 </div>
                                 
-                                <div>
-                                  <span className="text-gray-600">Present:</span>
-                                  <div className="font-medium">
-                                    {report.totalPresentParticipants || 0}
-                                    <span className="text-gray-500 text-xs ml-1">
-                                      (Youth: {report.youthParticipants || 0})
-                                    </span>
-                                  </div>
-                                </div>
+
                                 
                                 <div>
                                   <span className="text-gray-600">Impact:</span>

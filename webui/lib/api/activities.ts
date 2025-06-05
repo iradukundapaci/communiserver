@@ -52,8 +52,6 @@ export interface Task {
   actualCost: number;
   expectedParticipants: number;
   actualParticipants: number;
-  totalEstimatedCost: number;
-  totalActualCost: number;
   expectedFinancialImpact: number;
   actualFinancialImpact: number;
   activity: {
@@ -89,7 +87,6 @@ export interface CreateTaskInput {
   isiboId: string;
   estimatedCost?: number;
   expectedParticipants?: number;
-  totalEstimatedCost?: number;
   expectedFinancialImpact?: number;
 }
 
@@ -103,8 +100,6 @@ export interface UpdateTaskInput {
   actualCost?: number;
   expectedParticipants?: number;
   actualParticipants?: number;
-  totalEstimatedCost?: number;
-  totalActualCost?: number;
   expectedFinancialImpact?: number;
   actualFinancialImpact?: number;
 }

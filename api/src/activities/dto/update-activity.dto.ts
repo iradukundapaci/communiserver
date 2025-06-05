@@ -62,14 +62,6 @@ export namespace UpdateActivityDTO {
 
     @IsNumber()
     @IsOptional()
-    totalEstimatedCost?: number;
-
-    @IsNumber()
-    @IsOptional()
-    totalActualCost?: number;
-
-    @IsNumber()
-    @IsOptional()
     expectedFinancialImpact?: number;
 
     @IsNumber()

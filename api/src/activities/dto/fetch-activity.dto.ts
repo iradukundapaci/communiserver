@@ -37,8 +37,6 @@ export namespace FetchActivityDTO {
       actualCost: number;
       expectedParticipants: number;
       actualParticipants: number;
-      totalEstimatedCost: number;
-      totalActualCost: number;
       expectedFinancialImpact: number;
       actualFinancialImpact: number;
       isibo?: {

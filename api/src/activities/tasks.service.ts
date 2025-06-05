@@ -63,8 +63,6 @@ export class TasksService {
       actualCost: 0, // Always 0 during creation
       expectedParticipants: createTaskDTO.expectedParticipants || 0,
       actualParticipants: 0, // Always 0 during creation
-      totalEstimatedCost: createTaskDTO.totalEstimatedCost || 0,
-      totalActualCost: 0, // Always 0 during creation
       expectedFinancialImpact: createTaskDTO.expectedFinancialImpact || 0,
       actualFinancialImpact: 0, // Always 0 during creation
       activity,
@@ -83,8 +81,6 @@ export class TasksService {
       actualCost: savedTask.actualCost,
       expectedParticipants: savedTask.expectedParticipants,
       actualParticipants: savedTask.actualParticipants,
-      totalEstimatedCost: savedTask.totalEstimatedCost,
-      totalActualCost: savedTask.totalActualCost,
       expectedFinancialImpact: savedTask.expectedFinancialImpact,
       actualFinancialImpact: savedTask.actualFinancialImpact,
       isibo: savedTask.isibo
@@ -147,8 +143,6 @@ export class TasksService {
           actualCost: task.actualCost,
           expectedParticipants: task.expectedParticipants,
           actualParticipants: task.actualParticipants,
-          totalEstimatedCost: task.totalEstimatedCost,
-          totalActualCost: task.totalActualCost,
           expectedFinancialImpact: task.expectedFinancialImpact,
           actualFinancialImpact: task.actualFinancialImpact,
           // Include only necessary isibo data
@@ -191,8 +185,6 @@ export class TasksService {
       actualCost: task.actualCost,
       expectedParticipants: task.expectedParticipants,
       actualParticipants: task.actualParticipants,
-      totalEstimatedCost: task.totalEstimatedCost,
-      totalActualCost: task.totalActualCost,
       expectedFinancialImpact: task.expectedFinancialImpact,
       actualFinancialImpact: task.actualFinancialImpact,
       isibo: task.isibo
@@ -300,12 +292,6 @@ export class TasksService {
     if (updateTaskDTO.actualParticipants !== undefined) {
       task.actualParticipants = updateTaskDTO.actualParticipants;
     }
-    if (updateTaskDTO.totalEstimatedCost !== undefined) {
-      task.totalEstimatedCost = updateTaskDTO.totalEstimatedCost;
-    }
-    if (updateTaskDTO.totalActualCost !== undefined) {
-      task.totalActualCost = updateTaskDTO.totalActualCost;
-    }
     if (updateTaskDTO.expectedFinancialImpact !== undefined) {
       task.expectedFinancialImpact = updateTaskDTO.expectedFinancialImpact;
     }
@@ -325,8 +311,6 @@ export class TasksService {
       actualCost: updatedTask.actualCost,
       expectedParticipants: updatedTask.expectedParticipants,
       actualParticipants: updatedTask.actualParticipants,
-      totalEstimatedCost: updatedTask.totalEstimatedCost,
-      totalActualCost: updatedTask.totalActualCost,
       expectedFinancialImpact: updatedTask.expectedFinancialImpact,
       actualFinancialImpact: updatedTask.actualFinancialImpact,
       isibo: updatedTask.isibo

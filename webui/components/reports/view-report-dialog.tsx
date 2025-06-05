@@ -203,28 +203,7 @@ export function ViewReportDialog({ report, trigger, onDownload }: ViewReportDial
                     </div>
                   </div>
 
-                  {(report.totalExpectedParticipants || report.totalPresentParticipants || report.youthParticipants) && (
-                    <div className="grid grid-cols-3 gap-4 pt-4 border-t">
-                      <div className="text-center">
-                        <div className="text-lg font-bold text-gray-700">
-                          {report.totalExpectedParticipants || 0}
-                        </div>
-                        <div className="text-sm text-gray-600">Total Expected</div>
-                      </div>
-                      <div className="text-center">
-                        <div className="text-lg font-bold text-gray-700">
-                          {report.totalPresentParticipants || 0}
-                        </div>
-                        <div className="text-sm text-gray-600">Total Present</div>
-                      </div>
-                      <div className="text-center">
-                        <div className="text-lg font-bold text-gray-700">
-                          {report.youthParticipants || 0}
-                        </div>
-                        <div className="text-sm text-gray-600">Youth</div>
-                      </div>
-                    </div>
-                  )}
+
                 </CardContent>
               </Card>
             </div>

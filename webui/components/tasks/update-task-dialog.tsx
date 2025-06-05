@@ -31,8 +31,6 @@ export function UpdateTaskDialog({ task, onTaskUpdated, trigger }: UpdateTaskDia
   const [actualCost, setActualCost] = useState(task.actualCost || 0);
   const [expectedParticipants, setExpectedParticipants] = useState(task.expectedParticipants || 0);
   const [actualParticipants, setActualParticipants] = useState(task.actualParticipants || 0);
-  const [totalEstimatedCost, setTotalEstimatedCost] = useState(task.totalEstimatedCost || 0);
-  const [totalActualCost, setTotalActualCost] = useState(task.totalActualCost || 0);
   const [expectedFinancialImpact, setExpectedFinancialImpact] = useState(task.expectedFinancialImpact || 0);
   const [actualFinancialImpact, setActualFinancialImpact] = useState(task.actualFinancialImpact || 0);
 
@@ -44,8 +42,6 @@ export function UpdateTaskDialog({ task, onTaskUpdated, trigger }: UpdateTaskDia
     setActualCost(task.actualCost || 0);
     setExpectedParticipants(task.expectedParticipants || 0);
     setActualParticipants(task.actualParticipants || 0);
-    setTotalEstimatedCost(task.totalEstimatedCost || 0);
-    setTotalActualCost(task.totalActualCost || 0);
     setExpectedFinancialImpact(task.expectedFinancialImpact || 0);
     setActualFinancialImpact(task.actualFinancialImpact || 0);
   };
@@ -63,8 +59,6 @@ export function UpdateTaskDialog({ task, onTaskUpdated, trigger }: UpdateTaskDia
         actualCost,
         expectedParticipants,
         actualParticipants,
-        totalEstimatedCost,
-        totalActualCost,
         expectedFinancialImpact,
         actualFinancialImpact,
       };
@@ -258,31 +252,7 @@ export function UpdateTaskDialog({ task, onTaskUpdated, trigger }: UpdateTaskDia
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="totalEstimatedCost">Total Estimated Cost</Label>
-                  <Input
-                    id="totalEstimatedCost"
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={totalEstimatedCost}
-                    onChange={(e) => setTotalEstimatedCost(parseFloat(e.target.value) || 0)}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="totalActualCost">Total Actual Cost</Label>
-                  <Input
-                    id="totalActualCost"
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={totalActualCost}
-                    onChange={(e) => setTotalActualCost(parseFloat(e.target.value) || 0)}
-                    className="border-green-300 focus:border-green-500"
-                  />
-                </div>
-              </div>
+
 
               <div className="grid grid-cols-2 gap-4">
                 <div>

@@ -27,12 +27,6 @@ export class Task extends AbstractEntity {
 
   @Column()
   actualParticipants: number = 0;
-
-  @Column()
-  totalEstimatedCost: number = 0;
-  
-  @Column()
-  totalActualCost: number = 0;
   
   @Column()
   expectedFinancialImpact: number = 0;

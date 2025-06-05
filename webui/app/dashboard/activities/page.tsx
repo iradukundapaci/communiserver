@@ -121,7 +121,6 @@ function CreateActivityDialog({
       isiboId: string;
       estimatedCost?: number;
       expectedParticipants?: number;
-      totalEstimatedCost?: number;
       expectedFinancialImpact?: number;
     }>;
   }>({
@@ -139,7 +138,6 @@ function CreateActivityDialog({
     isiboId: user?.isibo?.id || "",
     estimatedCost: 0,
     expectedParticipants: 0,
-    totalEstimatedCost: 0,
     expectedFinancialImpact: 0,
   });
   const [, setVillages] = useState<Array<{ id: string; name: string }>>(
@@ -247,7 +245,6 @@ function CreateActivityDialog({
       isiboId: "",
       estimatedCost: 0,
       expectedParticipants: 0,
-      totalEstimatedCost: 0,
       expectedFinancialImpact: 0,
     });
 
@@ -326,7 +323,6 @@ function CreateActivityDialog({
         isiboId: "",
         estimatedCost: 0,
         expectedParticipants: 0,
-        totalEstimatedCost: 0,
         expectedFinancialImpact: 0,
       });
     } catch (error: unknown) {

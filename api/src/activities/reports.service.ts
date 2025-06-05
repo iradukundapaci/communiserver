@@ -38,16 +38,11 @@ export class ReportsService {
     const report = this.reportRepository.create({
       task: { id: dto.taskId },
       activity: { id: dto.activityId },
-      totalExpectedParticipants: dto.totalExpectedParticipants,
-      totalPresentParticipants: dto.totalPresentParticipants,
-      youthParticipants: dto.youthParticipants,
       // Copy task financial data for easy access
       estimatedCost: dto.estimatedCost || 0,
       actualCost: dto.actualCost || 0,
       expectedParticipants: dto.expectedParticipants || 0,
       actualParticipants: dto.actualParticipants || 0,
-      totalEstimatedCost: dto.totalEstimatedCost || 0,
-      totalActualCost: dto.totalActualCost || 0,
       expectedFinancialImpact: dto.expectedFinancialImpact || 0,
       actualFinancialImpact: dto.actualFinancialImpact || 0,
       comment: dto.comment,
@@ -152,16 +147,11 @@ export class ReportsService {
       throw new NotFoundException("Report not found.");
     }
 
-    if (dto.totalExpectedParticipants !== undefined) report.totalExpectedParticipants = dto.totalExpectedParticipants;
-    if (dto.totalPresentParticipants !== undefined) report.totalPresentParticipants = dto.totalPresentParticipants;
-    if (dto.youthParticipants !== undefined) report.youthParticipants = dto.youthParticipants;
     // Update task financial data
     if (dto.estimatedCost !== undefined) report.estimatedCost = dto.estimatedCost;
     if (dto.actualCost !== undefined) report.actualCost = dto.actualCost;
     if (dto.expectedParticipants !== undefined) report.expectedParticipants = dto.expectedParticipants;
     if (dto.actualParticipants !== undefined) report.actualParticipants = dto.actualParticipants;
-    if (dto.totalEstimatedCost !== undefined) report.totalEstimatedCost = dto.totalEstimatedCost;
-    if (dto.totalActualCost !== undefined) report.totalActualCost = dto.totalActualCost;
     if (dto.expectedFinancialImpact !== undefined) report.expectedFinancialImpact = dto.expectedFinancialImpact;
     if (dto.actualFinancialImpact !== undefined) report.actualFinancialImpact = dto.actualFinancialImpact;
     if (dto.comment !== undefined) report.comment = dto.comment;

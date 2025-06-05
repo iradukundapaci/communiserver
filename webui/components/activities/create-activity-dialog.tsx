@@ -49,7 +49,6 @@ export function CreateActivityDialog({ onActivityCreated, trigger }: CreateActiv
       isiboId: "",
       estimatedCost: 0,
       expectedParticipants: 0,
-      totalEstimatedCost: 0,
       expectedFinancialImpact: 0,
     };
     setTasks([...tasks, newTask]);
@@ -353,16 +352,7 @@ function TaskForm({ task, villageId, onUpdate, onRemove, onIsiboSearch }: TaskFo
           />
         </div>
 
-        <div>
-          <Label>Total Estimated Cost (RWF)</Label>
-          <Input
-            type="number"
-            min="0"
-            value={task.totalEstimatedCost || ""}
-            onChange={(e) => onUpdate({ totalEstimatedCost: parseFloat(e.target.value) || 0 })}
-            placeholder="0"
-          />
-        </div>
+
 
         <div>
           <Label>Expected Financial Impact (RWF)</Label>

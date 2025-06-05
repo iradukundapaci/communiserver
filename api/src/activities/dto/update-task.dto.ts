@@ -41,14 +41,6 @@ export namespace UpdateTaskDTO {
 
     @IsNumber()
     @IsOptional()
-    totalEstimatedCost?: number;
-
-    @IsNumber()
-    @IsOptional()
-    totalActualCost?: number;
-
-    @IsNumber()
-    @IsOptional()
     expectedFinancialImpact?: number;
 
     @IsNumber()
@@ -65,8 +57,6 @@ export namespace UpdateTaskDTO {
     actualCost: number;
     expectedParticipants: number;
     actualParticipants: number;
-    totalEstimatedCost: number;
-    totalActualCost: number;
     expectedFinancialImpact: number;
     actualFinancialImpact: number;
     activity: {

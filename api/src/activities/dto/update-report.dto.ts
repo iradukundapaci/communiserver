@@ -22,18 +22,6 @@ export namespace UpdateReportDTO {
     @IsOptional()
     attendanceIds?: string[];
 
-    @IsNumber()
-    @IsOptional()
-    totalExpectedParticipants?: number;
-
-    @IsNumber()
-    @IsOptional()
-    totalPresentParticipants?: number;
-
-    @IsNumber()
-    @IsOptional()
-    youthParticipants?: number;
-
     // Task financial data (copied from task for easy access)
     @IsNumber()
     @IsOptional()
@@ -50,14 +38,6 @@ export namespace UpdateReportDTO {
     @IsNumber()
     @IsOptional()
     actualParticipants?: number;
-
-    @IsNumber()
-    @IsOptional()
-    totalEstimatedCost?: number;
-
-    @IsNumber()
-    @IsOptional()
-    totalActualCost?: number;
 
     @IsNumber()
     @IsOptional()
@@ -96,15 +76,10 @@ export namespace UpdateReportDTO {
     task: { id: string; title: string };
     submittedAt: Date;
     attendance: Profile[];
-    totalExpectedParticipants?: number;
-    totalPresentParticipants?: number;
-    youthParticipants?: number;
     estimatedCost: number;
     actualCost: number;
     expectedParticipants: number;
     actualParticipants: number;
-    totalEstimatedCost: number;
-    totalActualCost: number;
     expectedFinancialImpact: number;
     actualFinancialImpact: number;
     comment?: string;

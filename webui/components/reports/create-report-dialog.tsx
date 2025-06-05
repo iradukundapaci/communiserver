@@ -35,17 +35,12 @@ export function CreateReportDialog({
 
   // Form state with new fields
   const [attendanceIds, setAttendanceIds] = useState<string[]>([]);
-  const [totalExpectedParticipants, setTotalExpectedParticipants] = useState<number>(task.expectedParticipants || 0);
-  const [totalPresentParticipants, setTotalPresentParticipants] = useState<number>(0);
-  const [youthParticipants, setYouthParticipants] = useState<number>(0);
 
   // Task financial data (pre-filled from task, can be updated)
   const [estimatedCost, setEstimatedCost] = useState<number>(task.estimatedCost || 0);
   const [actualCost, setActualCost] = useState<number>(task.actualCost || 0);
   const [expectedParticipants, setExpectedParticipants] = useState<number>(task.expectedParticipants || 0);
   const [actualParticipants, setActualParticipants] = useState<number>(task.actualParticipants || 0);
-  const [totalEstimatedCost, setTotalEstimatedCost] = useState<number>(task.totalEstimatedCost || 0);
-  const [totalActualCost, setTotalActualCost] = useState<number>(task.totalActualCost || 0);
   const [expectedFinancialImpact, setExpectedFinancialImpact] = useState<number>(task.expectedFinancialImpact || 0);
   const [actualFinancialImpact, setActualFinancialImpact] = useState<number>(task.actualFinancialImpact || 0);
 
@@ -73,15 +68,10 @@ export function CreateReportDialog({
 
   const resetForm = () => {
     setAttendanceIds([]);
-    setTotalExpectedParticipants(task.expectedParticipants || 0);
-    setTotalPresentParticipants(0);
-    setYouthParticipants(0);
     setEstimatedCost(task.estimatedCost || 0);
     setActualCost(task.actualCost || 0);
     setExpectedParticipants(task.expectedParticipants || 0);
     setActualParticipants(task.actualParticipants || 0);
-    setTotalEstimatedCost(task.totalEstimatedCost || 0);
-    setTotalActualCost(task.totalActualCost || 0);
     setExpectedFinancialImpact(task.expectedFinancialImpact || 0);
     setActualFinancialImpact(task.actualFinancialImpact || 0);
     setComment("");
@@ -105,16 +95,11 @@ export function CreateReportDialog({
         activityId,
         taskId: task.id,
         attendanceIds: attendanceIds.length > 0 ? attendanceIds : undefined,
-        totalExpectedParticipants,
-        totalPresentParticipants,
-        youthParticipants,
         // Include task financial data
         estimatedCost,
         actualCost,
         expectedParticipants,
         actualParticipants,
-        totalEstimatedCost,
-        totalActualCost,
         expectedFinancialImpact,
         actualFinancialImpact,
         comment: comment || undefined,
@@ -172,41 +157,7 @@ export function CreateReportDialog({
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Left Column - Participation & Financial Data */}
             <div className="space-y-6">
-              <div>
-                <h3 className="text-lg font-medium mb-4">Participation Details</h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="totalExpected">Total Expected Participants</Label>
-                    <Input
-                      id="totalExpected"
-                      type="number"
-                      min="0"
-                      value={totalExpectedParticipants}
-                      onChange={(e) => setTotalExpectedParticipants(parseInt(e.target.value) || 0)}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="totalPresent">Total Present Participants</Label>
-                    <Input
-                      id="totalPresent"
-                      type="number"
-                      min="0"
-                      value={totalPresentParticipants}
-                      onChange={(e) => setTotalPresentParticipants(parseInt(e.target.value) || 0)}
-                    />
-                  </div>
-                  <div className="sm:col-span-2">
-                    <Label htmlFor="youth">Youth Participants</Label>
-                    <Input
-                      id="youth"
-                      type="number"
-                      min="0"
-                      value={youthParticipants}
-                      onChange={(e) => setYouthParticipants(parseInt(e.target.value) || 0)}
-                    />
-                  </div>
-                </div>
-              </div>
+
 
               <div>
                 <h3 className="text-lg font-medium mb-4">Financial Information</h3>
@@ -253,28 +204,7 @@ export function CreateReportDialog({
                       onChange={(e) => setActualParticipants(parseInt(e.target.value) || 0)}
                     />
                   </div>
-                  <div>
-                    <Label htmlFor="totalEstimatedCost">Total Estimated Cost</Label>
-                    <Input
-                      id="totalEstimatedCost"
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      value={totalEstimatedCost}
-                      onChange={(e) => setTotalEstimatedCost(parseFloat(e.target.value) || 0)}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="totalActualCost">Total Actual Cost</Label>
-                    <Input
-                      id="totalActualCost"
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      value={totalActualCost}
-                      onChange={(e) => setTotalActualCost(parseFloat(e.target.value) || 0)}
-                    />
-                  </div>
+
                   <div>
                     <Label htmlFor="expectedFinancialImpact">Expected Financial Impact</Label>
                     <Input
