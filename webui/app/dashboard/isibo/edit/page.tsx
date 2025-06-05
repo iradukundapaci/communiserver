@@ -186,7 +186,7 @@ export default function EditMyIsiboPage() {
     try {
       await updateIsibo(user.isibo.id, {
         name: formData.name,
-        memberIds: formData.memberIds,
+        existingMemberIds: formData.memberIds,
       });
       toast.success("Isibo updated successfully");
       router.push("/dashboard");

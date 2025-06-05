@@ -4,16 +4,15 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { formatCurrency, formatNumber, calculatePercentage } from "@/lib/utils";
-import { 
-  IconActivity, 
-  IconUsers, 
-  IconCurrencyDollar, 
+import {
+  IconActivity,
+  IconUsers,
+  IconCurrencyDollar,
   IconTrendingUp,
   IconTrendingDown,
   IconMinus,
   IconTarget,
   IconCheckCircle,
-  IconClock,
   IconAlertTriangle
 } from "@tabler/icons-react";
 

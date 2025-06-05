@@ -75,9 +75,9 @@ export class ActivitiesService {
         task.status = ETaskStatus.PENDING;
         task.estimatedCost = taskDto.estimatedCost || 0;
         task.actualCost = 0; // Always 0 during creation
-        task.expectedParticipants = taskDto.expectedParticipants || 0;
+        task.expectedParticipants = 0;
         task.actualParticipants = 0; // Always 0 during creation
-        task.totalEstimatedCost = taskDto.totalEstimatedCost || 0;
+        task.totalEstimatedCost = 0;
         task.totalActualCost = 0; // Always 0 during creation
         task.expectedFinancialImpact = taskDto.expectedFinancialImpact || 0;
         task.actualFinancialImpact = 0; // Always 0 during creation

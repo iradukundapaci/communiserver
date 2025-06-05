@@ -245,7 +245,7 @@ export function CreateActivityDialog({ onActivityCreated, trigger }: CreateActiv
                 {tasks.length === 0 && (
                   <div className="text-center py-8 text-gray-500">
                     <p>No tasks added yet</p>
-                    <p className="text-sm">Click "Add Task" to create tasks for this activity</p>
+                    <p className="text-sm">Click &quot;Add Task&quot; to create tasks for this activity</p>
                   </div>
                 )}
               </div>

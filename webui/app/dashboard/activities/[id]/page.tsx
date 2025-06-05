@@ -78,9 +78,7 @@ export default function ActivityDetailPage() {
     actualFinancialImpact: 0,
   });
 
-  const [villages] = useState<Array<{ id: string; name: string }>>(
-    []
-  );
+  // Removed unused villages state
   const [isibos, setIsibos] = useState<Array<{ id: string; name: string }>>([]);
 
   useEffect(() => {
@@ -163,15 +161,7 @@ export default function ActivityDetailPage() {
     }));
   };
 
-  const handleSelectChange = (name: string, value: string) => {
-    // If "NONE" is selected, set the form value to empty string
-    const formValue = value === "NONE" ? "" : value;
-
-    setFormData((prev) => ({
-      ...prev,
-      [name]: formValue,
-    }));
-  };
+  // Removed unused handleSelectChange function
 
   // Handle changes to the current task form
   const handleTaskChange = (

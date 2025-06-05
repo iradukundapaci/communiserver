@@ -2,6 +2,16 @@
 import { getAuthTokens } from "./auth";
 
 // Types
+
+export interface Sector{
+  id: string;
+  name: string;
+  district?: {
+    id: string;
+    name: string;
+  };
+}
+
 export interface Cell {
   id: string;
   name: string;

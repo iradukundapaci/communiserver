@@ -247,7 +247,7 @@ export default function EditIsiboPage({
       // Send the name and members when updating the isibo
       await updateIsibo(id, {
         name: formData.name,
-        memberIds: formData.members.map(member => member.id),
+        existingMemberIds: formData.members.map(member => member.id),
       });
       toast.success("Isibo updated successfully");
       router.push("/dashboard/locations/isibos");

@@ -1,8 +1,7 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Users, MapPin, Calendar, Shield, Globe, Heart } from "lucide-react";
+import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Users, MapPin, Calendar, Globe } from "lucide-react";
 
 export default function HomePage() {
   return (
@@ -43,7 +42,7 @@ export default function HomePage() {
           </h1>
           <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
             CommuniServer brings communities together through local activities, events, and meaningful connections.
-            Join your neighborhood and discover what's happening around you.
+            Join your neighborhood and discover what&apos;s happening around you.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link href="/auth/register">

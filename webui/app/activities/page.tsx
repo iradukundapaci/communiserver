@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+// Removed unused Select imports
 import { SearchableSelect, SearchableSelectOption } from "@/components/ui/searchable-select";
 import { Globe, MapPin, Calendar, Users, Search, Loader2 } from "lucide-react";
 import { useState, useEffect } from "react";

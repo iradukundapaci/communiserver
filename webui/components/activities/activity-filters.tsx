@@ -6,9 +6,10 @@ import { Label } from "@/components/ui/label";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { searchVillages, searchCells, searchSectors, type Village, type Cell, type Sector } from "@/lib/api/locations";
 import { IconFilter, IconX, IconSearch, IconMapPin } from "@tabler/icons-react";
 import { useState, useEffect } from "react";
+import { Cell, searchCells, Sector } from "@/lib/api/cells";
+import { searchVillages, Village } from "@/lib/api/villages";
 
 export interface ActivityFilterState {
   q?: string;
@@ -58,18 +59,24 @@ export function ActivityFilters({
 
   const handleVillageSelect = (village: Village | null) => {
     setSelectedVillage(village);
-    onFiltersChange({ 
-      ...filters, 
+    onFiltersChange({
+      ...filters,
       villageId: village?.id,
       cellId: village?.cell?.id,
-      sectorId: village?.cell?.sector?.id
+      sectorId: undefined // Village data doesn't include sector info
     });
-    
+
     if (village?.cell) {
-      setSelectedCell(village.cell);
-      if (village.cell.sector) {
-        setSector(village.cell.sector);
-      }
+      // Convert village.cell to Cell type
+      const cellData: Cell = {
+        id: village.cell.id,
+        name: village.cell.name,
+        hasLeader: false,
+        leaderId: null,
+      };
+      setSelectedCell(cellData);
+      // Clear sector since village data doesn't include sector info
+      setSector(null);
     }
   };
 
@@ -112,7 +119,7 @@ export function ActivityFilters({
       const villages = await searchVillages(query);
       return villages.map(village => ({
         value: village.id,
-        label: `${village.name} (${village.cell?.name}, ${village.cell?.sector?.name})`,
+        label: `${village.name} (${village.cell?.name})`,
         data: village,
       }));
     } catch (error) {
