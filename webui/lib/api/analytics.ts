@@ -39,6 +39,41 @@ export interface ReportStats {
   evidencePercentage: number;
   averageAttendance: number;
   totalAttendees: number;
+  reportsWithChallenges: number;
+  reportsWithSuggestions: number;
+  reportsWithMaterials: number;
+  averageEvidencePerReport: number;
+}
+
+export interface FinancialAnalytics {
+  totalEstimatedCost: number;
+  totalActualCost: number;
+  costVariance: number;
+  costVariancePercentage: number;
+  totalEstimatedImpact: number;
+  totalActualImpact: number;
+  impactVariance: number;
+  impactVariancePercentage: number;
+  averageCostPerActivity: number;
+  averageCostPerTask: number;
+  budgetEfficiency: number;
+}
+
+export interface ParticipationAnalytics {
+  totalExpectedParticipants: number;
+  totalActualParticipants: number;
+  participationRate: number;
+  averageParticipantsPerActivity: number;
+  averageParticipantsPerTask: number;
+}
+
+export interface TaskPerformance {
+  totalTasks: number;
+  completedTasks: number;
+  pendingTasks: number;
+  cancelledTasks: number;
+  taskCompletionRate: number;
+  averageTasksPerActivity: number;
 }
 
 export interface CoreMetrics {
@@ -46,6 +81,9 @@ export interface CoreMetrics {
   locationStats: LocationStats;
   activityStats: ActivityStats;
   reportStats: ReportStats;
+  financialAnalytics: FinancialAnalytics;
+  participationAnalytics: ParticipationAnalytics;
+  taskPerformance: TaskPerformance;
 }
 
 export interface TimeSeriesData {

@@ -45,13 +45,10 @@ export class ActivityStatsDto {
   totalActivities: number;
 
   @ApiProperty()
-  activeActivities: number;
+  activitiesWithReports: number;
 
   @ApiProperty()
-  completedActivities: number;
-
-  @ApiProperty()
-  pendingActivities: number;
+  activitiesWithoutReports: number;
 
   @ApiProperty()
   totalTasks: number;
@@ -66,7 +63,13 @@ export class ActivityStatsDto {
   pendingTasks: number;
 
   @ApiProperty()
+  cancelledTasks: number;
+
+  @ApiProperty()
   taskCompletionRate: number;
+
+  @ApiProperty()
+  activityReportingRate: number;
 }
 
 export class ReportStatsDto {
@@ -87,6 +90,90 @@ export class ReportStatsDto {
 
   @ApiProperty()
   totalAttendees: number;
+
+  @ApiProperty()
+  reportsWithChallenges: number;
+
+  @ApiProperty()
+  reportsWithSuggestions: number;
+
+  @ApiProperty()
+  reportsWithMaterials: number;
+
+  @ApiProperty()
+  averageEvidencePerReport: number;
+}
+
+export class FinancialAnalyticsDto {
+  @ApiProperty()
+  totalEstimatedCost: number;
+
+  @ApiProperty()
+  totalActualCost: number;
+
+  @ApiProperty()
+  costVariance: number;
+
+  @ApiProperty()
+  costVariancePercentage: number;
+
+  @ApiProperty()
+  totalEstimatedImpact: number;
+
+  @ApiProperty()
+  totalActualImpact: number;
+
+  @ApiProperty()
+  impactVariance: number;
+
+  @ApiProperty()
+  impactVariancePercentage: number;
+
+  @ApiProperty()
+  averageCostPerActivity: number;
+
+  @ApiProperty()
+  averageCostPerTask: number;
+
+  @ApiProperty()
+  budgetEfficiency: number;
+}
+
+export class ParticipationAnalyticsDto {
+  @ApiProperty()
+  totalExpectedParticipants: number;
+
+  @ApiProperty()
+  totalActualParticipants: number;
+
+  @ApiProperty()
+  participationRate: number;
+
+  @ApiProperty()
+  averageParticipantsPerActivity: number;
+
+  @ApiProperty()
+  averageParticipantsPerTask: number;
+}
+
+export class TaskPerformanceDto {
+  @ApiProperty()
+  totalTasks: number;
+
+  @ApiProperty()
+  completedTasks: number;
+
+  @ApiProperty()
+  pendingTasks: number;
+
+  @ApiProperty()
+  cancelledTasks: number;
+
+  @ApiProperty()
+  taskCompletionRate: number;
+
+  @ApiProperty()
+  averageTasksPerActivity: number;
 }
 
 export class CoreMetricsDto {
@@ -101,6 +188,15 @@ export class CoreMetricsDto {
 
   @ApiProperty()
   reportStats: ReportStatsDto;
+
+  @ApiProperty()
+  financialAnalytics: FinancialAnalyticsDto;
+
+  @ApiProperty()
+  participationAnalytics: ParticipationAnalyticsDto;
+
+  @ApiProperty()
+  taskPerformance: TaskPerformanceDto;
 }
 
 export class TimeSeriesDataDto {

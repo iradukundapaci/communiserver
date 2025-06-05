@@ -20,6 +20,9 @@ import {
   TimeSeriesDataDto,
   LocationPerformanceDto,
   EngagementMetricsDto,
+  FinancialAnalyticsDto,
+  ParticipationAnalyticsDto,
+  TaskPerformanceDto,
 } from './dto/analytics-response.dto';
 import { AnalyticsQueryDto, TimeRange } from './dto/analytics-query.dto';
 
@@ -45,11 +48,14 @@ export class AnalyticsService {
   ) {}
 
   async getCoreMetrics(query: AnalyticsQueryDto, userProfile?: Profile): Promise<CoreMetricsDto> {
-    const [userStats, locationStats, activityStats, reportStats] = await Promise.all([
+    const [userStats, locationStats, activityStats, reportStats, financialAnalytics, participationAnalytics, taskPerformance] = await Promise.all([
       this.getUserRoleStats(userProfile),
       this.getLocationStats(userProfile),
       this.getActivityStats(query, userProfile),
       this.getReportStats(query, userProfile),
+      this.getFinancialAnalytics(query, userProfile),
+      this.getParticipationAnalytics(query, userProfile),
+      this.getTaskPerformance(query, userProfile),
     ]);
 
     return {
@@ -57,6 +63,9 @@ export class AnalyticsService {
       locationStats,
       activityStats,
       reportStats,
+      financialAnalytics,
+      participationAnalytics,
+      taskPerformance,
     };
   }
 
@@ -140,38 +149,51 @@ export class AnalyticsService {
       taskQuery = this.applyTaskLocationFilter(taskQuery, userProfile);
     }
 
+    // Get activities with reports (activities that have at least one report)
+    let activitiesWithReportsQuery = this.activityRepository.createQueryBuilder('activity')
+      .leftJoin('activity.tasks', 'task')
+      .leftJoin(Report, 'report', 'report.taskId = task.id')
+      .where('report.id IS NOT NULL');
+
+    if (dateRange.startDate && dateRange.endDate) {
+      activitiesWithReportsQuery = activitiesWithReportsQuery.andWhere('activity.createdAt BETWEEN :startDate AND :endDate', dateRange);
+    }
+
+    if (userProfile) {
+      activitiesWithReportsQuery = this.applyActivityLocationFilter(activitiesWithReportsQuery, userProfile);
+    }
+
     const [
       totalActivities,
-      activeActivities,
-      completedActivities,
-      pendingActivities,
+      activitiesWithReports,
       totalTasks,
-      activeTasks,
       completedTasks,
       pendingTasks,
+      cancelledTasks,
     ] = await Promise.all([
       activityQuery.getCount(),
-      activityQuery.clone().where('activity.status = :status', { status: "ACTIVE" }).getCount(),
-      activityQuery.clone().where('activity.status = :status', { status: "COMPLETED" }).getCount(),
-      activityQuery.clone().where('activity.status = :status', { status: "PENDING" }).getCount(),
+      activitiesWithReportsQuery.getCount(),
       taskQuery.getCount(),
-      taskQuery.clone().where('task.status = :status', { status: ETaskStatus.ACTIVE }).getCount(),
       taskQuery.clone().where('task.status = :status', { status: ETaskStatus.COMPLETED }).getCount(),
       taskQuery.clone().where('task.status = :status', { status: ETaskStatus.PENDING }).getCount(),
+      taskQuery.clone().where('task.status = :status', { status: ETaskStatus.CANCELLED }).getCount(),
     ]);
 
+    const activitiesWithoutReports = totalActivities - activitiesWithReports;
     const taskCompletionRate = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+    const activityReportingRate = totalActivities > 0 ? Math.round((activitiesWithReports / totalActivities) * 100) : 0;
 
     return {
       totalActivities,
-      activeActivities,
-      completedActivities,
-      pendingActivities,
+      activitiesWithReports,
+      activitiesWithoutReports,
       totalTasks,
-      activeTasks,
+      activeTasks: pendingTasks, // Pending tasks are considered "active"
       completedTasks,
       pendingTasks,
+      cancelledTasks,
       taskCompletionRate,
+      activityReportingRate,
     };
   }
 
@@ -190,16 +212,32 @@ export class AnalyticsService {
       reportQuery = this.applyReportLocationFilter(reportQuery, userProfile);
     }
 
-    const [totalReports, reportsWithEvidence, attendanceData] = await Promise.all([
+    const [totalReports, reportsWithEvidence, reportsWithChallenges, reportsWithSuggestions, reportsWithMaterials, attendanceData, evidenceData] = await Promise.all([
       reportQuery.getCount(),
       reportQuery.clone()
         .where('report.evidenceUrls IS NOT NULL')
         .andWhere('array_length(report.evidenceUrls, 1) > 0')
         .getCount(),
       reportQuery.clone()
+        .where('report.challengesFaced IS NOT NULL')
+        .andWhere('report.challengesFaced != :empty', { empty: '' })
+        .getCount(),
+      reportQuery.clone()
+        .where('report.suggestions IS NOT NULL')
+        .andWhere('report.suggestions != :empty', { empty: '' })
+        .getCount(),
+      reportQuery.clone()
+        .where('report.materialsUsed IS NOT NULL')
+        .andWhere('array_length(report.materialsUsed, 1) > 0')
+        .getCount(),
+      reportQuery.clone()
         .leftJoin('report.attendance', 'attendance')
         .select(['report.id', 'COUNT(attendance.id) as attendanceCount'])
         .groupBy('report.id')
+        .getRawMany(),
+      reportQuery.clone()
+        .select(['report.id', 'array_length(report.evidenceUrls, 1) as evidenceCount'])
+        .where('report.evidenceUrls IS NOT NULL')
         .getRawMany(),
     ]);
 
@@ -208,8 +246,14 @@ export class AnalyticsService {
       return sum + attendanceCount;
     }, 0);
 
+    const totalEvidenceFiles = evidenceData.reduce((sum, report) => {
+      const evidenceCount = parseInt(report.evidenceCount) || 0;
+      return sum + evidenceCount;
+    }, 0);
+
     const averageAttendance = totalReports > 0 ? Math.round(totalAttendees / totalReports) : 0;
     const evidencePercentage = totalReports > 0 ? Math.round((reportsWithEvidence / totalReports) * 100) : 0;
+    const averageEvidencePerReport = reportsWithEvidence > 0 ? Math.round((totalEvidenceFiles / reportsWithEvidence) * 100) / 100 : 0;
 
     return {
       totalReports,
@@ -218,6 +262,10 @@ export class AnalyticsService {
       evidencePercentage,
       averageAttendance,
       totalAttendees,
+      reportsWithChallenges,
+      reportsWithSuggestions,
+      reportsWithMaterials,
+      averageEvidencePerReport,
     };
   }
 
@@ -556,6 +604,193 @@ export class AnalyticsService {
       reportSubmissionFrequency,
       totalCitizens,
     };
+  }
+
+  async getFinancialAnalytics(query: AnalyticsQueryDto, userProfile?: Profile): Promise<FinancialAnalyticsDto> {
+    const dateRange = this.getDateRange(query);
+
+    // Get financial data from reports
+    let reportQuery = this.reportRepository.createQueryBuilder('report');
+
+    if (dateRange.startDate && dateRange.endDate) {
+      reportQuery = reportQuery.where('report.createdAt BETWEEN :startDate AND :endDate', dateRange);
+    }
+
+    if (userProfile) {
+      reportQuery = this.applyReportLocationFilter(reportQuery, userProfile);
+    }
+
+    const reports = await reportQuery.getMany();
+
+    // Calculate totals
+    const totalEstimatedCost = reports.reduce((sum, report) => sum + (Number(report.estimatedCost) || 0), 0);
+    const totalActualCost = reports.reduce((sum, report) => sum + (Number(report.actualCost) || 0), 0);
+    const totalEstimatedImpact = reports.reduce((sum, report) => sum + (Number(report.expectedFinancialImpact) || 0), 0);
+    const totalActualImpact = reports.reduce((sum, report) => sum + (Number(report.actualFinancialImpact) || 0), 0);
+
+    // Calculate variances
+    const costVariance = totalActualCost - totalEstimatedCost;
+    const costVariancePercentage = totalEstimatedCost > 0 ? (costVariance / totalEstimatedCost) * 100 : 0;
+    const impactVariance = totalActualImpact - totalEstimatedImpact;
+    const impactVariancePercentage = totalEstimatedImpact > 0 ? (impactVariance / totalEstimatedImpact) * 100 : 0;
+
+    // Get activity and task counts for averages
+    const activityCount = await this.getActivityCount(query, userProfile);
+    const taskCount = await this.getTaskCount(query, userProfile);
+
+    const averageCostPerActivity = activityCount > 0 ? totalActualCost / activityCount : 0;
+    const averageCostPerTask = taskCount > 0 ? totalActualCost / taskCount : 0;
+    const budgetEfficiency = totalEstimatedCost > 0 ? (totalActualCost / totalEstimatedCost) * 100 : 100;
+
+    return {
+      totalEstimatedCost,
+      totalActualCost,
+      costVariance,
+      costVariancePercentage: Math.round(costVariancePercentage * 100) / 100,
+      totalEstimatedImpact,
+      totalActualImpact,
+      impactVariance,
+      impactVariancePercentage: Math.round(impactVariancePercentage * 100) / 100,
+      averageCostPerActivity: Math.round(averageCostPerActivity),
+      averageCostPerTask: Math.round(averageCostPerTask),
+      budgetEfficiency: Math.round(budgetEfficiency * 100) / 100,
+    };
+  }
+
+  async getParticipationAnalytics(query: AnalyticsQueryDto, userProfile?: Profile): Promise<ParticipationAnalyticsDto> {
+    const dateRange = this.getDateRange(query);
+
+    let reportQuery = this.reportRepository.createQueryBuilder('report');
+
+    if (dateRange.startDate && dateRange.endDate) {
+      reportQuery = reportQuery.where('report.createdAt BETWEEN :startDate AND :endDate', dateRange);
+    }
+
+    if (userProfile) {
+      reportQuery = this.applyReportLocationFilter(reportQuery, userProfile);
+    }
+
+    const reports = await reportQuery.getMany();
+
+    const totalExpectedParticipants = reports.reduce((sum, report) => sum + (Number(report.expectedParticipants) || 0), 0);
+    const totalActualParticipants = reports.reduce((sum, report) => sum + (Number(report.actualParticipants) || 0), 0);
+
+    const participationRate = totalExpectedParticipants > 0 ? (totalActualParticipants / totalExpectedParticipants) * 100 : 0;
+
+    const activityCount = await this.getActivityCount(query, userProfile);
+    const taskCount = await this.getTaskCount(query, userProfile);
+
+    const averageParticipantsPerActivity = activityCount > 0 ? totalActualParticipants / activityCount : 0;
+    const averageParticipantsPerTask = taskCount > 0 ? totalActualParticipants / taskCount : 0;
+
+    return {
+      totalExpectedParticipants,
+      totalActualParticipants,
+      participationRate: Math.round(participationRate * 100) / 100,
+      averageParticipantsPerActivity: Math.round(averageParticipantsPerActivity * 100) / 100,
+      averageParticipantsPerTask: Math.round(averageParticipantsPerTask * 100) / 100,
+    };
+  }
+
+  async getTaskPerformance(query: AnalyticsQueryDto, userProfile?: Profile): Promise<TaskPerformanceDto> {
+    const dateRange = this.getDateRange(query);
+
+    let taskQuery = this.taskRepository.createQueryBuilder('task');
+
+    if (dateRange.startDate && dateRange.endDate) {
+      taskQuery = taskQuery.where('task.createdAt BETWEEN :startDate AND :endDate', dateRange);
+    }
+
+    if (userProfile) {
+      taskQuery = this.applyTaskLocationFilter(taskQuery, userProfile);
+    }
+
+    const [totalTasks, completedTasks, pendingTasks, cancelledTasks] = await Promise.all([
+      taskQuery.getCount(),
+      taskQuery.clone().andWhere('task.status = :status', { status: ETaskStatus.COMPLETED }).getCount(),
+      taskQuery.clone().andWhere('task.status = :status', { status: ETaskStatus.PENDING }).getCount(),
+      taskQuery.clone().andWhere('task.status = :status', { status: ETaskStatus.CANCELLED }).getCount(),
+    ]);
+
+    const taskCompletionRate = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
+    const activityCount = await this.getActivityCount(query, userProfile);
+    const averageTasksPerActivity = activityCount > 0 ? totalTasks / activityCount : 0;
+
+    return {
+      totalTasks,
+      completedTasks,
+      pendingTasks,
+      cancelledTasks,
+      taskCompletionRate: Math.round(taskCompletionRate * 100) / 100,
+      averageTasksPerActivity: Math.round(averageTasksPerActivity * 100) / 100,
+    };
+  }
+
+  private async getActivityCount(query: AnalyticsQueryDto, userProfile?: Profile): Promise<number> {
+    const dateRange = this.getDateRange(query);
+
+    let activityQuery = this.activityRepository.createQueryBuilder('activity');
+
+    if (dateRange.startDate && dateRange.endDate) {
+      activityQuery = activityQuery.where('activity.createdAt BETWEEN :startDate AND :endDate', dateRange);
+    }
+
+    if (userProfile) {
+      activityQuery = this.applyActivityLocationFilter(activityQuery, userProfile);
+    }
+
+    return activityQuery.getCount();
+  }
+
+  private async getTaskCount(query: AnalyticsQueryDto, userProfile?: Profile): Promise<number> {
+    const dateRange = this.getDateRange(query);
+
+    let taskQuery = this.taskRepository.createQueryBuilder('task');
+
+    if (dateRange.startDate && dateRange.endDate) {
+      taskQuery = taskQuery.where('task.createdAt BETWEEN :startDate AND :endDate', dateRange);
+    }
+
+    if (userProfile) {
+      taskQuery = this.applyTaskLocationFilter(taskQuery, userProfile);
+    }
+
+    return taskQuery.getCount();
+  }
+
+  private applyTaskLocationFilter(query: any, userProfile: Profile): any {
+    if (userProfile.role === 'VILLAGE_LEADER' && userProfile.village?.id) {
+      return query
+        .leftJoin('task.activity', 'activity')
+        .andWhere('activity.village_id = :villageId', { villageId: userProfile.village.id });
+    }
+
+    if (userProfile.role === 'CELL_LEADER' && userProfile.cell?.id) {
+      return query
+        .leftJoin('task.activity', 'activity')
+        .leftJoin('activity.village', 'village')
+        .andWhere('village.cell_id = :cellId', { cellId: userProfile.cell.id });
+    }
+
+    if (userProfile.role === 'ISIBO_LEADER' && userProfile.isibo?.id) {
+      return query.andWhere('task.isibo_id = :isiboId', { isiboId: userProfile.isibo.id });
+    }
+
+    return query;
+  }
+
+  private applyActivityLocationFilter(query: any, userProfile: Profile): any {
+    if (userProfile.role === 'VILLAGE_LEADER' && userProfile.village?.id) {
+      return query.andWhere('activity.village_id = :villageId', { villageId: userProfile.village.id });
+    }
+
+    if (userProfile.role === 'CELL_LEADER' && userProfile.cell?.id) {
+      return query
+        .leftJoin('activity.village', 'village')
+        .andWhere('village.cell_id = :cellId', { cellId: userProfile.cell.id });
+    }
+
+    return query;
   }
 
   private async getCountForDate(

@@ -7,6 +7,9 @@ import { UserRoleDistribution } from "@/components/analytics/user-role-distribut
 import { ActivityStatusOverview } from "@/components/analytics/activity-status-overview";
 import { EngagementMetrics } from "@/components/analytics/engagement-metrics";
 import { RecentActivitiesTimeline } from "@/components/analytics/recent-activities-timeline";
+import { FinancialAnalytics } from "@/components/analytics/financial-analytics";
+import { ParticipationAnalytics } from "@/components/analytics/participation-analytics";
+import { EnhancedTaskPerformance } from "@/components/analytics/enhanced-task-performance";
 import { DashboardPDFButton } from "@/components/pdf-report-button";
 
 import { useAnalytics } from "@/hooks/use-analytics";
@@ -85,10 +88,18 @@ export default function Page() {
 
         {/* Analytics Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 lg:gap-6 px-4 lg:px-6">
+          {/* First Row - Core Analytics */}
+          <FinancialAnalytics />
+          <ParticipationAnalytics />
+          <EnhancedTaskPerformance />
+
+          {/* Second Row - Additional Analytics */}
           <UserRoleDistribution />
           <ActivityStatusOverview />
           <EngagementMetrics />
-          <div className="lg:col-span-2 xl:col-span-1">
+
+          {/* Third Row - Timeline */}
+          <div className="lg:col-span-2 xl:col-span-3">
             <RecentActivitiesTimeline />
           </div>
         </div>
