@@ -4,6 +4,7 @@ import {
   IsOptional,
   IsString,
   IsUUID,
+  Min,
 } from "class-validator";
 import { Profile } from "src/users/entities/profile.entity";
 
@@ -24,18 +25,22 @@ export namespace UpdateReportDTO {
 
     // Task financial data (copied from task for easy access)
     @IsNumber()
+    @Min(0)
     @IsOptional()
     estimatedCost?: number;
 
     @IsNumber()
+    @Min(0)
     @IsOptional()
     actualCost?: number;
 
     @IsNumber()
+    @Min(0)
     @IsOptional()
     expectedParticipants?: number;
 
     @IsNumber()
+    @Min(0)
     @IsOptional()
     actualParticipants?: number;
 

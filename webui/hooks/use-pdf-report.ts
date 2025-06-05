@@ -5,7 +5,7 @@ import { PDFGenerator, PDFReportData, PDFMetric } from '@/lib/pdf-generator';
 import { toast } from 'sonner';
 
 export interface ReportConfig {
-  pageType: 'dashboard' | 'activities' | 'locations' | 'reports' | 'users';
+  pageType: 'dashboard' | 'activities' | 'locations' | 'reports' | 'users' | 'activity-report';
   title: string;
   subtitle?: string;
   includeCharts?: boolean;
@@ -262,6 +262,110 @@ export function usePDFReport() {
     };
   };
 
+  const generateActivityReport = async (activityData: any, userProfile: any) => {
+    if (!activityData?.activity || !activityData?.reports) {
+      throw new Error('Invalid activity data provided');
+    }
+
+    const { activity, reports, totals, summary } = activityData;
+
+    const sections = [
+      {
+        title: 'Activity Overview',
+        type: 'text' as const,
+        content: `This report provides comprehensive details about the "${activity.title}" activity. The activity was conducted on ${new Date(activity.date).toLocaleDateString()} in ${activity.village?.name || 'No specific village'}. This report includes financial summaries, task completion details, participant information, and implementation insights.`
+      },
+      {
+        title: 'Activity Summary',
+        type: 'metrics' as const,
+        content: [
+          { label: 'Total Tasks Completed', value: summary.totalTasks },
+          { label: 'Completion Rate', value: summary.completionRate },
+          { label: 'Total Actual Cost', value: `${totals.actualCost.toLocaleString()} RWF` },
+          { label: 'Total Participants', value: totals.actualParticipants },
+          { label: 'Financial Impact', value: `${totals.actualFinancialImpact.toLocaleString()} RWF` },
+          { label: 'Cost Variance', value: `${(totals.actualCost - totals.estimatedCost).toLocaleString()} RWF` }
+        ]
+      },
+      {
+        title: 'Financial Analysis',
+        type: 'table' as const,
+        content: [
+          {
+            'Metric': 'Estimated Cost',
+            'Amount (RWF)': totals.estimatedCost.toLocaleString(),
+            'Status': 'Planned'
+          },
+          {
+            'Metric': 'Actual Cost',
+            'Amount (RWF)': totals.actualCost.toLocaleString(),
+            'Status': 'Actual'
+          },
+          {
+            'Metric': 'Cost Variance',
+            'Amount (RWF)': (totals.actualCost - totals.estimatedCost).toLocaleString(),
+            'Status': totals.actualCost > totals.estimatedCost ? 'Over Budget' : 'Under Budget'
+          },
+          {
+            'Metric': 'Expected Financial Impact',
+            'Amount (RWF)': totals.expectedFinancialImpact.toLocaleString(),
+            'Status': 'Projected'
+          },
+          {
+            'Metric': 'Actual Financial Impact',
+            'Amount (RWF)': totals.actualFinancialImpact.toLocaleString(),
+            'Status': 'Achieved'
+          }
+        ]
+      },
+      {
+        title: 'Task Reports Summary',
+        type: 'table' as const,
+        content: reports.map((report: any) => ({
+          'Task': report.task.title,
+          'Isibo': report.task.isibo?.names || 'N/A',
+          'Cost (RWF)': (report.actualCost || 0).toLocaleString(),
+          'Participants': report.actualParticipants || 0,
+          'Impact (RWF)': (report.actualFinancialImpact || 0).toLocaleString(),
+          'Submitted': new Date(report.createdAt).toLocaleDateString()
+        }))
+      }
+    ];
+
+    // Add detailed task reports if available
+    if (reports.length > 0) {
+      reports.forEach((report: any, index: number) => {
+        sections.push({
+          title: `Task ${index + 1}: ${report.task.title}`,
+          type: 'text' as const,
+          content: `
+Isibo: ${report.task.isibo?.names || 'N/A'}
+Estimated Cost: ${(report.estimatedCost || 0).toLocaleString()} RWF
+Actual Cost: ${(report.actualCost || 0).toLocaleString()} RWF
+Expected Participants: ${report.expectedParticipants || 0}
+Actual Participants: ${report.actualParticipants || 0}
+Expected Financial Impact: ${(report.expectedFinancialImpact || 0).toLocaleString()} RWF
+Actual Financial Impact: ${(report.actualFinancialImpact || 0).toLocaleString()} RWF
+
+${report.comment ? `Comments: ${report.comment}` : ''}
+${report.challengesFaced ? `Challenges: ${report.challengesFaced}` : ''}
+${report.suggestions ? `Suggestions: ${report.suggestions}` : ''}
+${report.materialsUsed && report.materialsUsed.length > 0 ? `Materials Used: ${report.materialsUsed.join(', ')}` : ''}
+${report.evidenceUrls && report.evidenceUrls.length > 0 ? `Evidence Files: ${report.evidenceUrls.length} file(s) attached` : ''}
+          `.trim()
+        });
+      });
+    }
+
+    return {
+      title: `${activity.title} - Activity Report`,
+      subtitle: `Detailed Activity Report Generated on ${new Date().toLocaleDateString()}`,
+      generatedBy: userProfile?.name || 'System User',
+      generatedAt: new Date(),
+      sections
+    };
+  };
+
   const generateUsersReport = async (usersData: any, userProfile: any) => {
     const sections = [
       {
@@ -343,6 +447,9 @@ export function usePDFReport() {
           break;
         case 'users':
           reportData = await generateUsersReport(data, userProfile);
+          break;
+        case 'activity-report':
+          reportData = await generateActivityReport(data, userProfile);
           break;
         default:
           throw new Error('Unsupported report type');

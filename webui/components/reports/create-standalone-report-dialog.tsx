@@ -132,10 +132,10 @@ export function CreateStandaloneReportDialog({
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
-    const { name, value } = e.target;
+    const { name, value, type } = e.target;
     setFormData((prev) => ({
       ...prev,
-      [name]: value,
+      [name]: type === 'number' ? (value === '' ? 0 : parseFloat(value)) : value,
     }));
   };
 
@@ -205,18 +205,19 @@ export function CreateStandaloneReportDialog({
     setIsSubmitting(true);
 
     try {
+      // Ensure all numeric fields are properly converted to numbers
       await createReport({
         activityId: formData.activityId,
         taskId: formData.taskId,
         attendanceIds: formData.attendanceIds,
         comment: formData.comment,
         evidenceUrls: formData.evidenceUrls,
-        estimatedCost: formData.estimatedCost,
-        actualCost: formData.actualCost,
-        expectedParticipants: formData.expectedParticipants,
+        estimatedCost: Number(formData.estimatedCost) || 0,
+        actualCost: Number(formData.actualCost) || 0,
+        expectedParticipants: Number(formData.expectedParticipants) || 0,
         // actualParticipants will be calculated from attendanceIds in backend
-        expectedFinancialImpact: formData.expectedFinancialImpact,
-        actualFinancialImpact: formData.actualFinancialImpact,
+        expectedFinancialImpact: Number(formData.expectedFinancialImpact) || 0,
+        actualFinancialImpact: Number(formData.actualFinancialImpact) || 0,
         materialsUsed: formData.materialsUsed,
         challengesFaced: formData.challengesFaced,
         suggestions: formData.suggestions,

@@ -1,6 +1,8 @@
 "use client";
 
 import { CreateReportDialog } from "@/components/reports/create-report-dialog";
+import { EditReportDialog } from "@/components/reports/edit-report-dialog";
+import { getTaskReport, type Report } from "@/lib/api/reports";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -287,6 +289,7 @@ export default function TasksTab() {
   const [totalPages, setTotalPages] = useState(1);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
+  const [taskReports, setTaskReports] = useState<Record<string, Report | null>>({});
   const [deleteConfirmation, setDeleteConfirmation] = useState<{
     isOpen: boolean;
     taskId: string | null;
@@ -312,14 +315,19 @@ export default function TasksTab() {
         response = await getTasks(activityId, page, 10);
       }
 
+      const fetchedTasks = response.items;
+
       if (resetTasks) {
-        setTasks(response.items);
+        setTasks(fetchedTasks);
       } else {
-        setTasks((prevTasks) => [...prevTasks, ...response.items]);
+        setTasks((prevTasks) => [...prevTasks, ...fetchedTasks]);
       }
 
       setTotalPages(response.meta.totalPages);
       setCurrentPage(page);
+
+      // Check for existing reports for each task
+      await checkTaskReports(fetchedTasks);
     } catch (error: unknown) {
       if (error instanceof Error) {
         toast.error(error.message);
@@ -333,6 +341,27 @@ export default function TasksTab() {
       setIsLoadingMore(false);
     }
   }, [selectedActivityId, user.user?.role, user.user?.isibo?.id]);
+
+  const checkTaskReports = async (tasksToCheck: Task[]) => {
+    const reportChecks = tasksToCheck.map(async (task) => {
+      try {
+        const report = await getTaskReport(task.id);
+        return { taskId: task.id, report };
+      } catch (error) {
+        console.error(`Failed to check report for task ${task.id}:`, error);
+        return { taskId: task.id, report: null };
+      }
+    });
+
+    const results = await Promise.all(reportChecks);
+    const reportsMap: Record<string, Report | null> = {};
+
+    results.forEach(({ taskId, report }) => {
+      reportsMap[taskId] = report;
+    });
+
+    setTaskReports(prev => ({ ...prev, ...reportsMap }));
+  };
 
   const fetchActivities = useCallback(async () => {
     try {
@@ -372,6 +401,8 @@ export default function TasksTab() {
     const activityIdParam =
       selectedActivityId === "ALL_ACTIVITIES" ? "" : selectedActivityId;
     fetchTasks(activityIdParam, 1, true);
+    // Clear task reports cache to force refresh
+    setTaskReports({});
   };
 
   const handleDelete = (task: Task) => {
@@ -534,12 +565,19 @@ export default function TasksTab() {
                       <td className="p-4 whitespace-nowrap">
                         <div className="flex items-center gap-2">
                           {user.user?.role === "ISIBO_LEADER" ? (
-                            // For isibo leaders, show report button
-                            <CreateReportDialog
-                              task={task}
-                              activityId={task.activity.id}
-                              onReportCreated={handleRefresh}
-                            />
+                            // For isibo leaders, show report button based on whether report exists
+                            taskReports[task.id] ? (
+                              <EditReportDialog
+                                report={taskReports[task.id]!}
+                                onReportUpdated={handleRefresh}
+                              />
+                            ) : (
+                              <CreateReportDialog
+                                task={task}
+                                activityId={task.activity.id}
+                                onReportCreated={handleRefresh}
+                              />
+                            )
                           ) : (
                             // For other roles, show edit and delete buttons
                             <>

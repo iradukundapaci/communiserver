@@ -13,6 +13,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { FileUpload } from "@/components/ui/file-upload";
 import { Report, updateReport } from "@/lib/api/reports";
 import { Pencil } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -42,7 +43,6 @@ export function EditReportDialog({
     challengesFaced: report.challengesFaced || "",
     suggestions: report.suggestions || "",
   });
-  const [evidenceUrl, setEvidenceUrl] = useState("");
 
   // Update form data when report changes
   useEffect(() => {
@@ -64,36 +64,32 @@ export function EditReportDialog({
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
-    const { name, value } = e.target;
+    const { name, value, type } = e.target;
     setFormData((prev) => ({
       ...prev,
-      [name]: value,
+      [name]: type === 'number' ? (value === '' ? 0 : parseFloat(value)) : value,
     }));
   };
 
-  const handleAddEvidenceUrl = () => {
-    if (evidenceUrl.trim()) {
-      setFormData((prev) => ({
-        ...prev,
-        evidenceUrls: [...prev.evidenceUrls, evidenceUrl.trim()],
-      }));
-      setEvidenceUrl("");
-    }
-  };
 
-  const handleRemoveEvidenceUrl = (index: number) => {
-    setFormData((prev) => ({
-      ...prev,
-      evidenceUrls: prev.evidenceUrls.filter((_, i) => i !== index),
-    }));
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
 
     try {
-      await updateReport(report.id, formData);
+      // Ensure all numeric fields are properly converted to numbers
+      const sanitizedData = {
+        ...formData,
+        estimatedCost: Number(formData.estimatedCost) || 0,
+        actualCost: Number(formData.actualCost) || 0,
+        expectedParticipants: Number(formData.expectedParticipants) || 0,
+        actualParticipants: Number(formData.actualParticipants) || 0,
+        expectedFinancialImpact: Number(formData.expectedFinancialImpact) || 0,
+        actualFinancialImpact: Number(formData.actualFinancialImpact) || 0,
+      };
+
+      await updateReport(report.id, sanitizedData);
       toast.success("Report updated successfully");
       setIsOpen(false);
       onReportUpdated();
@@ -112,8 +108,9 @@ export function EditReportDialog({
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button variant="ghost" size="icon">
-          <Pencil className="h-4 w-4" />
+        <Button variant="outline" size="sm">
+          <Pencil className="h-4 w-4 mr-2" />
+          Update Report
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[800px] max-h-[90vh] flex flex-col">
@@ -243,44 +240,20 @@ export function EditReportDialog({
               </div>
             </div>
 
-            {/* Evidence URLs */}
+            {/* Evidence Files */}
             <div className="grid grid-cols-4 items-start gap-4">
-              <Label htmlFor="evidenceUrl" className="text-right mt-2">
-                Evidence URLs
+              <Label className="text-right mt-2">
+                Evidence Files
               </Label>
-              <div className="col-span-3 space-y-2">
-                <div className="flex gap-2">
-                  <Input
-                    id="evidenceUrl"
-                    value={evidenceUrl}
-                    onChange={(e) => setEvidenceUrl(e.target.value)}
-                    placeholder="https://example.com/evidence"
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={handleAddEvidenceUrl}
-                  >
-                    Add
-                  </Button>
-                </div>
-                {formData.evidenceUrls.length > 0 && (
-                  <div className="space-y-1">
-                    {formData.evidenceUrls.map((url, index) => (
-                      <div key={index} className="flex items-center gap-2">
-                        <div className="text-sm truncate flex-1">{url}</div>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleRemoveEvidenceUrl(index)}
-                        >
-                          Remove
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
-                )}
+              <div className="col-span-3">
+                <FileUpload
+                  onFilesUploaded={(urls) => setFormData(prev => ({ ...prev, evidenceUrls: urls }))}
+                  uploadedFiles={formData.evidenceUrls}
+                  maxFiles={10}
+                  maxSizeInMB={10}
+                  multiple={true}
+                  accept="image/*,application/pdf,.doc,.docx,.txt,.mp4,.mp3,.zip,.rar"
+                />
               </div>
             </div>
           </div>

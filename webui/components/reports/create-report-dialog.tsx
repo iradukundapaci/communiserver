@@ -118,9 +118,9 @@ export function CreateReportDialog({
     <WideDialog open={open} onOpenChange={setOpen}>
       <WideDialogTrigger asChild>
         {trigger || (
-          <Button size="sm">
+          <Button variant="outline" size="sm">
             <IconFileText className="h-4 w-4 mr-2" />
-            Create Report
+            Submit Report
           </Button>
         )}
       </WideDialogTrigger>
@@ -141,7 +141,7 @@ export function CreateReportDialog({
                 Cancel
               </Button>
               <Button type="submit" disabled={isLoading}>
-                {isLoading ? "Creating..." : "Create Report"}
+                {isLoading ? "Submitting..." : "Submit Report"}
               </Button>
             </>
           }

@@ -12,12 +12,16 @@ import { CreateReportDTO } from "./dto/create-report.dto";
 import { FetchReportDTO } from "./dto/fetch-report.dto";
 import { UpdateReportDTO } from "./dto/update-report.dto";
 import { Report } from "./entities/report.entity";
+import { Task } from "./entities/task.entity";
+import { ETaskStatus } from "./enum/ETaskStatus";
 
 @Injectable()
 export class ReportsService {
   constructor(
     @InjectRepository(Report)
     private readonly reportRepository: Repository<Report>,
+    @InjectRepository(Task)
+    private readonly taskRepository: Repository<Task>,
     private readonly usersService: UsersService,
   ) {}
 
@@ -61,6 +65,12 @@ export class ReportsService {
     if (dto.attendanceIds && dto.attendanceIds.length > 0) {
       await this.assignAttendanceToReport(saved.id, dto.attendanceIds);
     }
+
+    // Mark the task as complete when report is submitted
+    await this.taskRepository.update(
+      { id: dto.taskId },
+      { status: ETaskStatus.COMPLETED }
+    );
 
     return this.findReportById(saved.id);
   }

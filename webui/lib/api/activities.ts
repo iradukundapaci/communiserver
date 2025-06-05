@@ -368,12 +368,12 @@ export async function deleteActivity(id: string): Promise<string> {
 
 export async function updateTask(taskId: string, input: UpdateTaskInput): Promise<Task> {
   try {
-    const tokens = getTokens();
+    const tokens = getAuthTokens();
     if (!tokens) {
       throw new Error("No authentication tokens found");
     }
 
-    const response = await fetch(`${API_BASE_URL}/activities/tasks/${taskId}`, {
+    const response = await fetch(`/api/v1/tasks/${taskId}`, {
       method: "PUT",
       headers: {
         Authorization: `Bearer ${tokens.accessToken}`,
@@ -388,7 +388,7 @@ export async function updateTask(taskId: string, input: UpdateTaskInput): Promis
     }
 
     const data: ApiResponse<Task> = await response.json();
-    return data.data;
+    return data.payload;
   } catch (error) {
     console.error("Update task error:", error);
     throw error;

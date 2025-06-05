@@ -10,81 +10,60 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Activity, getActivities } from "@/lib/api/activities";
-import { getIsibos } from "@/lib/api/isibos";
-import { Report, deleteReport, getReports } from "@/lib/api/reports";
+import { Report, getReports } from "@/lib/api/reports";
 import { useUser } from "@/lib/contexts/user-context";
-import { Eye, Pencil, Plus, RefreshCw, Trash2 } from "lucide-react";
+import { FileText, RefreshCw, Download } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { ConfirmationDialog } from "@/components/confirmation-dialog";
-import { ReportsPDFButton } from "@/components/pdf-report-button";
+
+interface GroupedReport {
+  activity: Activity;
+  reports: Report[];
+  totalEstimatedCost: number;
+  totalActualCost: number;
+  totalExpectedParticipants: number;
+  totalActualParticipants: number;
+  totalExpectedFinancialImpact: number;
+  totalActualFinancialImpact: number;
+}
 
 export default function ReportsPage() {
   const router = useRouter();
   const { user } = useUser();
-  const [reports, setReports] = useState<Report[]>([]);
+  const [groupedReports, setGroupedReports] = useState<GroupedReport[]>([]);
   const [activities, setActivities] = useState<Activity[]>([]);
-  const [isibos, setIsibos] = useState<{ id: string; name: string }[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [isLoadingMore, setIsLoadingMore] = useState(false);
-  const [isDeleting, setIsDeleting] = useState<string | null>(null);
-  const [deleteConfirmation, setDeleteConfirmation] = useState<{
-    isOpen: boolean;
-    reportId: string | null;
-    reportTitle: string;
-  }>({
-    isOpen: false,
-    reportId: null,
-    reportTitle: "",
-  });
   const [filters, setFilters] = useState({
     activityId: "all_activities",
-    isiboId: "all_isibos",
   });
 
-  const fetchReports = async (
-    page: number = 1,
-    resetReports: boolean = true
-  ) => {
+  const fetchGroupedReports = async () => {
     try {
       setIsLoading(true);
 
-      // For isibo leaders, only fetch reports for their isibo
-      let response;
-      if (user?.role === "ISIBO_LEADER" && user?.isibo?.id) {
-        response = await getReports(
+      // Fetch all reports (with pagination if needed)
+      let allReports: Report[] = [];
+      let page = 1;
+      let hasMore = true;
+
+      while (hasMore) {
+        const response = await getReports(
           page,
-          10,
-          filters.activityId === "all_activities"
-            ? undefined
-            : filters.activityId,
+          100, // Fetch more per page to reduce API calls
+          filters.activityId === "all_activities" ? undefined : filters.activityId,
           undefined,
-          user.isibo.id
+          user?.role === "ISIBO_LEADER" && user?.isibo?.id ? user.isibo.id : undefined
         );
-      } else {
-        // For other roles, fetch reports based on filters
-        response = await getReports(
-          page,
-          10,
-          filters.activityId === "all_activities"
-            ? undefined
-            : filters.activityId,
-          undefined,
-          filters.isiboId === "all_isibos" ? undefined : filters.isiboId
-        );
+
+        allReports = [...allReports, ...response.items];
+        hasMore = page < response.meta.totalPages;
+        page++;
       }
 
-      if (resetReports) {
-        setReports(response.items);
-      } else {
-        setReports((prevReports) => [...prevReports, ...response.items]);
-      }
-
-      setTotalPages(response.meta.totalPages);
-      setCurrentPage(page);
+      // Group reports by activity
+      const grouped = groupReportsByActivity(allReports);
+      setGroupedReports(grouped);
     } catch (error: unknown) {
       if (error instanceof Error) {
         toast.error(error.message);
@@ -94,8 +73,50 @@ export default function ReportsPage() {
       console.error(error);
     } finally {
       setIsLoading(false);
-      setIsLoadingMore(false);
     }
+  };
+
+  const groupReportsByActivity = (reports: Report[]): GroupedReport[] => {
+    const activityMap = new Map<string, GroupedReport>();
+
+    reports.forEach((report) => {
+      const activityId = report.activity.id;
+
+      if (!activityMap.has(activityId)) {
+        activityMap.set(activityId, {
+          activity: report.activity,
+          reports: [],
+          totalEstimatedCost: 0,
+          totalActualCost: 0,
+          totalExpectedParticipants: 0,
+          totalActualParticipants: 0,
+          totalExpectedFinancialImpact: 0,
+          totalActualFinancialImpact: 0,
+        });
+      }
+
+      const group = activityMap.get(activityId)!;
+      group.reports.push(report);
+
+      // Calculate totals - ensure numbers are properly converted and handle potential string values
+      const estimatedCost = parseFloat(String(report.estimatedCost)) || 0;
+      const actualCost = parseFloat(String(report.actualCost)) || 0;
+      const expectedParticipants = parseInt(String(report.expectedParticipants)) || 0;
+      const actualParticipants = parseInt(String(report.actualParticipants)) || 0;
+      const expectedFinancialImpact = parseFloat(String(report.expectedFinancialImpact)) || 0;
+      const actualFinancialImpact = parseFloat(String(report.actualFinancialImpact)) || 0;
+
+      group.totalEstimatedCost += estimatedCost;
+      group.totalActualCost += actualCost;
+      group.totalExpectedParticipants += expectedParticipants;
+      group.totalActualParticipants += actualParticipants;
+      group.totalExpectedFinancialImpact += expectedFinancialImpact;
+      group.totalActualFinancialImpact += actualFinancialImpact;
+    });
+
+    return Array.from(activityMap.values()).sort((a, b) =>
+      new Date(b.activity.date).getTime() - new Date(a.activity.date).getTime()
+    );
   };
 
   const fetchActivities = async () => {
@@ -107,121 +128,44 @@ export default function ReportsPage() {
     }
   };
 
-  const fetchIsibos = async () => {
-    try {
-      // If user is a village leader, fetch isibos for their village
-      if (user?.village?.id) {
-        const response = await getIsibos(user.village.id, 1, 100);
-        setIsibos(response.items);
-      } else if (user?.role === "ADMIN" || user?.role === "CELL_LEADER") {
-        // For admin and cell leaders, fetch all isibos (this would need to be implemented)
-        // For now, we'll just show a message
-        toast.info("Filtering by isibo is only available for village leaders");
-      }
-    } catch (error) {
-      console.error("Failed to fetch isibos:", error);
-    }
-  };
-
   useEffect(() => {
-    fetchReports(1, true);
-    fetchActivities();
-    fetchIsibos();
+    if (user) {
+      fetchGroupedReports();
+      fetchActivities();
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user]);
+  }, [user, filters.activityId]);
 
-  const handleFilterChange = (key: string, value: string) => {
-    setFilters((prev) => ({
-      ...prev,
-      [key]: value,
-    }));
-    // Fetch reports with new filters
-    fetchReports(1, true);
+  const handleFilterChange = (value: string) => {
+    setFilters({ activityId: value });
   };
 
   const handleRefresh = () => {
-    fetchReports(1, true);
+    fetchGroupedReports();
   };
 
-  const handleLoadMore = () => {
-    if (currentPage < totalPages && !isLoadingMore) {
-      setIsLoadingMore(true);
-      fetchReports(currentPage + 1, false);
-    }
-  };
-
-  const handleDelete = (report: Report) => {
-    setDeleteConfirmation({
-      isOpen: true,
-      reportId: report.id,
-      reportTitle: `${report.activity.title} - ${report.task.title}`,
-    });
-  };
-
-  const confirmDelete = async () => {
-    if (!deleteConfirmation.reportId) return;
-
-    try {
-      setIsDeleting(deleteConfirmation.reportId);
-      await deleteReport(deleteConfirmation.reportId);
-      toast.success("Report deleted successfully");
-      fetchReports(1, true);
-    } catch (error: unknown) {
-      if (error instanceof Error) {
-        toast.error(error.message);
-      } else {
-        toast.error("Failed to delete report");
-      }
-      console.error(error);
-    } finally {
-      setIsDeleting(null);
-      setDeleteConfirmation({
-        isOpen: false,
-        reportId: null,
-        reportTitle: "",
-      });
-    }
+  const handleViewActivityReport = (activityId: string) => {
+    router.push(`/dashboard/reports/activity/${activityId}`);
   };
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString() + " " + date.toLocaleTimeString();
+    return date.toLocaleDateString();
   };
 
   return (
     <div className="flex flex-col gap-4">
-      {/* Confirmation Dialog for deleting report */}
-      <ConfirmationDialog
-        isOpen={deleteConfirmation.isOpen}
-        onOpenChange={(open) => {
-          if (!open) {
-            setDeleteConfirmation({
-              isOpen: false,
-              reportId: null,
-              reportTitle: "",
-            });
-          }
-        }}
-        onConfirm={confirmDelete}
-        title="Delete Report"
-        description={`Are you sure you want to delete the report for "${deleteConfirmation.reportTitle}"? This action cannot be undone.`}
-        confirmText="Delete"
-        cancelText="Cancel"
-        confirmVariant="destructive"
-      />
-
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold">Task Reports</h1>
+        <h1 className="text-3xl font-bold">Activity Reports</h1>
       </div>
 
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle>Reports</CardTitle>
+              <CardTitle>Activity Reports Summary</CardTitle>
             </div>
             <div className="flex gap-2">
-              <ReportsPDFButton data={reports} />
               <Button
                 variant="outline"
                 onClick={handleRefresh}
@@ -230,16 +174,6 @@ export default function ReportsPage() {
                 <RefreshCw className="h-4 w-4 mr-2" />
                 Refresh
               </Button>
-
-              {/* Add create button for isibo leaders */}
-              {user?.role === "ISIBO_LEADER" && (
-                <Button
-                  onClick={() => router.push("/dashboard/reports/create")}
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Create Report
-                </Button>
-              )}
             </div>
           </div>
         </CardHeader>
@@ -251,9 +185,7 @@ export default function ReportsPage() {
               <div className="w-[250px]">
                 <Select
                   value={filters.activityId}
-                  onValueChange={(value) =>
-                    handleFilterChange("activityId", value)
-                  }
+                  onValueChange={handleFilterChange}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Filter by activity" />
@@ -270,50 +202,32 @@ export default function ReportsPage() {
                   </SelectContent>
                 </Select>
               </div>
-
-              {/* Isibo filter - only for admin, cell leaders, and village leaders */}
-              {user?.role !== "ISIBO_LEADER" && (
-                <div className="w-[250px]">
-                  <Select
-                    value={filters.isiboId}
-                    onValueChange={(value) =>
-                      handleFilterChange("isiboId", value)
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Filter by isibo" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all_isibos">All Isibos</SelectItem>
-                      {isibos.map((isibo) => (
-                        <SelectItem key={isibo.id} value={isibo.id}>
-                          {isibo.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
             </div>
           </div>
 
-          {/* Reports table */}
+          {/* Grouped Reports table */}
           <div className="rounded-md border overflow-hidden">
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[800px]">
+              <table className="w-full min-w-[1200px]">
                 <thead>
                   <tr className="border-b bg-muted/50">
                     <th className="h-10 px-4 text-left align-middle font-medium text-muted-foreground">
                       Activity
                     </th>
                     <th className="h-10 px-4 text-left align-middle font-medium text-muted-foreground">
-                      Task
+                      Date
                     </th>
                     <th className="h-10 px-4 text-left align-middle font-medium text-muted-foreground">
-                      Comment
+                      Tasks
                     </th>
                     <th className="h-10 px-4 text-left align-middle font-medium text-muted-foreground">
-                      Submitted At
+                      Total Cost
+                    </th>
+                    <th className="h-10 px-4 text-left align-middle font-medium text-muted-foreground">
+                      Participants
+                    </th>
+                    <th className="h-10 px-4 text-left align-middle font-medium text-muted-foreground">
+                      Financial Impact
                     </th>
                     <th className="h-10 px-4 text-left align-middle font-medium text-muted-foreground">
                       Actions
@@ -321,10 +235,10 @@ export default function ReportsPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {isLoading && reports.length === 0 ? (
+                  {isLoading ? (
                     <tr>
                       <td
-                        colSpan={5}
+                        colSpan={7}
                         className="p-4 text-center text-muted-foreground"
                       >
                         <div className="flex justify-center py-8">
@@ -332,81 +246,63 @@ export default function ReportsPage() {
                         </div>
                       </td>
                     </tr>
-                  ) : reports.length === 0 ? (
+                  ) : groupedReports.length === 0 ? (
                     <tr>
                       <td
-                        colSpan={5}
+                        colSpan={7}
                         className="p-4 text-center text-muted-foreground"
                       >
                         No reports found
                       </td>
                     </tr>
                   ) : (
-                    reports.map((report) => (
-                      <tr key={report.id} className="border-b">
-                        <td className="p-4 whitespace-nowrap">
-                          {report.activity.title}
-                        </td>
-                        <td className="p-4 whitespace-nowrap">
-                          {report.task.title}
-                        </td>
+                    groupedReports.map((group) => (
+                      <tr key={group.activity.id} className="border-b hover:bg-muted/50">
                         <td className="p-4">
-                          <div className="max-w-xs truncate">
-                            {report.comment || "No comment"}
+                          <div className="font-medium">{group.activity.title}</div>
+                          <div className="text-sm text-muted-foreground">
+                            {group.activity.village?.name || "No village"}
                           </div>
                         </td>
                         <td className="p-4 whitespace-nowrap">
-                          {formatDate(report.createdAt.toString())}
+                          {formatDate(group.activity.date.toString())}
+                        </td>
+                        <td className="p-4">
+                          <div className="text-sm">
+                            <div className="font-medium">{group.reports.length} tasks completed</div>
+                            <div className="text-muted-foreground">
+                              {group.reports.map(r => r.task.isibo?.names).filter((name, index, arr) => arr.indexOf(name) === index).join(", ")}
+                            </div>
+                          </div>
+                        </td>
+                        <td className="p-4">
+                          <div className="text-sm">
+                            <div>Est: {group.totalEstimatedCost.toLocaleString()} RWF</div>
+                            <div className="font-medium">Act: {group.totalActualCost.toLocaleString()} RWF</div>
+                          </div>
+                        </td>
+                        <td className="p-4">
+                          <div className="text-sm">
+                            <div>Est: {group.totalExpectedParticipants}</div>
+                            <div className="font-medium">Act: {group.totalActualParticipants}</div>
+                          </div>
+                        </td>
+                        <td className="p-4">
+                          <div className="text-sm">
+                            <div>Est: {group.totalExpectedFinancialImpact.toLocaleString()} RWF</div>
+                            <div className="font-medium">Act: {group.totalActualFinancialImpact.toLocaleString()} RWF</div>
+                          </div>
                         </td>
                         <td className="p-4 whitespace-nowrap">
                           <div className="flex items-center gap-2">
                             <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() =>
-                                router.push(`/dashboard/reports/${report.id}`)
-                              }
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleViewActivityReport(group.activity.id)}
                             >
-                              <Eye className="h-4 w-4" />
+                              <FileText className="h-4 w-4 mr-2" />
+                              View Report
                             </Button>
-                            {/* Allow isibo leaders to edit/delete their own reports, and admins/leaders to delete any report */}
-                            {(user?.role === "CELL_LEADER" ||
-                              user?.role === "VILLAGE_LEADER" ||
-                              user?.role === "ADMIN" ||
-                              (user?.role === "ISIBO_LEADER" &&
-                                user?.isibo?.id ===
-                                  report.task?.isibo?.id)) && (
-                              <>
-                                {/* Edit button - only for isibo leaders for their own reports */}
-                                {user?.role === "ISIBO_LEADER" && (
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={() =>
-                                      router.push(
-                                        `/dashboard/reports/${report.id}/edit`
-                                      )
-                                    }
-                                  >
-                                    <Pencil className="h-4 w-4" />
-                                  </Button>
-                                )}
-
-                                {/* Delete button */}
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={() => handleDelete(report)}
-                                  disabled={isDeleting === report.id}
-                                >
-                                  {isDeleting === report.id ? (
-                                    <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-primary"></div>
-                                  ) : (
-                                    <Trash2 className="h-4 w-4 text-red-500" />
-                                  )}
-                                </Button>
-                              </>
-                            )}
                           </div>
                         </td>
                       </tr>
@@ -416,26 +312,6 @@ export default function ReportsPage() {
               </table>
             </div>
           </div>
-
-          {/* Load more button */}
-          {currentPage < totalPages && (
-            <div className="mt-4 flex justify-center">
-              <Button
-                variant="outline"
-                onClick={handleLoadMore}
-                disabled={isLoadingMore}
-              >
-                {isLoadingMore ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-primary mr-2"></div>
-                    Loading...
-                  </>
-                ) : (
-                  "Load More"
-                )}
-              </Button>
-            </div>
-          )}
         </CardContent>
       </Card>
     </div>

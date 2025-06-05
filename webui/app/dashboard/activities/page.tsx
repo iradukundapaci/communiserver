@@ -752,9 +752,6 @@ function ActivitiesTab() {
                     Date
                   </th>
                   <th className="h-10 px-4 text-left align-middle font-medium text-muted-foreground">
-                    Status
-                  </th>
-                  <th className="h-10 px-4 text-left align-middle font-medium text-muted-foreground">
                     Village
                   </th>
                   <th className="h-10 px-4 text-left align-middle font-medium text-muted-foreground">
@@ -777,7 +774,7 @@ function ActivitiesTab() {
                 ) : activities.length === 0 ? (
                   <tr>
                     <td
-                      colSpan={5}
+                      colSpan={4}
                       className="p-4 text-center text-muted-foreground"
                     >
                       No activities found
@@ -791,11 +788,6 @@ function ActivitiesTab() {
                       </td>
                       <td className="p-4 whitespace-nowrap">
                         {format(new Date(activity.date), "PPP")}
-                      </td>
-                      <td className="p-4 whitespace-nowrap">
-                        <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-blue-100 text-blue-800">
-                          Activity
-                        </span>
                       </td>
                       <td className="p-4 whitespace-nowrap">
                         {activity.village?.name || "-"}

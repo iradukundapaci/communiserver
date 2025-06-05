@@ -61,6 +61,8 @@ export function PDFReportButton({
         return 'Community Reports';
       case 'users':
         return 'Users & Roles';
+      case 'activity-report':
+        return 'Activity Report';
       default:
         return type.charAt(0).toUpperCase() + type.slice(1);
     }
@@ -190,6 +192,29 @@ export function UsersPDFButton({ data, className }: { data: unknown; className?:
       title="Users Report"
       subtitle="System Users and Role Distribution Overview"
       className={className}
+    />
+  );
+}
+
+export function ActivityReportPDFButton({
+  data,
+  title,
+  subtitle,
+  className
+}: {
+  data: unknown;
+  title?: string;
+  subtitle?: string;
+  className?: string;
+}) {
+  return (
+    <PDFReportButton
+      pageType={"activity-report" as any}
+      data={data}
+      title={title || "Activity Report"}
+      subtitle={subtitle || "Detailed Activity Report"}
+      className={className}
+      variant="default"
     />
   );
 }

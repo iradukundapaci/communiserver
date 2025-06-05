@@ -294,3 +294,18 @@ export async function deleteReport(id: string): Promise<string> {
     throw error;
   }
 }
+
+/**
+ * Check if a task has an existing report
+ * @param taskId Task ID to check
+ * @returns Promise with the report if it exists, null otherwise
+ */
+export async function getTaskReport(taskId: string): Promise<Report | null> {
+  try {
+    const response = await getReports(1, 1, undefined, taskId);
+    return response.items.length > 0 ? response.items[0] : null;
+  } catch (error) {
+    console.error("Get task report error:", error);
+    return null;
+  }
+}
