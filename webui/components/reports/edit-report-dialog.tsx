@@ -158,6 +158,7 @@ export function EditReportDialog({
                     min="0"
                     value={formData.estimatedCost}
                     onChange={handleChange}
+                    className="max-w-lg"
                   />
                 </div>
                 <div className="space-y-2">
@@ -169,6 +170,7 @@ export function EditReportDialog({
                     min="0"
                     value={formData.actualCost}
                     onChange={handleChange}
+                    className="max-w-lg"
                   />
                 </div>
                 <div className="space-y-2">
@@ -180,6 +182,7 @@ export function EditReportDialog({
                     min="0"
                     value={formData.expectedParticipants}
                     onChange={handleChange}
+                    className="max-w-lg"
                   />
                 </div>
                 <div className="space-y-2">
@@ -191,6 +194,7 @@ export function EditReportDialog({
                     min="0"
                     value={formData.actualParticipants}
                     onChange={handleChange}
+                    className="max-w-lg"
                   />
                 </div>
 
@@ -203,6 +207,7 @@ export function EditReportDialog({
                     min="0"
                     value={formData.expectedFinancialImpact}
                     onChange={handleChange}
+                    className="max-w-lg"
                   />
                 </div>
                 <div className="space-y-2">
@@ -214,6 +219,7 @@ export function EditReportDialog({
                     min="0"
                     value={formData.actualFinancialImpact}
                     onChange={handleChange}
+                    className="max-w-lg"
                   />
                 </div>
               </div>

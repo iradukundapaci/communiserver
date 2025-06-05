@@ -31,6 +31,7 @@ import { useRouter } from "next/navigation";
 import * as React from "react";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
+import { ConfirmationDialog } from "@/components/confirmation-dialog";
 
 interface CreateTaskDialogProps {
   onTaskCreated: () => void;
@@ -252,6 +253,15 @@ export default function TasksTab() {
   const [totalPages, setTotalPages] = useState(1);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
+  const [deleteConfirmation, setDeleteConfirmation] = useState<{
+    isOpen: boolean;
+    taskId: string | null;
+    taskTitle: string;
+  }>({
+    isOpen: false,
+    taskId: null,
+    taskTitle: "",
+  });
 
   const fetchTasks = useCallback(async (
     activityId: string = selectedActivityId,
@@ -330,26 +340,39 @@ export default function TasksTab() {
     fetchTasks(activityIdParam, 1, true);
   };
 
-  const handleDelete = async (id: string) => {
-    if (confirm("Are you sure you want to delete this task?")) {
-      try {
-        setIsDeleting(id);
-        await deleteTask(id);
-        toast.success("Task deleted successfully");
-        // If "ALL_ACTIVITIES" is selected, pass an empty string to fetch all tasks
-        const activityIdParam =
-          selectedActivityId === "ALL_ACTIVITIES" ? "" : selectedActivityId;
-        fetchTasks(activityIdParam, 1, true);
-      } catch (error: unknown) {
-        if (error instanceof Error) {
-          toast.error(error.message);
-        } else {
-          toast.error("Failed to delete task");
-        }
-        console.error(error);
-      } finally {
-        setIsDeleting(null);
+  const handleDelete = (task: Task) => {
+    setDeleteConfirmation({
+      isOpen: true,
+      taskId: task.id,
+      taskTitle: task.title,
+    });
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteConfirmation.taskId) return;
+
+    try {
+      setIsDeleting(deleteConfirmation.taskId);
+      await deleteTask(deleteConfirmation.taskId);
+      toast.success("Task deleted successfully");
+      // If "ALL_ACTIVITIES" is selected, pass an empty string to fetch all tasks
+      const activityIdParam =
+        selectedActivityId === "ALL_ACTIVITIES" ? "" : selectedActivityId;
+      fetchTasks(activityIdParam, 1, true);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        toast.error(error.message);
+      } else {
+        toast.error("Failed to delete task");
       }
+      console.error(error);
+    } finally {
+      setIsDeleting(null);
+      setDeleteConfirmation({
+        isOpen: false,
+        taskId: null,
+        taskTitle: "",
+      });
     }
   };
 
@@ -500,7 +523,7 @@ export default function TasksTab() {
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                onClick={() => handleDelete(task.id)}
+                                onClick={() => handleDelete(task)}
                                 disabled={isDeleting === task.id}
                               >
                                 {isDeleting === task.id ? (
@@ -540,6 +563,25 @@ export default function TasksTab() {
           </div>
         )}
       </CardContent>
+
+      <ConfirmationDialog
+        isOpen={deleteConfirmation.isOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            setDeleteConfirmation({
+              isOpen: false,
+              taskId: null,
+              taskTitle: "",
+            });
+          }
+        }}
+        onConfirm={confirmDelete}
+        title="Delete Task"
+        description={`Are you sure you want to delete "${deleteConfirmation.taskTitle}"? This action cannot be undone.`}
+        confirmText="Delete"
+        cancelText="Cancel"
+        confirmVariant="destructive"
+      />
     </Card>
   );
 }

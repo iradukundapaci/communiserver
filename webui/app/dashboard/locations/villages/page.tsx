@@ -48,6 +48,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { LocationsPDFButton } from "@/components/pdf-report-button";
+import { ConfirmationDialog } from "@/components/confirmation-dialog";
 
 export default function VillagesPage() {
   const router = useRouter();
@@ -66,6 +67,15 @@ export default function VillagesPage() {
   const [isRemoveLeaderDialogOpen, setIsRemoveLeaderDialogOpen] =
     useState(false);
   const [selectedVillageId, setSelectedVillageId] = useState<string>("");
+  const [deleteConfirmation, setDeleteConfirmation] = useState<{
+    isOpen: boolean;
+    villageId: string | null;
+    villageName: string;
+  }>({
+    isOpen: false,
+    villageId: null,
+    villageName: "",
+  });
 
   useEffect(() => {
     fetchCells();
@@ -155,16 +165,30 @@ export default function VillagesPage() {
     fetchVillages();
   };
 
-  const handleDeleteVillage = async (id: string) => {
-    if (window.confirm("Are you sure you want to delete this village?")) {
-      try {
-        await deleteVillage(id);
-        toast.success("Village deleted successfully");
-        fetchVillages();
-      } catch (error) {
-        toast.error("Failed to delete village");
-        console.error(error);
-      }
+  const handleDeleteVillage = (village: Village) => {
+    setDeleteConfirmation({
+      isOpen: true,
+      villageId: village.id,
+      villageName: village.name,
+    });
+  };
+
+  const confirmDeleteVillage = async () => {
+    if (!deleteConfirmation.villageId) return;
+
+    try {
+      await deleteVillage(deleteConfirmation.villageId);
+      toast.success("Village deleted successfully");
+      fetchVillages();
+    } catch (error) {
+      toast.error("Failed to delete village");
+      console.error(error);
+    } finally {
+      setDeleteConfirmation({
+        isOpen: false,
+        villageId: null,
+        villageName: "",
+      });
     }
   };
 
@@ -208,6 +232,26 @@ export default function VillagesPage() {
         title="Remove Village Leader"
         description="Are you sure you want to remove the leader from this village? This action cannot be undone."
         confirmText="Remove Leader"
+        confirmVariant="destructive"
+      />
+
+      {/* Confirmation Dialog for deleting village */}
+      <ConfirmationDialog
+        isOpen={deleteConfirmation.isOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            setDeleteConfirmation({
+              isOpen: false,
+              villageId: null,
+              villageName: "",
+            });
+          }
+        }}
+        onConfirm={confirmDeleteVillage}
+        title="Delete Village"
+        description={`Are you sure you want to delete "${deleteConfirmation.villageName}"? This action cannot be undone.`}
+        confirmText="Delete"
+        cancelText="Cancel"
         confirmVariant="destructive"
       />
 
@@ -390,7 +434,7 @@ export default function VillagesPage() {
                                   variant="destructive"
                                   size="sm"
                                   onClick={() =>
-                                    handleDeleteVillage(village.id)
+                                    handleDeleteVillage(village)
                                   }
                                 >
                                   <Trash2 className="h-4 w-4" />

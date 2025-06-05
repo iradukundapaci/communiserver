@@ -212,6 +212,7 @@ export function UpdateTaskDialog({ task, onTaskUpdated, trigger }: UpdateTaskDia
                     step="0.01"
                     value={estimatedCost}
                     onChange={(e) => setEstimatedCost(parseFloat(e.target.value) || 0)}
+                    className="max-w-lg"
                   />
                 </div>
                 <div>
@@ -223,7 +224,7 @@ export function UpdateTaskDialog({ task, onTaskUpdated, trigger }: UpdateTaskDia
                     step="0.01"
                     value={actualCost}
                     onChange={(e) => setActualCost(parseFloat(e.target.value) || 0)}
-                    className="border-green-300 focus:border-green-500"
+                    className="max-w-lg border-green-300 focus:border-green-500"
                   />
                 </div>
               </div>
@@ -237,6 +238,7 @@ export function UpdateTaskDialog({ task, onTaskUpdated, trigger }: UpdateTaskDia
                     min="0"
                     value={expectedParticipants}
                     onChange={(e) => setExpectedParticipants(parseInt(e.target.value) || 0)}
+                    className="max-w-lg"
                   />
                 </div>
                 <div>
@@ -247,7 +249,7 @@ export function UpdateTaskDialog({ task, onTaskUpdated, trigger }: UpdateTaskDia
                     min="0"
                     value={actualParticipants}
                     onChange={(e) => setActualParticipants(parseInt(e.target.value) || 0)}
-                    className="border-green-300 focus:border-green-500"
+                    className="max-w-lg border-green-300 focus:border-green-500"
                   />
                 </div>
               </div>
@@ -264,6 +266,7 @@ export function UpdateTaskDialog({ task, onTaskUpdated, trigger }: UpdateTaskDia
                     step="0.01"
                     value={expectedFinancialImpact}
                     onChange={(e) => setExpectedFinancialImpact(parseFloat(e.target.value) || 0)}
+                    className="max-w-lg"
                   />
                 </div>
                 <div>
@@ -275,7 +278,7 @@ export function UpdateTaskDialog({ task, onTaskUpdated, trigger }: UpdateTaskDia
                     step="0.01"
                     value={actualFinancialImpact}
                     onChange={(e) => setActualFinancialImpact(parseFloat(e.target.value) || 0)}
-                    className="border-green-300 focus:border-green-500"
+                    className="max-w-lg border-green-300 focus:border-green-500"
                   />
                 </div>
               </div>

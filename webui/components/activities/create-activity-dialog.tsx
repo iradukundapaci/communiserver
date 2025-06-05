@@ -338,6 +338,7 @@ function TaskForm({ task, villageId, onUpdate, onRemove, onIsiboSearch }: TaskFo
             value={task.estimatedCost || ""}
             onChange={(e) => onUpdate({ estimatedCost: parseFloat(e.target.value) || 0 })}
             placeholder="0"
+            className="max-w-lg"
           />
         </div>
 
@@ -349,10 +350,9 @@ function TaskForm({ task, villageId, onUpdate, onRemove, onIsiboSearch }: TaskFo
             value={task.expectedParticipants || ""}
             onChange={(e) => onUpdate({ expectedParticipants: parseInt(e.target.value) || 0 })}
             placeholder="0"
+            className="max-w-lg"
           />
         </div>
-
-
 
         <div>
           <Label>Expected Financial Impact (RWF)</Label>
@@ -362,6 +362,7 @@ function TaskForm({ task, villageId, onUpdate, onRemove, onIsiboSearch }: TaskFo
             value={task.expectedFinancialImpact || ""}
             onChange={(e) => onUpdate({ expectedFinancialImpact: parseFloat(e.target.value) || 0 })}
             placeholder="0"
+            className="max-w-lg"
           />
         </div>
       </div>

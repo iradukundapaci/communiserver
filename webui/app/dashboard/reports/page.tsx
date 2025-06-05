@@ -17,6 +17,7 @@ import { Eye, Pencil, Plus, RefreshCw, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { ConfirmationDialog } from "@/components/confirmation-dialog";
 import { ReportsPDFButton } from "@/components/pdf-report-button";
 
 export default function ReportsPage() {
@@ -30,6 +31,15 @@ export default function ReportsPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
+  const [deleteConfirmation, setDeleteConfirmation] = useState<{
+    isOpen: boolean;
+    reportId: string | null;
+    reportTitle: string;
+  }>({
+    isOpen: false,
+    reportId: null,
+    reportTitle: "",
+  });
   const [filters, setFilters] = useState({
     activityId: "all_activities",
     isiboId: "all_isibos",
@@ -140,23 +150,36 @@ export default function ReportsPage() {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (confirm("Are you sure you want to delete this report?")) {
-      try {
-        setIsDeleting(id);
-        await deleteReport(id);
-        toast.success("Report deleted successfully");
-        fetchReports(1, true);
-      } catch (error: unknown) {
-        if (error instanceof Error) {
-          toast.error(error.message);
-        } else {
-          toast.error("Failed to delete report");
-        }
-        console.error(error);
-      } finally {
-        setIsDeleting(null);
+  const handleDelete = (report: Report) => {
+    setDeleteConfirmation({
+      isOpen: true,
+      reportId: report.id,
+      reportTitle: `${report.activity.title} - ${report.task.title}`,
+    });
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteConfirmation.reportId) return;
+
+    try {
+      setIsDeleting(deleteConfirmation.reportId);
+      await deleteReport(deleteConfirmation.reportId);
+      toast.success("Report deleted successfully");
+      fetchReports(1, true);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        toast.error(error.message);
+      } else {
+        toast.error("Failed to delete report");
       }
+      console.error(error);
+    } finally {
+      setIsDeleting(null);
+      setDeleteConfirmation({
+        isOpen: false,
+        reportId: null,
+        reportTitle: "",
+      });
     }
   };
 
@@ -167,6 +190,26 @@ export default function ReportsPage() {
 
   return (
     <div className="flex flex-col gap-4">
+      {/* Confirmation Dialog for deleting report */}
+      <ConfirmationDialog
+        isOpen={deleteConfirmation.isOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            setDeleteConfirmation({
+              isOpen: false,
+              reportId: null,
+              reportTitle: "",
+            });
+          }
+        }}
+        onConfirm={confirmDelete}
+        title="Delete Report"
+        description={`Are you sure you want to delete the report for "${deleteConfirmation.reportTitle}"? This action cannot be undone.`}
+        confirmText="Delete"
+        cancelText="Cancel"
+        confirmVariant="destructive"
+      />
+
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold">Task Reports</h1>
       </div>
@@ -353,7 +396,7 @@ export default function ReportsPage() {
                                 <Button
                                   variant="ghost"
                                   size="icon"
-                                  onClick={() => handleDelete(report.id)}
+                                  onClick={() => handleDelete(report)}
                                   disabled={isDeleting === report.id}
                                 >
                                   {isDeleting === report.id ? (

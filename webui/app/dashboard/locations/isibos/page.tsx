@@ -69,6 +69,15 @@ export default function IsibosPage() {
   const [isRemoveLeaderDialogOpen, setIsRemoveLeaderDialogOpen] =
     useState(false);
   const [selectedIsiboId, setSelectedIsiboId] = useState<string>("");
+  const [deleteConfirmation, setDeleteConfirmation] = useState<{
+    isOpen: boolean;
+    isiboId: string | null;
+    isiboName: string;
+  }>({
+    isOpen: false,
+    isiboId: null,
+    isiboName: "",
+  });
 
   useEffect(() => {
     fetchCells();
@@ -230,16 +239,30 @@ export default function IsibosPage() {
     fetchIsibos();
   };
 
-  const handleDeleteIsibo = async (id: string) => {
-    if (window.confirm("Are you sure you want to delete this isibo?")) {
-      try {
-        await deleteIsibo(id);
-        toast.success("Isibo deleted successfully");
-        fetchIsibos();
-      } catch (error) {
-        toast.error("Failed to delete isibo");
-        console.error(error);
-      }
+  const handleDeleteIsibo = (isibo: Isibo) => {
+    setDeleteConfirmation({
+      isOpen: true,
+      isiboId: isibo.id,
+      isiboName: isibo.name,
+    });
+  };
+
+  const confirmDeleteIsibo = async () => {
+    if (!deleteConfirmation.isiboId) return;
+
+    try {
+      await deleteIsibo(deleteConfirmation.isiboId);
+      toast.success("Isibo deleted successfully");
+      fetchIsibos();
+    } catch (error) {
+      toast.error("Failed to delete isibo");
+      console.error(error);
+    } finally {
+      setDeleteConfirmation({
+        isOpen: false,
+        isiboId: null,
+        isiboName: "",
+      });
     }
   };
 
@@ -289,6 +312,26 @@ export default function IsibosPage() {
         title="Remove Isibo Leader"
         description="Are you sure you want to remove the leader from this isibo? This action cannot be undone."
         confirmText="Remove Leader"
+        confirmVariant="destructive"
+      />
+
+      {/* Confirmation Dialog for deleting isibo */}
+      <ConfirmationDialog
+        isOpen={deleteConfirmation.isOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            setDeleteConfirmation({
+              isOpen: false,
+              isiboId: null,
+              isiboName: "",
+            });
+          }
+        }}
+        onConfirm={confirmDeleteIsibo}
+        title="Delete Isibo"
+        description={`Are you sure you want to delete "${deleteConfirmation.isiboName}"? This action cannot be undone.`}
+        confirmText="Delete"
+        cancelText="Cancel"
         confirmVariant="destructive"
       />
 
@@ -481,7 +524,7 @@ export default function IsibosPage() {
                                 <Button
                                   variant="destructive"
                                   size="sm"
-                                  onClick={() => handleDeleteIsibo(isibo.id)}
+                                  onClick={() => handleDeleteIsibo(isibo)}
                                 >
                                   <Trash2 className="h-4 w-4" />
                                   <span className="sr-only">Delete</span>

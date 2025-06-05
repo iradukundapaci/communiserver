@@ -33,6 +33,7 @@ import { Pencil, PlusCircle, Trash2, UserMinus, UserPlus } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { ConfirmationDialog } from "@/components/confirmation-dialog";
 
 export default function CellsPage() {
   const router = useRouter();
@@ -48,6 +49,15 @@ export default function CellsPage() {
   const [isRemoveLeaderDialogOpen, setIsRemoveLeaderDialogOpen] =
     useState(false);
   const [selectedCellId, setSelectedCellId] = useState<string>("");
+  const [deleteConfirmation, setDeleteConfirmation] = useState<{
+    isOpen: boolean;
+    cellId: string | null;
+    cellName: string;
+  }>({
+    isOpen: false,
+    cellId: null,
+    cellName: "",
+  });
 
   useEffect(() => {
     fetchCells();
@@ -76,16 +86,30 @@ export default function CellsPage() {
     fetchCells();
   };
 
-  const handleDeleteCell = async (id: string) => {
-    if (window.confirm("Are you sure you want to delete this cell?")) {
-      try {
-        await deleteCell(id);
-        toast.success("Cell deleted successfully");
-        fetchCells();
-      } catch (error) {
-        toast.error("Failed to delete cell");
-        console.error(error);
-      }
+  const handleDeleteCell = (cell: Cell) => {
+    setDeleteConfirmation({
+      isOpen: true,
+      cellId: cell.id,
+      cellName: cell.name,
+    });
+  };
+
+  const confirmDeleteCell = async () => {
+    if (!deleteConfirmation.cellId) return;
+
+    try {
+      await deleteCell(deleteConfirmation.cellId);
+      toast.success("Cell deleted successfully");
+      fetchCells();
+    } catch (error) {
+      toast.error("Failed to delete cell");
+      console.error(error);
+    } finally {
+      setDeleteConfirmation({
+        isOpen: false,
+        cellId: null,
+        cellName: "",
+      });
     }
   };
 
@@ -124,6 +148,26 @@ export default function CellsPage() {
         title="Remove Cell Leader"
         description="Are you sure you want to remove the leader from this cell? This action cannot be undone."
         confirmText="Remove Leader"
+        confirmVariant="destructive"
+      />
+
+      {/* Confirmation Dialog for deleting cell */}
+      <ConfirmationDialog
+        isOpen={deleteConfirmation.isOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            setDeleteConfirmation({
+              isOpen: false,
+              cellId: null,
+              cellName: "",
+            });
+          }
+        }}
+        onConfirm={confirmDeleteCell}
+        title="Delete Cell"
+        description={`Are you sure you want to delete "${deleteConfirmation.cellName}"? This action cannot be undone.`}
+        confirmText="Delete"
+        cancelText="Cancel"
         confirmVariant="destructive"
       />
 
@@ -248,7 +292,7 @@ export default function CellsPage() {
                               <Button
                                 variant="destructive"
                                 size="sm"
-                                onClick={() => handleDeleteCell(cell.id)}
+                                onClick={() => handleDeleteCell(cell)}
                               >
                                 <Trash2 className="h-4 w-4" />
                                 <span className="sr-only">Delete</span>

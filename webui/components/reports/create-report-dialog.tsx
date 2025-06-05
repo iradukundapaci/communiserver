@@ -171,6 +171,7 @@ export function CreateReportDialog({
                       step="0.01"
                       value={estimatedCost}
                       onChange={(e) => setEstimatedCost(parseFloat(e.target.value) || 0)}
+                      className="max-w-lg"
                     />
                   </div>
                   <div>
@@ -182,6 +183,7 @@ export function CreateReportDialog({
                       step="0.01"
                       value={actualCost}
                       onChange={(e) => setActualCost(parseFloat(e.target.value) || 0)}
+                      className="max-w-lg"
                     />
                   </div>
                   <div>
@@ -192,6 +194,7 @@ export function CreateReportDialog({
                       min="0"
                       value={expectedParticipants}
                       onChange={(e) => setExpectedParticipants(parseInt(e.target.value) || 0)}
+                      className="max-w-lg"
                     />
                   </div>
                   <div>
@@ -202,6 +205,7 @@ export function CreateReportDialog({
                       min="0"
                       value={actualParticipants}
                       onChange={(e) => setActualParticipants(parseInt(e.target.value) || 0)}
+                      className="max-w-lg"
                     />
                   </div>
 
@@ -214,6 +218,7 @@ export function CreateReportDialog({
                       step="0.01"
                       value={expectedFinancialImpact}
                       onChange={(e) => setExpectedFinancialImpact(parseFloat(e.target.value) || 0)}
+                      className="max-w-lg"
                     />
                   </div>
                   <div>
@@ -225,6 +230,7 @@ export function CreateReportDialog({
                       step="0.01"
                       value={actualFinancialImpact}
                       onChange={(e) => setActualFinancialImpact(parseFloat(e.target.value) || 0)}
+                      className="max-w-lg"
                     />
                   </div>
                 </div>
@@ -253,6 +259,7 @@ export function CreateReportDialog({
                       onChange={(e) => setComment(e.target.value)}
                       placeholder="Add any comments about the task execution..."
                       rows={3}
+                      className="max-w-lg"
                     />
                   </div>
 
@@ -264,6 +271,7 @@ export function CreateReportDialog({
                       onChange={(e) => handleMaterialsChange(e.target.value)}
                       placeholder="List materials used (one per line)..."
                       rows={3}
+                      className="max-w-lg"
                     />
                   </div>
 
@@ -275,6 +283,7 @@ export function CreateReportDialog({
                       onChange={(e) => setChallengesFaced(e.target.value)}
                       placeholder="Describe any challenges encountered..."
                       rows={3}
+                      className="max-w-lg"
                     />
                   </div>
 
@@ -286,6 +295,7 @@ export function CreateReportDialog({
                       onChange={(e) => setSuggestions(e.target.value)}
                       placeholder="Provide suggestions for improvement..."
                       rows={3}
+                      className="max-w-lg"
                     />
                   </div>
                 </div>

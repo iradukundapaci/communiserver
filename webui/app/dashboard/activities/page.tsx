@@ -42,6 +42,7 @@ import { ActivitiesPDFButton } from "@/components/pdf-report-button";
 import TasksTabComponent from "./tasks-tab";
 import { Select } from "@radix-ui/react-select";
 import { SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ConfirmationDialog } from "@/components/confirmation-dialog";
 
 export default function ActivitiesPage() {
   const searchParams = useSearchParams();
@@ -579,6 +580,15 @@ function ActivitiesTab() {
   const [totalPages, setTotalPages] = useState(1);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
+  const [deleteConfirmation, setDeleteConfirmation] = useState<{
+    isOpen: boolean;
+    activityId: string | null;
+    activityTitle: string;
+  }>({
+    isOpen: false,
+    activityId: null,
+    activityTitle: "",
+  });
 
   const fetchActivities = async (
     query: string = searchQuery,
@@ -649,23 +659,36 @@ function ActivitiesTab() {
     fetchActivities(searchQuery, 1, true);
   };
 
-  const handleDelete = async (id: string) => {
-    if (confirm("Are you sure you want to delete this activity?")) {
-      try {
-        setIsDeleting(id);
-        await deleteActivity(id);
-        toast.success("Activity deleted successfully");
-        fetchActivities(searchQuery, 1, true);
-      } catch (error: unknown) {
-        if (error instanceof Error) {
-          toast.error(error.message);
-        } else {
-          toast.error("Failed to delete activity");
-        }
-        console.error(error);
-      } finally {
-        setIsDeleting(null);
+  const handleDelete = (activity: Activity) => {
+    setDeleteConfirmation({
+      isOpen: true,
+      activityId: activity.id,
+      activityTitle: activity.title,
+    });
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteConfirmation.activityId) return;
+
+    try {
+      setIsDeleting(deleteConfirmation.activityId);
+      await deleteActivity(deleteConfirmation.activityId);
+      toast.success("Activity deleted successfully");
+      fetchActivities(searchQuery, 1, true);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        toast.error(error.message);
+      } else {
+        toast.error("Failed to delete activity");
       }
+      console.error(error);
+    } finally {
+      setIsDeleting(null);
+      setDeleteConfirmation({
+        isOpen: false,
+        activityId: null,
+        activityTitle: "",
+      });
     }
   };
 
@@ -794,7 +817,7 @@ function ActivitiesTab() {
                             <Button
                               variant="ghost"
                               size="icon"
-                              onClick={() => handleDelete(activity.id)}
+                              onClick={() => handleDelete(activity)}
                               disabled={isDeleting === activity.id}
                             >
                               {isDeleting === activity.id ? (
@@ -837,6 +860,25 @@ function ActivitiesTab() {
           </div>
         )}
       </CardContent>
+
+      <ConfirmationDialog
+        isOpen={deleteConfirmation.isOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            setDeleteConfirmation({
+              isOpen: false,
+              activityId: null,
+              activityTitle: "",
+            });
+          }
+        }}
+        onConfirm={confirmDelete}
+        title="Delete Activity"
+        description={`Are you sure you want to delete "${deleteConfirmation.activityTitle}"? This action cannot be undone.`}
+        confirmText="Delete"
+        cancelText="Cancel"
+        confirmVariant="destructive"
+      />
     </Card>
   );
 }
