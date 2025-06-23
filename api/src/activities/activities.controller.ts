@@ -25,6 +25,7 @@ import { CreateActivityDTO } from "./dto/create-activity.dto";
 import { FetchActivityDTO } from "./dto/fetch-activity.dto";
 import { UpdateActivityDTO } from "./dto/update-activity.dto";
 import { Activity } from "./entities/activity.entity";
+import { ActivityReportDTO } from "./dto/activity-report.dto";
 
 @ApiTags("Activities")
 @ApiBearerAuth()
@@ -89,5 +90,15 @@ export class ActivitiesController {
   async remove(@Param("id") id: string): Promise<GenericResponse> {
     await this.activitiesService.delete(id);
     return new GenericResponse("Activity deleted successfully");
+  }
+
+  @GetOperation(":id/report", "Get enhanced activity report with analytics")
+  @IsAuthorized()
+  @ErrorResponses(UnauthorizedResponse, ForbiddenResponse, NotFoundResponse)
+  async getActivityReport(
+    @Param("id") id: string,
+  ): Promise<GenericResponse<ActivityReportDTO.Output>> {
+    const report = await this.activitiesService.generateActivityReport(id);
+    return new GenericResponse("Activity report retrieved successfully", report);
   }
 }

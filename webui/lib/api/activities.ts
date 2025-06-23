@@ -129,6 +129,98 @@ interface ApiResponse<T> {
   payload: T;
 }
 
+export interface ActivityReportData {
+  activity: {
+    id: string;
+    title: string;
+    description: string;
+    date: Date;
+    village: {
+      id: string;
+      name: string;
+    };
+  };
+  summary: {
+    totalTasks: number;
+    completedTasks: number;
+    completionRate: number;
+    totalCost: number;
+    totalParticipants: number;
+    totalImpact: number;
+  };
+  financialAnalysis: {
+    totalEstimatedCost: number;
+    totalActualCost: number;
+    costVariance: number;
+    costVariancePercentage: number;
+    budgetUtilization: number;
+    costPerParticipant: number;
+    costPerTask: number;
+    roiScore: number;
+    costBreakdown: {
+      taskId: string;
+      taskTitle: string;
+      estimatedCost: number;
+      actualCost: number;
+      variance: number;
+      percentage: number;
+    }[];
+  };
+  participantAnalysis: {
+    totalExpectedParticipants: number;
+    totalActualParticipants: number;
+    participationRate: number;
+    participantVariance: number;
+    averageParticipantsPerTask: number;
+    participantDistribution: {
+      taskId: string;
+      taskTitle: string;
+      expected: number;
+      actual: number;
+      variance: number;
+    }[];
+  };
+  evidenceSummary: {
+    totalFiles: number;
+    filesByType: {
+      images: number;
+      documents: number;
+      videos: number;
+      other: number;
+    };
+    evidenceQuality: {
+      high: number;
+      medium: number;
+      low: number;
+    };
+    evidenceUrls: string[];
+  };
+  insights: {
+    overallPerformanceScore: number;
+    keyStrengths: string[];
+    areasForImprovement: string[];
+    commonChallenges: string[];
+    bestPractices: string[];
+    recommendations: string[];
+    riskAssessment: {
+      level: 'low' | 'medium' | 'high';
+      factors: string[];
+    };
+  };
+  isiboPerformance: {
+    isiboId: string;
+    isiboName: string;
+    tasksCount: number;
+    completedTasks: number;
+    totalCost: number;
+    totalParticipants: number;
+    averagePerformanceScore: number;
+    tasks: any[];
+  }[];
+  taskPerformance: any[];
+  reports: any[];
+}
+
 /**
  * Get all activities with pagination and filtering
  * @param filters Activity filters
@@ -391,6 +483,40 @@ export async function updateTask(taskId: string, input: UpdateTaskInput): Promis
     return data.payload;
   } catch (error) {
     console.error("Update task error:", error);
+    throw error;
+  }
+}
+
+/**
+ * Get enhanced activity report with analytics
+ * @param id Activity ID
+ * @returns Promise with enhanced activity report data
+ */
+export async function getActivityReport(id: string): Promise<ActivityReportData> {
+  try {
+    const tokens = getAuthTokens();
+    
+    if (!tokens) {
+      throw new Error("Not authenticated");
+    }
+    
+    const response = await fetch(`/api/v1/activities/${id}/report`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${tokens.accessToken}`,
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || "Failed to fetch activity report");
+    }
+
+    const data: ApiResponse<ActivityReportData> = await response.json();
+    return data.payload;
+  } catch (error) {
+    console.error("Get activity report error:", error);
     throw error;
   }
 }

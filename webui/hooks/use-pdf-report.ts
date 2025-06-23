@@ -263,11 +263,24 @@ export function usePDFReport() {
   };
 
   const generateActivityReport = async (activityData: any, userProfile: any) => {
-    if (!activityData?.activity || !activityData?.reports) {
+    console.log('Generating activity report with data:', activityData);
+    
+    if (!activityData?.activity) {
       throw new Error('Invalid activity data provided');
     }
 
-    const { activity, reports, totals, summary } = activityData;
+    const { activity, summary, financialAnalysis, participantAnalysis, reports = [] } = activityData;
+
+    // Calculate totals from the available data with safety checks
+    const totals = {
+      actualCost: Number(financialAnalysis?.totalActualCost) || 0,
+      estimatedCost: Number(financialAnalysis?.totalEstimatedCost) || 0,
+      actualParticipants: Number(participantAnalysis?.totalActualParticipants) || 0,
+      expectedFinancialImpact: 0, // Calculate from tasks if needed
+      actualFinancialImpact: Number(summary?.totalImpact) || 0,
+    };
+
+    console.log('Calculated totals:', totals);
 
     const sections = [
       {
@@ -279,12 +292,12 @@ export function usePDFReport() {
         title: 'Activity Summary',
         type: 'metrics' as const,
         content: [
-          { label: 'Total Tasks Completed', value: summary.totalTasks },
-          { label: 'Completion Rate', value: summary.completionRate },
+          { label: 'Total Tasks', value: Number(summary?.totalTasks) || 0 },
+          { label: 'Completed Tasks', value: Number(summary?.completedTasks) || 0 },
+          { label: 'Completion Rate', value: `${(Number(summary?.completionRate) || 0).toFixed(1)}%` },
           { label: 'Total Actual Cost', value: `${totals.actualCost.toLocaleString()} RWF` },
           { label: 'Total Participants', value: totals.actualParticipants },
-          { label: 'Financial Impact', value: `${totals.actualFinancialImpact.toLocaleString()} RWF` },
-          { label: 'Cost Variance', value: `${(totals.actualCost - totals.estimatedCost).toLocaleString()} RWF` }
+          { label: 'Financial Impact', value: `${totals.actualFinancialImpact.toLocaleString()} RWF` }
         ]
       },
       {
@@ -307,45 +320,47 @@ export function usePDFReport() {
             'Status': totals.actualCost > totals.estimatedCost ? 'Over Budget' : 'Under Budget'
           },
           {
-            'Metric': 'Expected Financial Impact',
-            'Amount (RWF)': totals.expectedFinancialImpact.toLocaleString(),
-            'Status': 'Projected'
+            'Metric': 'Budget Utilization',
+            'Amount (RWF)': `${(Number(financialAnalysis?.budgetUtilization) || 0).toFixed(1)}%`,
+            'Status': (Number(financialAnalysis?.budgetUtilization) || 0) > 100 ? 'Over Budget' : 'Under Budget'
           },
           {
-            'Metric': 'Actual Financial Impact',
-            'Amount (RWF)': totals.actualFinancialImpact.toLocaleString(),
+            'Metric': 'ROI Score',
+            'Amount (RWF)': `${(Number(financialAnalysis?.roiScore) || 0).toFixed(1)}%`,
             'Status': 'Achieved'
           }
         ]
-      },
-      {
-        title: 'Task Reports Summary',
-        type: 'table' as const,
-        content: reports.map((report: any) => ({
-          'Task': report.task.title,
-          'Isibo': report.task.isibo?.names || 'N/A',
-          'Cost (RWF)': (report.actualCost || 0).toLocaleString(),
-          'Participants': report.actualParticipants || 0,
-          'Impact (RWF)': (report.actualFinancialImpact || 0).toLocaleString(),
-          'Submitted': new Date(report.createdAt).toLocaleDateString()
-        }))
       }
     ];
 
-    // Add detailed task reports if available
-    if (reports.length > 0) {
+    // Add task reports if available
+    if (reports && reports.length > 0) {
+      sections.push({
+        title: 'Task Reports Summary',
+        type: 'table' as const,
+        content: reports.map((report: any) => ({
+          'Task': report.task?.title || 'Unknown Task',
+          'Isibo': report.task?.isibo?.names || 'N/A',
+          'Cost (RWF)': (Number(report.actualCost) || 0).toLocaleString(),
+          'Participants': Number(report.actualParticipants) || 0,
+          'Impact (RWF)': (Number(report.actualFinancialImpact) || 0).toLocaleString(),
+          'Submitted': new Date(report.createdAt).toLocaleDateString()
+        }))
+      });
+
+      // Add detailed task reports
       reports.forEach((report: any, index: number) => {
         sections.push({
-          title: `Task ${index + 1}: ${report.task.title}`,
+          title: `Task ${index + 1}: ${report.task?.title || 'Unknown Task'}`,
           type: 'text' as const,
           content: `
-Isibo: ${report.task.isibo?.names || 'N/A'}
-Estimated Cost: ${(report.estimatedCost || 0).toLocaleString()} RWF
-Actual Cost: ${(report.actualCost || 0).toLocaleString()} RWF
-Expected Participants: ${report.expectedParticipants || 0}
-Actual Participants: ${report.actualParticipants || 0}
-Expected Financial Impact: ${(report.expectedFinancialImpact || 0).toLocaleString()} RWF
-Actual Financial Impact: ${(report.actualFinancialImpact || 0).toLocaleString()} RWF
+Isibo: ${report.task?.isibo?.names || 'N/A'}
+Estimated Cost: ${(Number(report.estimatedCost) || 0).toLocaleString()} RWF
+Actual Cost: ${(Number(report.actualCost) || 0).toLocaleString()} RWF
+Expected Participants: ${Number(report.expectedParticipants) || 0}
+Actual Participants: ${Number(report.actualParticipants) || 0}
+Expected Financial Impact: ${(Number(report.expectedFinancialImpact) || 0).toLocaleString()} RWF
+Actual Financial Impact: ${(Number(report.actualFinancialImpact) || 0).toLocaleString()} RWF
 
 ${report.comment ? `Comments: ${report.comment}` : ''}
 ${report.challengesFaced ? `Challenges: ${report.challengesFaced}` : ''}
@@ -357,13 +372,36 @@ ${report.evidenceUrls && report.evidenceUrls.length > 0 ? `Evidence Files: ${rep
       });
     }
 
-    return {
+    // Add insights if available
+    if (activityData.insights) {
+      sections.push({
+        title: 'Activity Insights',
+        type: 'text' as const,
+        content: `
+Overall Performance Score: ${(Number(activityData.insights.overallPerformanceScore) || 0).toFixed(1)}%
+
+Key Strengths:
+${activityData.insights.keyStrengths?.map((strength: string) => `• ${strength}`).join('\n') || 'None identified'}
+
+Areas for Improvement:
+${activityData.insights.areasForImprovement?.map((area: string) => `• ${area}`).join('\n') || 'None identified'}
+
+Risk Assessment: ${activityData.insights.riskAssessment?.level?.toUpperCase() || 'UNKNOWN'} RISK
+Risk Factors: ${activityData.insights.riskAssessment?.factors?.join(', ') || 'None identified'}
+        `.trim()
+      });
+    }
+
+    const reportData = {
       title: `${activity.title} - Activity Report`,
       subtitle: `Detailed Activity Report Generated on ${new Date().toLocaleDateString()}`,
       generatedBy: userProfile?.name || 'System User',
       generatedAt: new Date(),
       sections
     };
+
+    console.log('Generated report data:', reportData);
+    return reportData;
   };
 
   const generateUsersReport = async (usersData: any, userProfile: any) => {

@@ -4,57 +4,40 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Activity, getActivityById } from "@/lib/api/activities";
-import { Report, getReports } from "@/lib/api/reports";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { getActivityReport, ActivityReportData } from "@/lib/api/activities";
 import { useUser } from "@/lib/contexts/user-context";
-import { ArrowLeft, FileText, Users, DollarSign, Calendar, MapPin } from "lucide-react";
+import { ArrowLeft, FileText, Users, DollarSign, Calendar, MapPin, TrendingUp, AlertTriangle, CheckCircle, Target } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, use } from "react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { ActivityReportPDFButton } from "@/components/pdf-report-button";
+import { StickySummaryBar } from "@/components/reports/sticky-summary-bar";
+import { EnhancedFinancialSummary } from "@/components/reports/enhanced-financial-summary";
+import { TaskPerformanceGrid } from "@/components/reports/task-performance-grid";
+import { EvidenceGallery } from "@/components/reports/evidence-gallery";
 
 interface ActivityReportPageProps {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
 export default function ActivityReportPage({ params }: ActivityReportPageProps) {
   const router = useRouter();
   const { user } = useUser();
-  const [activity, setActivity] = useState<Activity | null>(null);
-  const [reports, setReports] = useState<Report[]>([]);
+  const [reportData, setReportData] = useState<ActivityReportData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  
+  // Unwrap params using React.use()
+  const { id } = use(params);
 
-  const fetchActivityAndReports = async () => {
+  const fetchActivityReport = async () => {
     try {
       setIsLoading(true);
-
-      // Fetch activity details
-      const activityData = await getActivityById(params.id);
-      setActivity(activityData);
-
-      // Fetch all reports for this activity
-      let allReports: Report[] = [];
-      let page = 1;
-      let hasMore = true;
-
-      while (hasMore) {
-        const response = await getReports(
-          page,
-          100,
-          params.id, // activityId filter
-          undefined,
-          user?.role === "ISIBO_LEADER" && user?.isibo?.id ? user.isibo.id : undefined
-        );
-
-        allReports = [...allReports, ...response.items];
-        hasMore = page < response.meta.totalPages;
-        page++;
-      }
-
-      setReports(allReports);
+      const data = await getActivityReport(id);
+      setReportData(data);
     } catch (error: unknown) {
       if (error instanceof Error) {
         toast.error(error.message);
@@ -68,52 +51,10 @@ export default function ActivityReportPage({ params }: ActivityReportPageProps) 
   };
 
   useEffect(() => {
-    if (user && params.id) {
-      fetchActivityAndReports();
+    if (user && id) {
+      fetchActivityReport();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, params.id]);
-
-  const calculateTotals = () => {
-    return reports.reduce(
-      (totals, report) => ({
-        estimatedCost: totals.estimatedCost + (parseFloat(String(report.estimatedCost)) || 0),
-        actualCost: totals.actualCost + (parseFloat(String(report.actualCost)) || 0),
-        expectedParticipants: totals.expectedParticipants + (parseInt(String(report.expectedParticipants)) || 0),
-        actualParticipants: totals.actualParticipants + (parseInt(String(report.actualParticipants)) || 0),
-        expectedFinancialImpact: totals.expectedFinancialImpact + (parseFloat(String(report.expectedFinancialImpact)) || 0),
-        actualFinancialImpact: totals.actualFinancialImpact + (parseFloat(String(report.actualFinancialImpact)) || 0),
-      }),
-      {
-        estimatedCost: 0,
-        actualCost: 0,
-        expectedParticipants: 0,
-        actualParticipants: 0,
-        expectedFinancialImpact: 0,
-        actualFinancialImpact: 0,
-      }
-    );
-  };
-
-  // Prepare data for PDF generation
-  const preparePDFData = () => {
-    if (!activity) return null;
-
-    const totals = calculateTotals();
-
-    return {
-      activity,
-      reports,
-      totals,
-      summary: {
-        totalTasks: reports.length,
-        completionRate: "100%", // All reports are for completed tasks
-        totalCost: totals.actualCost,
-        totalParticipants: totals.actualParticipants,
-        totalImpact: totals.actualFinancialImpact
-      }
-    };
-  };
+  }, [user, id]);
 
   if (isLoading) {
     return (
@@ -123,10 +64,10 @@ export default function ActivityReportPage({ params }: ActivityReportPageProps) 
     );
   }
 
-  if (!activity) {
+  if (!reportData) {
     return (
       <div className="text-center py-8">
-        <p className="text-muted-foreground">Activity not found</p>
+        <p className="text-muted-foreground">Activity report not found</p>
         <Button
           variant="outline"
           onClick={() => router.push("/dashboard/reports")}
@@ -139,298 +80,233 @@ export default function ActivityReportPage({ params }: ActivityReportPageProps) 
     );
   }
 
-  const totals = calculateTotals();
+  const { activity, summary, financialAnalysis, participantAnalysis, evidenceSummary, insights, taskPerformance } = reportData;
 
   return (
-    <div className="flex flex-col gap-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Button
-            variant="outline"
-            onClick={() => router.push("/dashboard/reports")}
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Reports
-          </Button>
-          <div>
-            <h1 className="text-3xl font-bold">{activity.title}</h1>
-            <p className="text-muted-foreground">Activity Report</p>
+    <div className="flex flex-col min-h-screen">
+      {/* Sticky Summary Bar */}
+      <StickySummaryBar summary={summary} insights={insights} />
+
+      {/* Main Content */}
+      <div className="flex-1 p-6 space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <Button
+              variant="outline"
+              onClick={() => router.push("/dashboard/reports")}
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to Reports
+            </Button>
+            <div>
+              <h1 className="text-3xl font-bold">{activity.title}</h1>
+              <p className="text-muted-foreground">Enhanced Activity Report</p>
+            </div>
           </div>
+          <ActivityReportPDFButton
+            data={reportData}
+            title={`${activity.title} - Enhanced Activity Report`}
+            subtitle={`Comprehensive analysis and insights for ${activity.title}`}
+          />
         </div>
-        <ActivityReportPDFButton
-          data={preparePDFData()}
-          title={`${activity.title} - Activity Report`}
-          subtitle={`Detailed report for ${activity.title} activity`}
-        />
-      </div>
 
-      {/* Activity Overview */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <FileText className="h-5 w-5" />
-            Activity Overview
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="flex items-center gap-2">
-              <Calendar className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm">
-                <strong>Date:</strong> {format(new Date(activity.date), "PPP")}
-              </span>
+        {/* Activity Overview */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <FileText className="h-5 w-5" />
+              Activity Overview
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="flex items-center gap-2">
+                <Calendar className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm">
+                  <strong>Date:</strong> {format(new Date(activity.date), "PPP")}
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <MapPin className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm">
+                  <strong>Village:</strong> {activity.village?.name || "No village assigned"}
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Users className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm">
+                  <strong>Tasks:</strong> {summary.totalTasks} total, {summary.completedTasks} completed
+                </span>
+              </div>
             </div>
-            <div className="flex items-center gap-2">
-              <MapPin className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm">
-                <strong>Village:</strong> {activity.village?.name || "No village assigned"}
-              </span>
+            <div>
+              <p className="text-sm">
+                <strong>Description:</strong> {activity.description}
+              </p>
             </div>
-            <div className="flex items-center gap-2">
-              <Users className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm">
-                <strong>Tasks Completed:</strong> {reports.length}
-              </span>
-            </div>
-          </div>
-          <div>
-            <p className="text-sm">
-              <strong>Description:</strong> {activity.description}
-            </p>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
 
-      {/* Financial Summary */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <DollarSign className="h-5 w-5" />
-            Financial Summary
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="space-y-2">
-              <h4 className="font-medium">Total Cost</h4>
-              <div className="space-y-1">
-                <div className="flex justify-between text-sm">
-                  <span>Estimated:</span>
-                  <span>{totals.estimatedCost.toLocaleString()} RWF</span>
+        {/* Insights & Recommendations */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <TrendingUp className="h-5 w-5" />
+              Insights & Recommendations
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Key Strengths */}
+              <div>
+                <h4 className="font-medium mb-3 flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-green-600" />
+                  Key Strengths
+                </h4>
+                <div className="space-y-2">
+                  {insights.keyStrengths.length > 0 ? (
+                    insights.keyStrengths.map((strength, index) => (
+                      <div key={index} className="text-sm bg-green-50 p-3 rounded-lg border border-green-200">
+                        {strength}
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-sm text-muted-foreground">No specific strengths identified</p>
+                  )}
                 </div>
-                <div className="flex justify-between text-sm font-medium">
-                  <span>Actual:</span>
-                  <span>{totals.actualCost.toLocaleString()} RWF</span>
-                </div>
-                <div className="flex justify-between text-sm text-muted-foreground">
-                  <span>Variance:</span>
-                  <span className={totals.actualCost > totals.estimatedCost ? "text-red-600" : "text-green-600"}>
-                    {(totals.actualCost - totals.estimatedCost).toLocaleString()} RWF
-                  </span>
+              </div>
+
+              {/* Areas for Improvement */}
+              <div>
+                <h4 className="font-medium mb-3 flex items-center gap-2">
+                  <Target className="h-4 w-4 text-blue-600" />
+                  Areas for Improvement
+                </h4>
+                <div className="space-y-2">
+                  {insights.areasForImprovement.length > 0 ? (
+                    insights.areasForImprovement.map((area, index) => (
+                      <div key={index} className="text-sm bg-blue-50 p-3 rounded-lg border border-blue-200">
+                        {area}
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-sm text-muted-foreground">No improvement areas identified</p>
+                  )}
                 </div>
               </div>
             </div>
-            <div className="space-y-2">
-              <h4 className="font-medium">Participants</h4>
-              <div className="space-y-1">
-                <div className="flex justify-between text-sm">
-                  <span>Expected:</span>
-                  <span>{totals.expectedParticipants}</span>
-                </div>
-                <div className="flex justify-between text-sm font-medium">
-                  <span>Actual:</span>
-                  <span>{totals.actualParticipants}</span>
-                </div>
-                <div className="flex justify-between text-sm text-muted-foreground">
-                  <span>Variance:</span>
-                  <span className={totals.actualParticipants > totals.expectedParticipants ? "text-green-600" : "text-red-600"}>
-                    {totals.actualParticipants - totals.expectedParticipants}
-                  </span>
-                </div>
-              </div>
-            </div>
-            <div className="space-y-2">
-              <h4 className="font-medium">Financial Impact</h4>
-              <div className="space-y-1">
-                <div className="flex justify-between text-sm">
-                  <span>Expected:</span>
-                  <span>{totals.expectedFinancialImpact.toLocaleString()} RWF</span>
-                </div>
-                <div className="flex justify-between text-sm font-medium">
-                  <span>Actual:</span>
-                  <span>{totals.actualFinancialImpact.toLocaleString()} RWF</span>
-                </div>
-                <div className="flex justify-between text-sm text-muted-foreground">
-                  <span>Variance:</span>
-                  <span className={totals.actualFinancialImpact > totals.expectedFinancialImpact ? "text-green-600" : "text-red-600"}>
-                    {(totals.actualFinancialImpact - totals.expectedFinancialImpact).toLocaleString()} RWF
-                  </span>
+
+            {/* Risk Assessment */}
+            <div className="mt-6">
+              <h4 className="font-medium mb-3 flex items-center gap-2">
+                <AlertTriangle className="h-4 w-4 text-orange-600" />
+                Risk Assessment
+              </h4>
+              <div className="flex items-center gap-4">
+                <Badge 
+                  variant="outline" 
+                  className={`${
+                    insights.riskAssessment.level === 'low' ? 'bg-green-100 text-green-800 border-green-200' :
+                    insights.riskAssessment.level === 'medium' ? 'bg-yellow-100 text-yellow-800 border-yellow-200' :
+                    'bg-red-100 text-red-800 border-red-200'
+                  }`}
+                >
+                  {insights.riskAssessment.level.toUpperCase()} RISK
+                </Badge>
+                <div className="text-sm text-muted-foreground">
+                  {insights.riskAssessment.factors.join(', ')}
                 </div>
               </div>
             </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
 
-      {/* Detailed Task Reports */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Task Reports</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          {reports.length === 0 ? (
-            <p className="text-center text-muted-foreground py-8">
-              No reports found for this activity
-            </p>
-          ) : (
-            reports.map((report, index) => (
-              <div key={report.id} className="space-y-4">
-                {index > 0 && <Separator />}
+        {/* Main Tabs */}
+        <Tabs defaultValue="financial" className="space-y-4">
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="financial">Financial Analysis</TabsTrigger>
+            <TabsTrigger value="tasks">Task Performance</TabsTrigger>
+            <TabsTrigger value="evidence">Evidence & Files</TabsTrigger>
+            <TabsTrigger value="participants">Participants</TabsTrigger>
+          </TabsList>
 
-                {/* Task Header */}
-                <div className="flex items-start justify-between">
-                  <div>
-                    <h3 className="text-lg font-semibold">{report.task.title}</h3>
-                    <div className="flex items-center gap-4 text-sm text-muted-foreground mt-1">
-                      <span>Isibo: {report.task.isibo?.names}</span>
-                      <Badge variant="secondary">
-                        COMPLETED
-                      </Badge>
+          <TabsContent value="financial" className="space-y-4">
+            <EnhancedFinancialSummary financialAnalysis={financialAnalysis} />
+          </TabsContent>
+
+          <TabsContent value="tasks" className="space-y-4">
+            <TaskPerformanceGrid taskPerformance={taskPerformance} />
+          </TabsContent>
+
+          <TabsContent value="evidence" className="space-y-4">
+            <EvidenceGallery evidenceSummary={evidenceSummary} />
+          </TabsContent>
+
+          <TabsContent value="participants" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Users className="h-5 w-5" />
+                  Participant Analysis
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  {/* Participation Rate */}
+                  <div className="text-center p-4 border rounded-lg">
+                    <div className="text-2xl font-bold text-blue-600">
+                      {participantAnalysis.participationRate.toFixed(1)}%
                     </div>
+                    <div className="text-sm text-muted-foreground">Participation Rate</div>
                   </div>
-                  <div className="text-right text-sm text-muted-foreground">
-                    Submitted: {format(new Date(report.createdAt), "PPp")}
+
+                  {/* Total Participants */}
+                  <div className="text-center p-4 border rounded-lg">
+                    <div className="text-2xl font-bold text-green-600">
+                      {participantAnalysis.totalActualParticipants}
+                    </div>
+                    <div className="text-sm text-muted-foreground">Actual Participants</div>
+                  </div>
+
+                  {/* Average per Task */}
+                  <div className="text-center p-4 border rounded-lg">
+                    <div className="text-2xl font-bold text-purple-600">
+                      {participantAnalysis.averageParticipantsPerTask.toFixed(1)}
+                    </div>
+                    <div className="text-sm text-muted-foreground">Avg per Task</div>
                   </div>
                 </div>
 
-                {/* Task Info */}
-                <div>
-                  <h4 className="font-medium mb-2">Task Information</h4>
-                  <p className="text-sm text-muted-foreground">Task ID: {report.task.id}</p>
-                </div>
-
-                {/* Financial Data */}
-                <div>
-                  <h4 className="font-medium mb-3">Financial Data</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="space-y-2">
-                      <div className="text-sm">
-                        <div className="flex justify-between">
-                          <span>Estimated Cost:</span>
-                          <span>{(report.estimatedCost || 0).toLocaleString()} RWF</span>
-                        </div>
-                        <div className="flex justify-between font-medium">
-                          <span>Actual Cost:</span>
-                          <span>{(report.actualCost || 0).toLocaleString()} RWF</span>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      <div className="text-sm">
-                        <div className="flex justify-between">
-                          <span>Expected Participants:</span>
-                          <span>{report.expectedParticipants || 0}</span>
-                        </div>
-                        <div className="flex justify-between font-medium">
-                          <span>Actual Participants:</span>
-                          <span>{report.actualParticipants || 0}</span>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      <div className="text-sm">
-                        <div className="flex justify-between">
-                          <span>Expected Impact:</span>
-                          <span>{(report.expectedFinancialImpact || 0).toLocaleString()} RWF</span>
-                        </div>
-                        <div className="flex justify-between font-medium">
-                          <span>Actual Impact:</span>
-                          <span>{(report.actualFinancialImpact || 0).toLocaleString()} RWF</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Attendance */}
-                {report.attendance && report.attendance.length > 0 && (
-                  <div>
-                    <h4 className="font-medium mb-2">Attendance ({report.attendance.length} people)</h4>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                      {report.attendance.map((attendee) => (
-                        <div key={attendee.id} className="text-sm p-2 bg-muted rounded">
-                          {attendee.names}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Materials Used */}
-                {report.materialsUsed && report.materialsUsed.length > 0 && (
-                  <div>
-                    <h4 className="font-medium mb-2">Materials Used</h4>
-                    <ul className="list-disc list-inside text-sm space-y-1">
-                      {report.materialsUsed.map((material, idx) => (
-                        <li key={idx}>{material}</li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-
-                {/* Comments */}
-                {report.comment && (
-                  <div>
-                    <h4 className="font-medium mb-2">Comments</h4>
-                    <p className="text-sm text-muted-foreground">{report.comment}</p>
-                  </div>
-                )}
-
-                {/* Challenges */}
-                {report.challengesFaced && (
-                  <div>
-                    <h4 className="font-medium mb-2">Challenges Faced</h4>
-                    <p className="text-sm text-muted-foreground">{report.challengesFaced}</p>
-                  </div>
-                )}
-
-                {/* Suggestions */}
-                {report.suggestions && (
-                  <div>
-                    <h4 className="font-medium mb-2">Suggestions</h4>
-                    <p className="text-sm text-muted-foreground">{report.suggestions}</p>
-                  </div>
-                )}
-
-                {/* Evidence Files */}
-                {report.evidenceUrls && report.evidenceUrls.length > 0 && (
-                  <div>
-                    <h4 className="font-medium mb-2">Evidence Files ({report.evidenceUrls.length})</h4>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                      {report.evidenceUrls.map((url, idx) => (
-                        <div key={idx} className="p-2 border rounded">
-                          <div className="flex items-center gap-2">
-                            <FileText className="h-4 w-4" />
-                            <a
-                              href={url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-sm text-blue-600 hover:underline truncate"
-                            >
-                              File {idx + 1}
-                            </a>
+                {/* Participant Distribution */}
+                <div className="mt-6">
+                  <h4 className="font-medium mb-3">Participant Distribution by Task</h4>
+                  <div className="space-y-3">
+                    {participantAnalysis.participantDistribution.map((task) => (
+                      <div key={task.taskId} className="flex items-center justify-between p-3 border rounded-lg">
+                        <div className="flex-1">
+                          <div className="font-medium">{task.taskTitle}</div>
+                          <div className="text-sm text-muted-foreground">
+                            Expected: {task.expected} • Actual: {task.actual}
                           </div>
                         </div>
-                      ))}
-                    </div>
+                        <div className="text-right">
+                          <div className={`font-medium ${
+                            task.variance >= 0 ? 'text-green-600' : 'text-red-600'
+                          }`}>
+                            {task.variance > 0 ? '+' : ''}{task.variance}
+                          </div>
+                          <div className="text-sm text-muted-foreground">Variance</div>
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                )}
-              </div>
-            ))
-          )}
-        </CardContent>
-      </Card>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+      </div>
     </div>
   );
 }
