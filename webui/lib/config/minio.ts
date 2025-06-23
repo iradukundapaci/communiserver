@@ -1,12 +1,11 @@
-// MinIO configuration
 export const MINIO_CONFIG = {
-  endPoint: '172.18.0.3',
+  endPoint: 'localhost',
   port: 9000,
   useSSL: false,
-  accessKey: 'gVmpnsvjgrnkSHwh5Ba7',
-  secretKey: 'WC2LevgjdXXco07TpCvzV2nSjAB2XpDsxZG8nMDJ',
+  accessKey:'keVfpVqGXH0eqmtdJkIt',
+  secretKey: 'bSORwJMqAHmBjh0Aca50kxhlOkVBfn9QGhxxhwuP',
   bucketName: 'evidence',
-  region: 'us-east-1', // Default region
+  region: 'us-east-1',
 };
 
-export const MINIO_URL = 'http://172.18.0.3:9000';
+export const MINIO_URL = `http://localhost:9000`;

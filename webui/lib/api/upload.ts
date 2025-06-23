@@ -11,13 +11,13 @@ export interface UploadResponse {
 
 // Create S3 client configured for MinIO
 const s3Client = new S3Client({
-  endpoint: MINIO_URL,
-  region: MINIO_CONFIG.region,
+  region: 'us-east-1',
+  endpoint: MINIO_CONFIG.endPoint ? `http://${MINIO_CONFIG.endPoint}:${MINIO_CONFIG.port}` : undefined,
   credentials: {
     accessKeyId: MINIO_CONFIG.accessKey,
-    secretAccessKey: MINIO_CONFIG.secretKey,
+    secretAccessKey: MINIO_CONFIG.secretKey
   },
-  forcePathStyle: true, // Required for MinIO
+  forcePathStyle: true
 });
 
 /**
@@ -42,6 +42,13 @@ function generateUniqueFilename(originalName: string): string {
  */
 export async function uploadFile(file: File): Promise<UploadResponse> {
   try {
+    console.log("accessKey: ", 10)
+    console.log("secretKey: ", MINIO_CONFIG.secretKey)
+    console.log("secretKey: ", MINIO_CONFIG.endPoint)
+    console.log("port", MINIO_CONFIG.port)
+    console.log("region", MINIO_CONFIG.region)
+    console.log("bucketName", MINIO_CONFIG.bucketName)
+    console.log("Url", MINIO_URL)
     // Generate unique filename
     const filename = generateUniqueFilename(file.name);
 
