@@ -1,5 +1,5 @@
 // Activities API service
-import { getAuthTokens } from "./auth";
+import { getAuthTokens } from './auth';
 
 // Types - ActivityStatus removed as activities no longer have status field
 
@@ -32,15 +32,15 @@ export interface Activity {
 }
 
 export enum TaskStatus {
-  ACTIVE = "active",
-  INACTIVE = "inactive",
-  COMPLETED = "completed",
-  CANCELLED = "cancelled",
-  ONGOING = "ongoing",
-  UPCOMING = "upcoming",
-  RESCHEDULED = "rescheduled",
-  POSTPONED = "postponed",
-  PENDING = "pending",
+  ACTIVE = 'active',
+  INACTIVE = 'inactive',
+  COMPLETED = 'completed',
+  CANCELLED = 'cancelled',
+  ONGOING = 'ongoing',
+  UPCOMING = 'upcoming',
+  RESCHEDULED = 'rescheduled',
+  POSTPONED = 'postponed',
+  PENDING = 'pending',
 }
 
 export interface Task {
@@ -146,24 +146,19 @@ export interface ActivityReportData {
     completionRate: number;
     totalCost: number;
     totalParticipants: number;
-    totalImpact: number;
   };
   financialAnalysis: {
     totalEstimatedCost: number;
     totalActualCost: number;
     costVariance: number;
     costVariancePercentage: number;
-    budgetUtilization: number;
     costPerParticipant: number;
-    costPerTask: number;
-    roiScore: number;
     costBreakdown: {
       taskId: string;
       taskTitle: string;
       estimatedCost: number;
       actualCost: number;
       variance: number;
-      percentage: number;
     }[];
   };
   participantAnalysis: {
@@ -178,47 +173,46 @@ export interface ActivityReportData {
       expected: number;
       actual: number;
       variance: number;
+      participants: {
+        id: string;
+        name: string;
+        email?: string;
+      }[];
     }[];
   };
-  evidenceSummary: {
-    totalFiles: number;
-    filesByType: {
-      images: number;
-      documents: number;
-      videos: number;
-      other: number;
+  taskOverview: {
+    task: {
+      id: string;
+      title: string;
+      description: string;
+      status: string;
+      isibo: {
+        id: string;
+        name: string;
+      };
     };
-    evidenceQuality: {
-      high: number;
-      medium: number;
-      low: number;
-    };
-    evidenceUrls: string[];
-  };
-  insights: {
-    overallPerformanceScore: number;
-    keyStrengths: string[];
-    areasForImprovement: string[];
-    commonChallenges: string[];
-    bestPractices: string[];
-    recommendations: string[];
-    riskAssessment: {
-      level: 'low' | 'medium' | 'high';
-      factors: string[];
-    };
-  };
-  isiboPerformance: {
-    isiboId: string;
-    isiboName: string;
-    tasksCount: number;
-    completedTasks: number;
-    totalCost: number;
-    totalParticipants: number;
-    averagePerformanceScore: number;
-    tasks: any[];
+    report?: {
+      estimatedCost: number;
+      actualCost: number;
+      expectedParticipants: number;
+      actualParticipants: number;
+      comment?: string;
+      materialsUsed: string[];
+      challengesFaced?: string;
+      suggestions?: string;
+      evidenceUrls: string[];
+      participants: {
+        id: string;
+        name: string;
+        email?: string;
+      }[];
+    } | null;
   }[];
-  taskPerformance: any[];
-  reports: any[];
+  insights: {
+    overallStatus: 'excellent' | 'good' | 'average' | 'needs_improvement';
+    keyPoints: string[];
+    recommendations: string[];
+  };
 }
 
 /**
@@ -227,13 +221,13 @@ export interface ActivityReportData {
  * @returns Promise with paginated activities
  */
 export async function getActivities(
-  filters: ActivityFilters = {}
+  filters: ActivityFilters = {},
 ): Promise<PaginatedResponse<Activity>> {
   try {
     const tokens = getAuthTokens();
 
     if (!tokens) {
-      throw new Error("Not authenticated");
+      throw new Error('Not authenticated');
     }
 
     const { page = 1, size = 10, q, villageId, cellId } = filters;
@@ -250,23 +244,23 @@ export async function getActivities(
     }
 
     const response = await fetch(url, {
-      method: "GET",
+      method: 'GET',
       headers: {
         Authorization: `Bearer ${tokens.accessToken}`,
-        "Content-Type": "application/json",
+        'Content-Type': 'application/json',
       },
     });
 
     if (!response.ok) {
       const errorData = await response.json();
-      throw new Error(errorData.message || "Failed to fetch activities");
+      throw new Error(errorData.message || 'Failed to fetch activities');
     }
 
     const data: ApiResponse<PaginatedResponse<Activity>> =
       await response.json();
     return data.payload;
   } catch (error) {
-    console.error("Get activities error:", error);
+    console.error('Get activities error:', error);
     throw error;
   }
 }
@@ -277,7 +271,7 @@ export async function getActivities(
  * @returns Promise with paginated activities
  */
 export async function getPublicActivities(
-  filters: ActivityFilters = {}
+  filters: ActivityFilters = {},
 ): Promise<PaginatedResponse<Activity>> {
   try {
     const { page = 1, size = 20, q, villageId, cellId } = filters;
@@ -294,22 +288,22 @@ export async function getPublicActivities(
     }
 
     const response = await fetch(url, {
-      method: "GET",
+      method: 'GET',
       headers: {
-        "Content-Type": "application/json",
+        'Content-Type': 'application/json',
       },
     });
 
     if (!response.ok) {
       const errorData = await response.json();
-      throw new Error(errorData.message || "Failed to fetch public activities");
+      throw new Error(errorData.message || 'Failed to fetch public activities');
     }
 
     const data: ApiResponse<PaginatedResponse<Activity>> =
       await response.json();
     return data.payload;
   } catch (error) {
-    console.error("Get public activities error:", error);
+    console.error('Get public activities error:', error);
     throw error;
   }
 }
@@ -324,26 +318,26 @@ export async function getActivityById(id: string): Promise<Activity> {
     const tokens = getAuthTokens();
 
     if (!tokens) {
-      throw new Error("Not authenticated");
+      throw new Error('Not authenticated');
     }
 
     const response = await fetch(`/api/v1/activities/${id}`, {
-      method: "GET",
+      method: 'GET',
       headers: {
         Authorization: `Bearer ${tokens.accessToken}`,
-        "Content-Type": "application/json",
+        'Content-Type': 'application/json',
       },
     });
 
     if (!response.ok) {
       const errorData = await response.json();
-      throw new Error(errorData.message || "Failed to fetch activity");
+      throw new Error(errorData.message || 'Failed to fetch activity');
     }
 
     const data: ApiResponse<Activity> = await response.json();
     return data.payload;
   } catch (error) {
-    console.error("Get activity error:", error);
+    console.error('Get activity error:', error);
     throw error;
   }
 }
@@ -354,33 +348,33 @@ export async function getActivityById(id: string): Promise<Activity> {
  * @returns Promise with created activity
  */
 export async function createActivity(
-  activityData: CreateActivityInput
+  activityData: CreateActivityInput,
 ): Promise<Activity> {
   try {
     const tokens = getAuthTokens();
 
     if (!tokens) {
-      throw new Error("Not authenticated");
+      throw new Error('Not authenticated');
     }
 
-    const response = await fetch("/api/v1/activities", {
-      method: "POST",
+    const response = await fetch('/api/v1/activities', {
+      method: 'POST',
       headers: {
         Authorization: `Bearer ${tokens.accessToken}`,
-        "Content-Type": "application/json",
+        'Content-Type': 'application/json',
       },
       body: JSON.stringify(activityData),
     });
 
     if (!response.ok) {
       const errorData = await response.json();
-      throw new Error(errorData.message || "Failed to create activity");
+      throw new Error(errorData.message || 'Failed to create activity');
     }
 
     const data: ApiResponse<Activity> = await response.json();
     return data.payload;
   } catch (error) {
-    console.error("Create activity error:", error);
+    console.error('Create activity error:', error);
     throw error;
   }
 }
@@ -393,33 +387,33 @@ export async function createActivity(
  */
 export async function updateActivity(
   id: string,
-  activityData: UpdateActivityInput
+  activityData: UpdateActivityInput,
 ): Promise<Activity> {
   try {
     const tokens = getAuthTokens();
 
     if (!tokens) {
-      throw new Error("Not authenticated");
+      throw new Error('Not authenticated');
     }
 
     const response = await fetch(`/api/v1/activities/${id}`, {
-      method: "PATCH",
+      method: 'PATCH',
       headers: {
         Authorization: `Bearer ${tokens.accessToken}`,
-        "Content-Type": "application/json",
+        'Content-Type': 'application/json',
       },
       body: JSON.stringify(activityData),
     });
 
     if (!response.ok) {
       const errorData = await response.json();
-      throw new Error(errorData.message || "Failed to update activity");
+      throw new Error(errorData.message || 'Failed to update activity');
     }
 
     const data: ApiResponse<Activity> = await response.json();
     return data.payload;
   } catch (error) {
-    console.error("Update activity error:", error);
+    console.error('Update activity error:', error);
     throw error;
   }
 }
@@ -434,55 +428,58 @@ export async function deleteActivity(id: string): Promise<string> {
     const tokens = getAuthTokens();
 
     if (!tokens) {
-      throw new Error("Not authenticated");
+      throw new Error('Not authenticated');
     }
 
     const response = await fetch(`/api/v1/activities/${id}`, {
-      method: "DELETE",
+      method: 'DELETE',
       headers: {
         Authorization: `Bearer ${tokens.accessToken}`,
-        "Content-Type": "application/json",
+        'Content-Type': 'application/json',
       },
     });
 
     if (!response.ok) {
       const errorData = await response.json();
-      throw new Error(errorData.message || "Failed to delete activity");
+      throw new Error(errorData.message || 'Failed to delete activity');
     }
 
     const data: ApiResponse<null> = await response.json();
     return data.message;
   } catch (error) {
-    console.error("Delete activity error:", error);
+    console.error('Delete activity error:', error);
     throw error;
   }
 }
 
-export async function updateTask(taskId: string, input: UpdateTaskInput): Promise<Task> {
+export async function updateTask(
+  taskId: string,
+  input: UpdateTaskInput,
+): Promise<Task> {
   try {
     const tokens = getAuthTokens();
     if (!tokens) {
-      throw new Error("No authentication tokens found");
+      throw new Error('No authentication tokens found');
     }
 
     const response = await fetch(`/api/v1/tasks/${taskId}`, {
-      method: "PUT",
+      method: 'PUT',
       headers: {
         Authorization: `Bearer ${tokens.accessToken}`,
-        "Content-Type": "application/json",
+        'Content-Type': 'application/json',
       },
       body: JSON.stringify(input),
     });
 
     if (!response.ok) {
       const errorData = await response.json();
-      throw new Error(errorData.message || "Failed to update task");
+      throw new Error(errorData.message || 'Failed to update task');
     }
 
     const data: ApiResponse<Task> = await response.json();
     return data.payload;
   } catch (error) {
-    console.error("Update task error:", error);
+    console.error('Update task error:', error);
     throw error;
   }
 }
@@ -492,31 +489,33 @@ export async function updateTask(taskId: string, input: UpdateTaskInput): Promis
  * @param id Activity ID
  * @returns Promise with enhanced activity report data
  */
-export async function getActivityReport(id: string): Promise<ActivityReportData> {
+export async function getActivityReport(
+  id: string,
+): Promise<ActivityReportData> {
   try {
     const tokens = getAuthTokens();
-    
+
     if (!tokens) {
-      throw new Error("Not authenticated");
+      throw new Error('Not authenticated');
     }
-    
+
     const response = await fetch(`/api/v1/activities/${id}/report`, {
-      method: "GET",
+      method: 'GET',
       headers: {
-        "Content-Type": "application/json",
+        'Content-Type': 'application/json',
         Authorization: `Bearer ${tokens.accessToken}`,
       },
     });
 
     if (!response.ok) {
       const errorData = await response.json();
-      throw new Error(errorData.message || "Failed to fetch activity report");
+      throw new Error(errorData.message || 'Failed to fetch activity report');
     }
 
     const data: ApiResponse<ActivityReportData> = await response.json();
     return data.payload;
   } catch (error) {
-    console.error("Get activity report error:", error);
+    console.error('Get activity report error:', error);
     throw error;
   }
 }

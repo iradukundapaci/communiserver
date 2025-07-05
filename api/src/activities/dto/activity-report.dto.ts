@@ -8,26 +8,33 @@ export namespace ActivityReportDTO {
     activityId: string;
   }
 
-  export class TaskPerformance {
-    task: Task;
-    report?: Report;
-    performanceScore: number;
-    costEfficiency: number;
-    participantEngagement: number;
-    completionQuality: number;
-    riskLevel: 'low' | 'medium' | 'high';
-    status: 'excellent' | 'good' | 'average' | 'needs_improvement';
-  }
-
-  export class IsiboPerformance {
-    isiboId: string;
-    isiboName: string;
-    tasksCount: number;
-    completedTasks: number;
-    totalCost: number;
-    totalParticipants: number;
-    averagePerformanceScore: number;
-    tasks: TaskPerformance[];
+  export class TaskOverview {
+    task: {
+      id: string;
+      title: string;
+      description: string;
+      status: string;
+      isibo: {
+        id: string;
+        name: string;
+      };
+    };
+    report?: {
+      estimatedCost: number;
+      actualCost: number;
+      expectedParticipants: number;
+      actualParticipants: number;
+      comment?: string;
+      materialsUsed: string[];
+      challengesFaced?: string;
+      suggestions?: string;
+      evidenceUrls: string[];
+      participants: {
+        id: string;
+        name: string;
+        email?: string;
+      }[];
+    } | null;
   }
 
   export class FinancialAnalysis {
@@ -35,17 +42,13 @@ export namespace ActivityReportDTO {
     totalActualCost: number;
     costVariance: number;
     costVariancePercentage: number;
-    budgetUtilization: number;
     costPerParticipant: number;
-    costPerTask: number;
-    roiScore: number;
     costBreakdown: {
       taskId: string;
       taskTitle: string;
       estimatedCost: number;
       actualCost: number;
       variance: number;
-      percentage: number;
     }[];
   }
 
@@ -61,36 +64,18 @@ export namespace ActivityReportDTO {
       expected: number;
       actual: number;
       variance: number;
+      participants: {
+        id: string;
+        name: string;
+        email?: string;
+      }[];
     }[];
   }
 
-  export class EvidenceSummary {
-    totalFiles: number;
-    filesByType: {
-      images: number;
-      documents: number;
-      videos: number;
-      other: number;
-    };
-    evidenceQuality: {
-      high: number;
-      medium: number;
-      low: number;
-    };
-    evidenceUrls: string[];
-  }
-
-  export class ActivityInsights {
-    overallPerformanceScore: number;
-    keyStrengths: string[];
-    areasForImprovement: string[];
-    commonChallenges: string[];
-    bestPractices: string[];
+  export class Insights {
+    overallStatus: "excellent" | "good" | "average" | "needs_improvement";
+    keyPoints: string[];
     recommendations: string[];
-    riskAssessment: {
-      level: 'low' | 'medium' | 'high';
-      factors: string[];
-    };
   }
 
   export class Output {
@@ -110,14 +95,10 @@ export namespace ActivityReportDTO {
       completionRate: number;
       totalCost: number;
       totalParticipants: number;
-      totalImpact: number;
     };
     financialAnalysis: FinancialAnalysis;
     participantAnalysis: ParticipantAnalysis;
-    evidenceSummary: EvidenceSummary;
-    insights: ActivityInsights;
-    isiboPerformance: IsiboPerformance[];
-    taskPerformance: TaskPerformance[];
-    reports: Report[];
+    taskOverview: TaskOverview[];
+    insights: Insights;
   }
-} 
+}

@@ -378,10 +378,12 @@ export class ActivitiesService {
               existingTask.actualParticipants = taskDto.actualParticipants;
             }
             if (taskDto.expectedFinancialImpact !== undefined) {
-              existingTask.expectedFinancialImpact = taskDto.expectedFinancialImpact;
+              existingTask.expectedFinancialImpact =
+                taskDto.expectedFinancialImpact;
             }
             if (taskDto.actualFinancialImpact !== undefined) {
-              existingTask.actualFinancialImpact = taskDto.actualFinancialImpact;
+              existingTask.actualFinancialImpact =
+                taskDto.actualFinancialImpact;
             }
 
             // Update isibo if provided
@@ -504,7 +506,9 @@ export class ActivitiesService {
     return plainToInstance(UpdateActivityDTO.Output, activityData);
   }
 
-  async generateActivityReport(activityId: string): Promise<ActivityReportDTO.Output> {
+  async generateActivityReport(
+    activityId: string,
+  ): Promise<ActivityReportDTO.Output> {
     const activity = await this.activityRepository.findOne({
       where: { id: activityId },
       relations: ["tasks", "tasks.isibo", "village"],
@@ -520,199 +524,162 @@ export class ActivitiesService {
       relations: ["task", "task.isibo", "attendance"],
     });
 
-    // Calculate summary metrics with proper number conversion
+    // Simple summary metrics
     const summary = {
       totalTasks: activity.tasks.length,
       completedTasks: reports.length,
-      completionRate: activity.tasks.length > 0 ? (reports.length / activity.tasks.length) * 100 : 0,
-      totalCost: reports.reduce((sum, report) => sum + (Number(report.actualCost) || 0), 0),
-      totalParticipants: reports.reduce((sum, report) => sum + (Number(report.actualParticipants) || 0), 0),
-      totalImpact: reports.reduce((sum, report) => sum + (Number(report.actualFinancialImpact) || 0), 0),
+      completionRate:
+        activity.tasks.length > 0
+          ? Math.round((reports.length / activity.tasks.length) * 100)
+          : 0,
+      totalCost: reports.reduce(
+        (sum, report) => sum + (Number(report.actualCost) || 0),
+        0,
+      ),
+      totalParticipants: reports.reduce(
+        (sum, report) => sum + (Number(report.actualParticipants) || 0),
+        0,
+      ),
     };
 
-    // Financial Analysis with proper number conversion
-    const totalEstimatedCost = activity.tasks.reduce((sum, task) => sum + (Number(task.estimatedCost) || 0), 0);
+    // Simple financial analysis
+    const totalEstimatedCost = reports.reduce(
+      (sum, report) => sum + (Number(report.estimatedCost) || 0),
+      0,
+    );
     const totalActualCost = summary.totalCost;
     const costVariance = totalActualCost - totalEstimatedCost;
-    const costVariancePercentage = totalEstimatedCost > 0 ? (costVariance / totalEstimatedCost) * 100 : 0;
 
-    const financialAnalysis: ActivityReportDTO.FinancialAnalysis = {
+    const financialAnalysis = {
       totalEstimatedCost,
       totalActualCost,
       costVariance,
-      costVariancePercentage,
-      budgetUtilization: totalEstimatedCost > 0 ? (totalActualCost / totalEstimatedCost) * 100 : 0,
-      costPerParticipant: summary.totalParticipants > 0 ? totalActualCost / summary.totalParticipants : 0,
-      costPerTask: summary.completedTasks > 0 ? totalActualCost / summary.completedTasks : 0,
-      roiScore: totalActualCost > 0 ? (summary.totalImpact / totalActualCost) * 100 : 0,
-      costBreakdown: activity.tasks.map(task => {
-        const report = reports.find(r => r.task.id === task.id);
-        const actualCost = Number(report?.actualCost) || 0;
-        const estimatedCost = Number(task.estimatedCost) || 0;
-        return {
-          taskId: task.id,
-          taskTitle: task.title,
-          estimatedCost,
-          actualCost,
-          variance: actualCost - estimatedCost,
-          percentage: totalEstimatedCost > 0 ? (estimatedCost / totalEstimatedCost) * 100 : 0,
-        };
-      }),
+      costVariancePercentage:
+        totalEstimatedCost > 0
+          ? Math.round((costVariance / totalEstimatedCost) * 100)
+          : 0,
+      costPerParticipant:
+        summary.totalParticipants > 0
+          ? Math.round(totalActualCost / summary.totalParticipants)
+          : 0,
+      costBreakdown: reports.map((report) => ({
+        taskId: report.task.id,
+        taskTitle: report.task.title,
+        estimatedCost: Number(report.estimatedCost) || 0,
+        actualCost: Number(report.actualCost) || 0,
+        variance:
+          (Number(report.actualCost) || 0) -
+          (Number(report.estimatedCost) || 0),
+      })),
     };
 
-    // Participant Analysis with proper number conversion
-    const totalExpectedParticipants = activity.tasks.reduce((sum, task) => sum + (Number(task.expectedParticipants) || 0), 0);
-    const participantVariance = summary.totalParticipants - totalExpectedParticipants;
+    // Simple participant analysis
+    const totalExpectedParticipants = reports.reduce(
+      (sum, report) => sum + (Number(report.expectedParticipants) || 0),
+      0,
+    );
+    const participantVariance =
+      summary.totalParticipants - totalExpectedParticipants;
 
-    const participantAnalysis: ActivityReportDTO.ParticipantAnalysis = {
+    const participantAnalysis = {
       totalExpectedParticipants,
       totalActualParticipants: summary.totalParticipants,
-      participationRate: totalExpectedParticipants > 0 ? (summary.totalParticipants / totalExpectedParticipants) * 100 : 0,
+      participationRate:
+        totalExpectedParticipants > 0
+          ? Math.round(
+              (summary.totalParticipants / totalExpectedParticipants) * 100,
+            )
+          : 0,
       participantVariance,
-      averageParticipantsPerTask: summary.completedTasks > 0 ? summary.totalParticipants / summary.completedTasks : 0,
-      participantDistribution: activity.tasks.map(task => {
-        const report = reports.find(r => r.task.id === task.id);
-        const expected = Number(task.expectedParticipants) || 0;
-        const actual = Number(report?.actualParticipants) || 0;
-        return {
-          taskId: task.id,
-          taskTitle: task.title,
-          expected,
-          actual,
-          variance: actual - expected,
-        };
-      }),
+      averageParticipantsPerTask:
+        summary.completedTasks > 0
+          ? Math.round(summary.totalParticipants / summary.completedTasks)
+          : 0,
+      participantDistribution: reports.map((report) => ({
+        taskId: report.task.id,
+        taskTitle: report.task.title,
+        expected: Number(report.expectedParticipants) || 0,
+        actual: Number(report.actualParticipants) || 0,
+        variance:
+          (Number(report.actualParticipants) || 0) -
+          (Number(report.expectedParticipants) || 0),
+        participants:
+          report.attendance?.map((profile) => ({
+            id: profile.id,
+            name: profile.names,
+          })) || [],
+      })),
     };
 
-    // Evidence Summary
-    const allEvidenceUrls = reports.flatMap(report => report.evidenceUrls || []);
-    const evidenceSummary: ActivityReportDTO.EvidenceSummary = {
-      totalFiles: allEvidenceUrls.length,
-      filesByType: {
-        images: allEvidenceUrls.filter(url => /\.(jpg|jpeg|png|gif|webp)$/i.test(url)).length,
-        documents: allEvidenceUrls.filter(url => /\.(pdf|doc|docx|txt)$/i.test(url)).length,
-        videos: allEvidenceUrls.filter(url => /\.(mp4|avi|mov|wmv)$/i.test(url)).length,
-        other: allEvidenceUrls.filter(url => !/\.(jpg|jpeg|png|gif|webp|pdf|doc|docx|txt|mp4|avi|mov|wmv)$/i.test(url)).length,
-      },
-      evidenceQuality: {
-        high: Math.floor(allEvidenceUrls.length * 0.6), // 60% high quality
-        medium: Math.floor(allEvidenceUrls.length * 0.3), // 30% medium quality
-        low: Math.floor(allEvidenceUrls.length * 0.1), // 10% low quality
-      },
-      evidenceUrls: allEvidenceUrls,
-    };
+    // Simple task overview
+    const taskOverview = activity.tasks.map((task) => {
+      const report = reports.find((r) => r.task.id === task.id);
 
-    // Task Performance Analysis
-    const taskPerformance: ActivityReportDTO.TaskPerformance[] = activity.tasks.map(task => {
-      const report = reports.find(r => r.task.id === task.id);
-      
-      // Calculate performance metrics with proper number conversion
-      const estimatedCost = Number(task.estimatedCost) || 0;
-      const actualCost = Number(report?.actualCost) || estimatedCost;
-      const expectedParticipants = Number(task.expectedParticipants) || 0;
-      const actualParticipants = Number(report?.actualParticipants) || 0;
-      
-      const costEfficiency = estimatedCost > 0 ? (estimatedCost / actualCost) * 100 : 100;
-      const participantEngagement = expectedParticipants > 0 ? (actualParticipants / expectedParticipants) * 100 : 0;
-      const completionQuality = report ? 100 : 0; // 100% if report exists, 0% if not
-      
-      const performanceScore = (costEfficiency + participantEngagement + completionQuality) / 3;
-      
-      // Determine risk level
-      let riskLevel: 'low' | 'medium' | 'high' = 'low';
-      if (costEfficiency < 70 || participantEngagement < 50) riskLevel = 'high';
-      else if (costEfficiency < 85 || participantEngagement < 75) riskLevel = 'medium';
-      
-      // Determine status
-      let status: 'excellent' | 'good' | 'average' | 'needs_improvement' = 'needs_improvement';
-      if (performanceScore >= 90) status = 'excellent';
-      else if (performanceScore >= 75) status = 'good';
-      else if (performanceScore >= 60) status = 'average';
-      
       return {
-        task,
-        report,
-        performanceScore,
-        costEfficiency,
-        participantEngagement,
-        completionQuality,
-        riskLevel,
-        status,
+        task: {
+          id: task.id,
+          title: task.title,
+          description: task.description,
+          status: task.status,
+          isibo: {
+            id: task.isibo.id,
+            name: task.isibo.name,
+          },
+        },
+        report: report
+          ? {
+              estimatedCost: Number(report.estimatedCost) || 0,
+              actualCost: Number(report.actualCost) || 0,
+              expectedParticipants: Number(report.expectedParticipants) || 0,
+              actualParticipants: Number(report.actualParticipants) || 0,
+              comment: report.comment,
+              materialsUsed: report.materialsUsed || [],
+              challengesFaced: report.challengesFaced,
+              suggestions: report.suggestions,
+              evidenceUrls: report.evidenceUrls || [],
+              participants:
+                report.attendance?.map((profile) => ({
+                  id: profile.id,
+                  name: profile.names,
+                })) || [],
+            }
+          : null,
       };
     });
 
-    // Isibo Performance Analysis
-    const isiboMap = new Map<string, ActivityReportDTO.IsiboPerformance>();
-    
-    activity.tasks.forEach(task => {
-      const isiboId = task.isibo.id;
-      const isiboName = task.isibo.name;
-      
-      if (!isiboMap.has(isiboId)) {
-        isiboMap.set(isiboId, {
-          isiboId,
-          isiboName,
-          tasksCount: 0,
-          completedTasks: 0,
-          totalCost: 0,
-          totalParticipants: 0,
-          averagePerformanceScore: 0,
-          tasks: [],
-        });
-      }
-      
-      const isiboPerf = isiboMap.get(isiboId)!;
-      isiboPerf.tasksCount++;
-      
-      const report = reports.find(r => r.task.id === task.id);
-      if (report) {
-        isiboPerf.completedTasks++;
-        isiboPerf.totalCost += Number(report.actualCost) || 0;
-        isiboPerf.totalParticipants += Number(report.actualParticipants) || 0;
-      }
-      
-      const taskPerf = taskPerformance.find(tp => tp.task.id === task.id);
-      if (taskPerf) {
-        isiboPerf.tasks.push(taskPerf);
-      }
-    });
-    
-    // Calculate average performance scores
-    isiboMap.forEach(isiboPerf => {
-      if (isiboPerf.tasks.length > 0) {
-        isiboPerf.averagePerformanceScore = isiboPerf.tasks.reduce((sum, task) => sum + task.performanceScore, 0) / isiboPerf.tasks.length;
-      }
-    });
-
-    // Activity Insights
-    const insights: ActivityReportDTO.ActivityInsights = {
-      overallPerformanceScore: taskPerformance.reduce((sum, task) => sum + task.performanceScore, 0) / taskPerformance.length,
-      keyStrengths: [
+    // Simple insights
+    const insights = {
+      overallStatus: (summary.completionRate >= 80
+        ? "excellent"
+        : summary.completionRate >= 60
+          ? "good"
+          : summary.completionRate >= 40
+            ? "average"
+            : "needs_improvement") as
+        | "excellent"
+        | "good"
+        | "average"
+        | "needs_improvement",
+      keyPoints: [
         summary.completionRate >= 80 ? "High task completion rate" : "",
-        financialAnalysis.roiScore >= 150 ? "Strong return on investment" : "",
-        participantAnalysis.participationRate >= 90 ? "Excellent participant engagement" : "",
+        financialAnalysis.costVariancePercentage <= 10
+          ? "Good cost management"
+          : "",
+        participantAnalysis.participationRate >= 90
+          ? "Excellent participation"
+          : "",
       ].filter(Boolean),
-      areasForImprovement: [
-        summary.completionRate < 80 ? "Improve task completion rates" : "",
-        financialAnalysis.costVariancePercentage > 10 ? "Better cost management needed" : "",
-        participantAnalysis.participationRate < 75 ? "Increase participant engagement" : "",
-      ].filter(Boolean),
-      commonChallenges: reports.flatMap(report => report.challengesFaced ? [report.challengesFaced] : []).slice(0, 3),
-      bestPractices: reports.flatMap(report => report.suggestions ? [report.suggestions] : []).slice(0, 3),
       recommendations: [
-        "Implement regular progress tracking",
-        "Enhance communication between isibos",
-        "Provide additional training for task leaders",
-      ],
-      riskAssessment: {
-        level: financialAnalysis.costVariancePercentage > 20 || participantAnalysis.participationRate < 60 ? 'high' : 
-                financialAnalysis.costVariancePercentage > 10 || participantAnalysis.participationRate < 80 ? 'medium' : 'low',
-        factors: [
-          financialAnalysis.costVariancePercentage > 10 ? "Cost overruns" : "",
-          participantAnalysis.participationRate < 80 ? "Low participation" : "",
-          summary.completionRate < 80 ? "Incomplete tasks" : "",
-        ].filter(Boolean),
-      },
+        summary.completionRate < 80
+          ? "Focus on completing remaining tasks"
+          : "",
+        financialAnalysis.costVariancePercentage > 10
+          ? "Review cost management practices"
+          : "",
+        participantAnalysis.participationRate < 75
+          ? "Improve participant engagement"
+          : "",
+      ].filter(Boolean),
     };
 
     return {
@@ -729,11 +696,8 @@ export class ActivitiesService {
       summary,
       financialAnalysis,
       participantAnalysis,
-      evidenceSummary,
+      taskOverview,
       insights,
-      isiboPerformance: Array.from(isiboMap.values()),
-      taskPerformance,
-      reports,
     };
   }
 }
