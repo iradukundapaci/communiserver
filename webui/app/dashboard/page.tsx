@@ -1,41 +1,38 @@
-"use client";
+'use client';
 
-import { ChartAreaInteractive } from "@/components/chart-area-interactive";
-import { SectionCards } from "@/components/section-cards";
-import { LocationPerformanceTable } from "@/components/analytics/location-performance-table";
-import { UserRoleDistribution } from "@/components/analytics/user-role-distribution";
-import { ActivityStatusOverview } from "@/components/analytics/activity-status-overview";
-import { EngagementMetrics } from "@/components/analytics/engagement-metrics";
-import { RecentActivitiesTimeline } from "@/components/analytics/recent-activities-timeline";
-import { FinancialAnalytics } from "@/components/analytics/financial-analytics";
-import { ParticipationAnalytics } from "@/components/analytics/participation-analytics";
-import { EnhancedTaskPerformance } from "@/components/analytics/enhanced-task-performance";
-import { DashboardPDFButton } from "@/components/pdf-report-button";
+import { ChartAreaInteractive } from '@/components/chart-area-interactive';
+import { SectionCards } from '@/components/section-cards';
+import { DashboardPDFButton } from '@/components/pdf-report-button';
 
-import { useAnalytics } from "@/hooks/use-analytics";
-import { Button } from "@/components/ui/button";
-import { RefreshCw } from "lucide-react";
-import { toast } from "sonner";
+import { useAnalytics } from '@/hooks/use-analytics';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  RefreshCw,
+  Users,
+  FileText,
+  CheckCircle,
+  DollarSign,
+  TrendingUp,
+} from 'lucide-react';
+import { toast } from 'sonner';
 
 export default function Page() {
-
   const {
     coreMetrics,
-    locationPerformance,
-    engagementMetrics,
     timeSeriesData,
     isLoading: analyticsLoading,
     error: analyticsError,
     lastUpdated,
-    refreshAnalytics
+    refreshAnalytics,
   } = useAnalytics();
 
   const handleRefreshAnalytics = async () => {
     try {
       await refreshAnalytics();
-      toast.success("Analytics data refreshed successfully");
+      toast.success('Analytics data refreshed successfully');
     } catch {
-      toast.error("Failed to refresh analytics data");
+      toast.error('Failed to refresh analytics data');
     }
   };
 
@@ -54,9 +51,7 @@ export default function Page() {
           <DashboardPDFButton
             data={{
               coreMetrics: coreMetrics,
-              locationPerformance: locationPerformance,
-              engagementMetrics: engagementMetrics,
-              timeSeriesData: timeSeriesData
+              timeSeriesData: timeSeriesData,
             }}
           />
           <Button
@@ -66,7 +61,9 @@ export default function Page() {
             disabled={analyticsLoading}
             className="gap-2"
           >
-            <RefreshCw className={`h-4 w-4 ${analyticsLoading ? 'animate-spin' : ''}`} />
+            <RefreshCw
+              className={`h-4 w-4 ${analyticsLoading ? 'animate-spin' : ''}`}
+            />
             Refresh
           </Button>
         </div>
@@ -82,31 +79,91 @@ export default function Page() {
       <div className="flex flex-1 flex-col gap-4 lg:gap-6">
         <SectionCards />
 
+        {/* Analytics Overview */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <TrendingUp className="h-5 w-5" />
+                Activity Overview
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm">Completed Activities</span>
+                  <span className="font-medium">
+                    {coreMetrics?.activityStats?.activitiesWithReports || 0}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm">Pending Activities</span>
+                  <span className="font-medium">
+                    {coreMetrics?.activityStats?.activitiesWithoutReports || 0}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm">Total Tasks</span>
+                  <span className="font-medium">
+                    {coreMetrics?.activityStats?.totalTasks || 0}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm">Completed Tasks</span>
+                  <span className="font-medium">
+                    {coreMetrics?.activityStats?.completedTasks || 0}
+                  </span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Users className="h-5 w-5" />
+                Participation Overview
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm">Expected Participants</span>
+                  <span className="font-medium">
+                    {coreMetrics?.participationAnalytics
+                      ?.totalExpectedParticipants || 0}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm">Actual Participants</span>
+                  <span className="font-medium">
+                    {coreMetrics?.participationAnalytics
+                      ?.totalActualParticipants || 0}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm">Participation Rate</span>
+                  <span className="font-medium">
+                    {coreMetrics?.participationAnalytics?.participationRate ||
+                      0}
+                    %
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm">Avg per Activity</span>
+                  <span className="font-medium">
+                    {coreMetrics?.participationAnalytics
+                      ?.averageParticipantsPerActivity || 0}
+                  </span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Chart */}
         <div className="px-4 lg:px-6">
           <ChartAreaInteractive />
-        </div>
-
-        {/* Analytics Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 lg:gap-6 px-4 lg:px-6">
-          {/* First Row - Core Analytics */}
-          <FinancialAnalytics />
-          <ParticipationAnalytics />
-          <EnhancedTaskPerformance />
-
-          {/* Second Row - Additional Analytics */}
-          <UserRoleDistribution />
-          <ActivityStatusOverview />
-          <EngagementMetrics />
-
-          {/* Third Row - Timeline */}
-          <div className="lg:col-span-2 xl:col-span-3">
-            <RecentActivitiesTimeline />
-          </div>
-        </div>
-
-        {/* Location Performance Table */}
-        <div className="px-4 lg:px-6">
-          <LocationPerformanceTable />
         </div>
       </div>
     </div>
