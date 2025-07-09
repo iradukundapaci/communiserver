@@ -42,8 +42,11 @@ export class TasksService {
       throw new NotFoundException("Isibo not found");
     }
 
+    var isiboMembers = isibo.houses.map((house) => house.members).flat();
+
     // Auto-calculate expected participants based on isibo member count
-    const expectedParticipants = createTaskDTO.expectedParticipants || isibo.members?.length || 0;
+    const expectedParticipants =
+      createTaskDTO.expectedParticipants || isiboMembers?.length || 0;
 
     const existingTask = await this.taskRepository.findOne({
       where: {

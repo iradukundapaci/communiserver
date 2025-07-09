@@ -154,6 +154,7 @@ export class UsersService {
     cell: any,
     village: any,
     isibo: any,
+    house: any,
     isVillageLeader: boolean,
     isCellLeader: boolean,
     isIsiboLeader: boolean,
@@ -174,6 +175,7 @@ export class UsersService {
       cell,
       village,
       isibo,
+      house,
       isVillageLeader,
       isCellLeader,
       isIsiboLeader,
@@ -213,6 +215,7 @@ export class UsersService {
           { email, phone, names },
           cell,
           village,
+          null,
           null,
           false,
           true,
@@ -255,6 +258,7 @@ export class UsersService {
           { email, phone, names },
           cell,
           village,
+          null,
           null,
           true,
           false,
@@ -301,6 +305,7 @@ export class UsersService {
           cell,
           village,
           isibo,
+          null,
           false,
           false,
           true,
@@ -323,8 +328,12 @@ export class UsersService {
     }
   }
 
-  async createCitizen(createCitizenDTO: CreateCitizenDTO.Input, currentUser?: User): Promise<void> {
-    const { email, names, phone, cellId, villageId, isiboId } = createCitizenDTO;
+  async createCitizen(
+    createCitizenDTO: CreateCitizenDTO.Input,
+    currentUser?: User,
+  ): Promise<void> {
+    const { email, names, phone, cellId, villageId, isiboId, houseId } =
+      createCitizenDTO;
 
     const userExists = await this.findUserByEmail(email);
     if (userExists) {
@@ -336,24 +345,31 @@ export class UsersService {
         let finalCellId = cellId;
         let finalVillageId = villageId;
         let finalIsiboId = isiboId;
+        let finalHouseId = houseId;
 
         // If the current user is an isibo leader, auto-assign to their isibo
         if (currentUser) {
           const userProfile = await this.findUserById(currentUser.id);
 
-          if (userProfile.role === UserRole.ISIBO_LEADER && userProfile.profile.isibo) {
+          if (
+            userProfile.role === UserRole.ISIBO_LEADER &&
+            userProfile.profile.isibo
+          ) {
             finalIsiboId = userProfile.profile.isibo.id;
             finalVillageId = userProfile.profile.village?.id || villageId;
             finalCellId = userProfile.profile.cell?.id || cellId;
+            finalHouseId = userProfile.profile.house?.id || houseId;
           }
         }
 
-        const { cell, village, isibo } = await this.validateAndGetLocationsForCitizen(
-          manager,
-          finalCellId,
-          finalVillageId,
-          finalIsiboId,
-        );
+        const { cell, village, isibo, house } =
+          await this.validateAndGetLocationsForCitizen(
+            manager,
+            finalCellId,
+            finalVillageId,
+            finalIsiboId,
+            finalHouseId,
+          );
 
         await this.createLeaderUser(
           manager,
@@ -361,6 +377,7 @@ export class UsersService {
           cell,
           village,
           isibo,
+          house,
           false,
           false,
           false,
@@ -379,24 +396,28 @@ export class UsersService {
     }
   }
 
-  private async sendAccountCreationEmail(user: User, password: string): Promise<void> {
+  private async sendAccountCreationEmail(
+    user: User,
+    password: string,
+  ): Promise<void> {
     try {
-      const frontendUrl = this.configService.get('url')?.client || 'http://localhost:3000';
+      const frontendUrl =
+        this.configService.get("url")?.client || "http://localhost:3000";
       const loginUrl = `${frontendUrl}/login`;
 
       // Determine role and location
-      let role = 'CITIZEN';
-      let location = '';
+      let role = "CITIZEN";
+      let location = "";
 
       if (user.profile.isCellLeader) {
-        role = 'CELL_LEADER';
-        location = user.profile.cell?.name || 'Unknown Cell';
+        role = "CELL_LEADER";
+        location = user.profile.cell?.name || "Unknown Cell";
       } else if (user.profile.isVillageLeader) {
-        role = 'VILLAGE_LEADER';
-        location = user.profile.village?.name || 'Unknown Village';
+        role = "VILLAGE_LEADER";
+        location = user.profile.village?.name || "Unknown Village";
       } else if (user.profile.isIsiboLeader) {
-        role = 'ISIBO_LEADER';
-        location = user.profile.isibo?.name || 'Unknown Isibo';
+        role = "ISIBO_LEADER";
+        location = user.profile.isibo?.name || "Unknown Isibo";
       }
 
       await this.notificationService.sendAccountCreationEmail({
@@ -409,7 +430,7 @@ export class UsersService {
       });
     } catch (error) {
       // Log error but don't fail the user creation process
-      console.error('Failed to send account creation email:', error);
+      console.error("Failed to send account creation email:", error);
     }
   }
 
@@ -419,8 +440,6 @@ export class UsersService {
       relations: ["profile"],
     });
   }
-
-
 
   async findUserById(userId: string): Promise<User> {
     const user = await this.usersRepository.findOne({
@@ -497,6 +516,7 @@ export class UsersService {
       cell: userProfile.profile.cell,
       village: userProfile.profile.village,
       isibo: userProfile.profile.isibo,
+      house: userProfile.profile.house,
       isIsiboLeader: userProfile.profile.isIsiboLeader,
       isVillageLeader: userProfile.profile.isVillageLeader,
       isCellLeader: userProfile.profile.isCellLeader,
@@ -506,7 +526,7 @@ export class UsersService {
 
   async updateProfile(
     userId: string,
-    { names, email, phone, isiboId }: UpdateProfileDto.Input,
+    { names, email, phone, isiboId, houseId }: UpdateProfileDto.Input,
   ): Promise<UpdateProfileDto.Output> {
     const user = await this.findUserById(userId);
 
@@ -525,6 +545,7 @@ export class UsersService {
     user.profile.names = names ?? user.profile.names;
     user.phone = phone ?? user.phone;
     user.profile.isibo = isiboId ? ({ id: isiboId } as any) : null;
+    user.profile.house = houseId ? ({ id: houseId } as any) : null;
 
     if (isEmailChanged) {
       user.email = email!;
@@ -552,6 +573,7 @@ export class UsersService {
       isIsiboLeader: user.profile.isIsiboLeader,
       isVillageLeader: user.profile.isVillageLeader,
       isCellLeader: user.profile.isCellLeader,
+      houseId: user.profile.house?.id,
     };
   }
 
@@ -580,23 +602,32 @@ export class UsersService {
       if (currentUser) {
         const userProfile = await this.findUserById(currentUser.id);
 
-        if (userProfile.role === UserRole.ISIBO_LEADER && userProfile.profile.isibo) {
+        if (
+          userProfile.role === UserRole.ISIBO_LEADER &&
+          userProfile.profile.isibo
+        ) {
           // Isibo leaders can only see citizens in their isibo
           queryBuilder.andWhere("profile.isibo.id = :isiboId", {
-            isiboId: userProfile.profile.isibo.id
+            isiboId: userProfile.profile.isibo.id,
           });
           queryBuilder.andWhere("user.role = :citizenRole", {
-            citizenRole: UserRole.CITIZEN
+            citizenRole: UserRole.CITIZEN,
           });
-        } else if (userProfile.role === UserRole.VILLAGE_LEADER && userProfile.profile.village) {
+        } else if (
+          userProfile.role === UserRole.VILLAGE_LEADER &&
+          userProfile.profile.village
+        ) {
           // Village leaders can see users in their village
           queryBuilder.andWhere("profile.village.id = :villageId", {
-            villageId: userProfile.profile.village.id
+            villageId: userProfile.profile.village.id,
           });
-        } else if (userProfile.role === UserRole.CELL_LEADER && userProfile.profile.cell) {
+        } else if (
+          userProfile.role === UserRole.CELL_LEADER &&
+          userProfile.profile.cell
+        ) {
           // Cell leaders can see users in their cell
           queryBuilder.andWhere("profile.cell.id = :cellId", {
-            cellId: userProfile.profile.cell.id
+            cellId: userProfile.profile.cell.id,
           });
         }
         // Admins can see all users (no additional filtering)
@@ -634,10 +665,12 @@ export class UsersService {
         role: user.role,
         activated: user.activated,
         profileID: user.profile.id,
-        isibo: user.profile.isibo ? {
-          id: user.profile.isibo.id,
-          name: user.profile.isibo.name,
-        } : null,
+        isibo: user.profile.isibo
+          ? {
+              id: user.profile.isibo.id,
+              name: user.profile.isibo.name,
+            }
+          : null,
       }));
 
       // Calculate pagination metadata
@@ -693,18 +726,21 @@ export class UsersService {
     });
   }
 
-  async removeIsiboFromProfiles(isiboId: string): Promise<void> {
+  async removeHouseFromProfiles(houseId: string): Promise<void> {
     await this.profilesRepository.update(
-      { isibo: { id: isiboId } },
-      { isibo: null }
+      { house: { id: houseId } },
+      { house: null },
     );
   }
 
-  async assignProfilesToIsibo(profileIds: string[], isiboId: string): Promise<void> {
+  async assignProfilesToHouse(
+    profileIds: string[],
+    houseId: string,
+  ): Promise<void> {
     if (profileIds.length > 0) {
       await this.profilesRepository.update(
         { id: In(profileIds) },
-        { isibo: { id: isiboId } }
+        { house: { id: houseId } },
       );
     }
   }
@@ -714,7 +750,8 @@ export class UsersService {
     cellId: string,
     villageId: string,
     isiboId?: string,
-  ): Promise<{ cell: any; village: any; isibo?: any }> {
+    houseId?: string,
+  ): Promise<{ cell: any; village: any; isibo?: any; house?: any }> {
     const cell = await manager.getRepository("Cell").findOneBy({ id: cellId });
 
     if (!cell) {
@@ -737,6 +774,14 @@ export class UsersService {
       }
     }
 
-    return { cell, village, isibo };
+    let house = undefined;
+    if (houseId) {
+      house = await manager.getRepository("House").findOneBy({ id: houseId });
+      if (!house) {
+        throw new NotFoundException("House not found");
+      }
+    }
+
+    return { cell, village, isibo, house };
   }
 }

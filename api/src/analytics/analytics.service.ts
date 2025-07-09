@@ -335,11 +335,11 @@ export class AnalyticsService {
     const reports = await reportQuery.getMany();
 
     const totalEstimatedCost = reports.reduce(
-      (sum, report) => sum + (Number(report.estimatedCost) || 0),
+      (sum, report) => sum + (Number(report.task.estimatedCost) || 0),
       0,
     );
     const totalActualCost = reports.reduce(
-      (sum, report) => sum + (Number(report.actualCost) || 0),
+      (sum, report) => sum + (Number(report.task.actualCost) || 0),
       0,
     );
 
@@ -393,11 +393,11 @@ export class AnalyticsService {
     const reports = await reportQuery.getMany();
 
     const totalExpectedParticipants = reports.reduce(
-      (sum, report) => sum + (Number(report.expectedParticipants) || 0),
+      (sum, report) => sum + (Number(report.task.expectedParticipants) || 0),
       0,
     );
     const totalActualParticipants = reports.reduce(
-      (sum, report) => sum + (Number(report.actualParticipants) || 0),
+      (sum, report) => sum + (Number(report.task.actualParticipants) || 0),
       0,
     );
 

@@ -1,6 +1,4 @@
-import { IsArray, IsOptional, IsString, IsUUID, ValidateNested } from "class-validator";
-import { Type } from "class-transformer";
-import { Citizen } from "../entities/citizen.entity";
+import { IsArray, IsOptional, IsString, IsUUID } from "class-validator";
 
 export namespace UpdateIsiboDto {
   export class Input {
@@ -15,16 +13,5 @@ export namespace UpdateIsiboDto {
     @IsUUID()
     @IsOptional()
     villageId?: string;
-
-    @IsArray()
-    @ValidateNested({ each: true })
-    @Type(() => Citizen)
-    @IsOptional()
-    newMembers?: Citizen[]; // New members to create
-
-    @IsArray()
-    @IsUUID("4", { each: true })
-    @IsOptional()
-    existingMemberIds?: string[]; // Existing member profile IDs to keep
   }
 }

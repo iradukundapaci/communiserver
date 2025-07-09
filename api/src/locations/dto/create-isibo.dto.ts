@@ -1,6 +1,4 @@
-import { IsArray, IsNotEmpty, IsOptional, IsString, IsUUID, ValidateNested } from "class-validator";
-import { Type } from "class-transformer";
-import { Citizen } from "../entities/citizen.entity";
+import { IsNotEmpty, IsOptional, IsString, IsUUID } from "class-validator";
 
 export namespace CreateIsiboDto {
   export class Input {
@@ -15,11 +13,5 @@ export namespace CreateIsiboDto {
     @IsUUID()
     @IsNotEmpty()
     villageId: string;
-
-    @IsArray()
-    @ValidateNested({ each: true })
-    @Type(() => Citizen)
-    @IsOptional()
-    members?: Citizen[];
   }
 }

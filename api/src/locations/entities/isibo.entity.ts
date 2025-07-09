@@ -9,6 +9,7 @@ import {
   ManyToOne,
   OneToMany,
 } from "typeorm";
+import { House } from "./house.entity";
 import { Village } from "./village.entity";
 
 @Entity("isibos")
@@ -30,14 +31,17 @@ export class Isibo extends AbstractEntity {
     }
   }
 
-  @OneToMany(() => Profile, (profile) => profile.isibo)
-  members: Profile[];
-
   @ManyToOne(() => Profile, { nullable: true })
   @JoinColumn({ name: "leader_id" })
   leader: Profile;
 
+  @OneToMany(() => Profile, (profile) => profile.cell)
+  profiles: Profile[];
+
   @ManyToOne(() => Village, (village) => village.isibos, { nullable: false })
   @JoinColumn({ name: "village_id" })
   village: Village;
+
+  @OneToMany(() => House, (house) => house.isibo)
+  houses: House[];
 }

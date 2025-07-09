@@ -45,13 +45,6 @@ export class ReportsService {
     const report = this.reportRepository.create({
       task: { id: dto.taskId },
       activity: { id: dto.activityId },
-      // Copy task financial data for easy access
-      estimatedCost: dto.estimatedCost || 0,
-      actualCost: dto.actualCost || 0,
-      expectedParticipants: dto.expectedParticipants || 0,
-      actualParticipants: actualParticipants,
-      expectedFinancialImpact: dto.expectedFinancialImpact || 0,
-      actualFinancialImpact: dto.actualFinancialImpact || 0,
       comment: dto.comment,
       materialsUsed: dto.materialsUsed,
       challengesFaced: dto.challengesFaced,
@@ -69,7 +62,7 @@ export class ReportsService {
     // Mark the task as complete when report is submitted
     await this.taskRepository.update(
       { id: dto.taskId },
-      { status: ETaskStatus.COMPLETED }
+      { status: ETaskStatus.COMPLETED },
     );
 
     return this.findReportById(saved.id);
@@ -108,7 +101,14 @@ export class ReportsService {
   async findOne(id: string): Promise<Report> {
     const report = await this.reportRepository.findOne({
       where: { id },
-      relations: ["task", "task.isibo", "activity", "activity.village", "attendance", "attendance.user"],
+      relations: [
+        "task",
+        "task.isibo",
+        "activity",
+        "activity.village",
+        "attendance",
+        "attendance.user",
+      ],
     });
 
     if (!report) {
@@ -122,7 +122,10 @@ export class ReportsService {
     return this.findOne(id);
   }
 
-  async assignAttendanceToReport(reportId: string, attendanceIds: string[]): Promise<void> {
+  async assignAttendanceToReport(
+    reportId: string,
+    attendanceIds: string[],
+  ): Promise<void> {
     const report = await this.reportRepository.findOne({
       where: { id: reportId },
       relations: ["attendance"],
@@ -162,19 +165,25 @@ export class ReportsService {
 
     // Auto-calculate actual participants from attendance list if attendance is being updated
     if (dto.attendanceIds !== undefined) {
-      report.actualParticipants = dto.attendanceIds.length;
+      report.task.actualParticipants = dto.attendanceIds.length;
     }
 
     // Update task financial data
-    if (dto.estimatedCost !== undefined) report.estimatedCost = dto.estimatedCost;
-    if (dto.actualCost !== undefined) report.actualCost = dto.actualCost;
-    if (dto.expectedParticipants !== undefined) report.expectedParticipants = dto.expectedParticipants;
+    if (dto.estimatedCost !== undefined)
+      report.task.estimatedCost = dto.estimatedCost;
+    if (dto.actualCost !== undefined) report.task.actualCost = dto.actualCost;
+    if (dto.expectedParticipants !== undefined)
+      report.task.expectedParticipants = dto.expectedParticipants;
     // Don't allow manual override of actualParticipants - it's calculated from attendance
-    if (dto.expectedFinancialImpact !== undefined) report.expectedFinancialImpact = dto.expectedFinancialImpact;
-    if (dto.actualFinancialImpact !== undefined) report.actualFinancialImpact = dto.actualFinancialImpact;
+    if (dto.expectedFinancialImpact !== undefined)
+      report.task.expectedFinancialImpact = dto.expectedFinancialImpact;
+    if (dto.actualFinancialImpact !== undefined)
+      report.task.actualFinancialImpact = dto.actualFinancialImpact;
     if (dto.comment !== undefined) report.comment = dto.comment;
-    if (dto.materialsUsed !== undefined) report.materialsUsed = dto.materialsUsed;
-    if (dto.challengesFaced !== undefined) report.challengesFaced = dto.challengesFaced;
+    if (dto.materialsUsed !== undefined)
+      report.materialsUsed = dto.materialsUsed;
+    if (dto.challengesFaced !== undefined)
+      report.challengesFaced = dto.challengesFaced;
     if (dto.suggestions !== undefined) report.suggestions = dto.suggestions;
     if (dto.evidenceUrls !== undefined) report.evidenceUrls = dto.evidenceUrls;
 

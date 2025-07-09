@@ -533,18 +533,18 @@ export class ActivitiesService {
           ? Math.round((reports.length / activity.tasks.length) * 100)
           : 0,
       totalCost: reports.reduce(
-        (sum, report) => sum + (Number(report.actualCost) || 0),
+        (sum, report) => sum + (Number(report.task.actualCost) || 0),
         0,
       ),
       totalParticipants: reports.reduce(
-        (sum, report) => sum + (Number(report.actualParticipants) || 0),
+        (sum, report) => sum + (Number(report.task.actualParticipants) || 0),
         0,
       ),
     };
 
     // Simple financial analysis
     const totalEstimatedCost = reports.reduce(
-      (sum, report) => sum + (Number(report.estimatedCost) || 0),
+      (sum, report) => sum + (Number(report.task.estimatedCost) || 0),
       0,
     );
     const totalActualCost = summary.totalCost;
@@ -565,17 +565,17 @@ export class ActivitiesService {
       costBreakdown: reports.map((report) => ({
         taskId: report.task.id,
         taskTitle: report.task.title,
-        estimatedCost: Number(report.estimatedCost) || 0,
-        actualCost: Number(report.actualCost) || 0,
+        estimatedCost: Number(report.task.estimatedCost) || 0,
+        actualCost: Number(report.task.actualCost) || 0,
         variance:
-          (Number(report.actualCost) || 0) -
-          (Number(report.estimatedCost) || 0),
+          (Number(report.task.actualCost) || 0) -
+          (Number(report.task.estimatedCost) || 0),
       })),
     };
 
     // Simple participant analysis
     const totalExpectedParticipants = reports.reduce(
-      (sum, report) => sum + (Number(report.expectedParticipants) || 0),
+      (sum, report) => sum + (Number(report.task.expectedParticipants) || 0),
       0,
     );
     const participantVariance =
@@ -598,11 +598,11 @@ export class ActivitiesService {
       participantDistribution: reports.map((report) => ({
         taskId: report.task.id,
         taskTitle: report.task.title,
-        expected: Number(report.expectedParticipants) || 0,
-        actual: Number(report.actualParticipants) || 0,
+        expected: Number(report.task.expectedParticipants) || 0,
+        actual: Number(report.task.actualParticipants) || 0,
         variance:
-          (Number(report.actualParticipants) || 0) -
-          (Number(report.expectedParticipants) || 0),
+          (Number(report.task.actualParticipants) || 0) -
+          (Number(report.task.expectedParticipants) || 0),
         participants:
           report.attendance?.map((profile) => ({
             id: profile.id,
@@ -628,10 +628,11 @@ export class ActivitiesService {
         },
         report: report
           ? {
-              estimatedCost: Number(report.estimatedCost) || 0,
-              actualCost: Number(report.actualCost) || 0,
-              expectedParticipants: Number(report.expectedParticipants) || 0,
-              actualParticipants: Number(report.actualParticipants) || 0,
+              estimatedCost: Number(report.task.estimatedCost) || 0,
+              actualCost: Number(report.task.actualCost) || 0,
+              expectedParticipants:
+                Number(report.task.expectedParticipants) || 0,
+              actualParticipants: Number(report.task.actualParticipants) || 0,
               comment: report.comment,
               materialsUsed: report.materialsUsed || [],
               challengesFaced: report.challengesFaced,

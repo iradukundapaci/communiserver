@@ -1,5 +1,6 @@
 import { AbstractEntity } from "src/__shared__/entities/abstract.entity";
 import { Cell } from "src/locations/entities/cell.entity";
+import { House } from "src/locations/entities/house.entity";
 import { Isibo } from "src/locations/entities/isibo.entity";
 import { Village } from "src/locations/entities/village.entity";
 import { Column, Entity, JoinColumn, ManyToOne, OneToOne } from "typeorm";
@@ -19,6 +20,9 @@ export class Profile extends AbstractEntity {
   @Column({ name: "is_cell_leader", default: false })
   isCellLeader: boolean;
 
+  @Column({ name: "is_isibo_leader", default: false })
+  isIsiboLeader: boolean;
+
   @ManyToOne(() => Cell, (cell) => cell.profiles, { eager: true })
   @JoinColumn({ name: "cell_id" })
   cell: Cell;
@@ -27,12 +31,13 @@ export class Profile extends AbstractEntity {
   @JoinColumn({ name: "village_id" })
   village: Village;
 
-  @ManyToOne(() => Isibo, (isibo) => isibo.members, { eager: true })
+  @ManyToOne(() => Isibo, (isibo) => isibo.profiles, { eager: true })
   @JoinColumn({ name: "isibo_id" })
   isibo: Isibo;
 
-  @Column({ name: "is_isibo_leader", default: false })
-  isIsiboLeader: boolean;
+  @ManyToOne(() => House, (house) => house.members, { eager: true })
+  @JoinColumn({ name: "house_id" })
+  house: House;
 
   constructor(
     names: string,
@@ -42,6 +47,7 @@ export class Profile extends AbstractEntity {
     cell: Cell,
     village: Village,
     isibo?: Isibo,
+    house?: House,
   ) {
     super();
     this.names = names;
@@ -52,6 +58,10 @@ export class Profile extends AbstractEntity {
     this.village = village;
     if (isibo) {
       this.isibo = isibo;
+    }
+
+    if (house) {
+      this.house = house;
     }
   }
 }

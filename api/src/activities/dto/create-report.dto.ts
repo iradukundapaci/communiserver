@@ -81,12 +81,6 @@ export namespace CreateReportDTO {
     activity: { id: string; title: string };
     task: { id: string; title: string };
     attendance: Profile[];
-    estimatedCost: number;
-    actualCost: number;
-    expectedParticipants: number;
-    actualParticipants: number;
-    expectedFinancialImpact: number;
-    actualFinancialImpact: number;
     comment?: string;
     materialsUsed?: string[];
     challengesFaced?: string;
