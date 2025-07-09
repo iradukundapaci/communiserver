@@ -13,7 +13,7 @@ export default function LocationsRedirect() {
 
     // Determine the appropriate tab based on user role
     let redirectPath = "/dashboard/locations/";
-
+    
     switch (user.role) {
       case "ADMIN":
         redirectPath += "cells";
@@ -25,16 +25,16 @@ export default function LocationsRedirect() {
         redirectPath += "isibos";
         break;
       case "ISIBO_LEADER":
-        redirectPath = "/dashboard/isibo/edit";
+        redirectPath += "houses";
         break;
       default:
         // If no appropriate tab, redirect to dashboard
         redirectPath = "/dashboard";
     }
-
+    
     // Use replace instead of push to avoid adding to history
     router.replace(redirectPath);
-  }, [user?.id, user?.role, router]); // Only depend on specific user properties
+  }, [user, router]);
 
   // Show a loading indicator while redirecting
   return (

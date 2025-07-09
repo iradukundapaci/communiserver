@@ -1,9 +1,9 @@
-"use client";
+'use client';
 
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useUser } from "@/lib/contexts/user-context";
-import { usePathname, useRouter } from "next/navigation";
-import React, { useEffect } from "react";
+import React, { useEffect } from 'react';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useUser } from '@/lib/contexts/user-context';
+import { usePathname, useRouter } from 'next/navigation';
 
 export default function LocationsLayout({
   children,
@@ -17,16 +17,16 @@ export default function LocationsLayout({
   // Helper function to get the default tab based on user role
   const getDefaultTabForRole = (role: string): string => {
     switch (role) {
-      case "ADMIN":
-        return "cells";
-      case "CELL_LEADER":
-        return "villages";
-      case "VILLAGE_LEADER":
-        return "isibos";
-      case "ISIBO_LEADER":
-        return "isibos";
+      case 'ADMIN':
+        return 'cells';
+      case 'CELL_LEADER':
+        return 'villages';
+      case 'VILLAGE_LEADER':
+        return 'isibos';
+      case 'ISIBO_LEADER':
+        return 'isibos';
       default:
-        return "cells";
+        return 'cells';
     }
   };
 
@@ -35,39 +35,33 @@ export default function LocationsLayout({
     if (!user) return;
 
     // If we're at the root locations path, redirect to the appropriate tab
-    if (pathname === "/dashboard/locations") {
-      // For isibo leaders, redirect to the dedicated isibo edit page
-      if (user.role === "ISIBO_LEADER") {
-        router.replace("/dashboard/isibo/edit");
-      } else {
-        const defaultTab = getDefaultTabForRole(user.role);
-        router.replace(`/dashboard/locations/${defaultTab}`);
-      }
+    if (pathname === '/dashboard/locations') {
+      const defaultTab = getDefaultTabForRole(user.role);
+      router.replace(`/dashboard/locations/${defaultTab}`);
     }
   }, [user, pathname, router]);
 
   const getActiveTab = () => {
-    if (pathname.includes("/cells")) return "cells";
-    if (pathname.includes("/villages")) return "villages";
-    if (pathname.includes("/isibos")) return "isibos";
-    return "cells";
+    if (pathname.includes('/cells')) return 'cells';
+    if (pathname.includes('/villages')) return 'villages';
+    if (pathname.includes('/isibos')) return 'isibos';
+    if (pathname.includes('/houses')) return 'houses';
+    return 'cells';
   };
 
   const handleTabChange = (value: string) => {
     switch (value) {
-      case "cells":
-        router.push("/dashboard/locations/cells");
+      case 'cells':
+        router.push('/dashboard/locations/cells');
         break;
-      case "villages":
-        router.push("/dashboard/locations/villages");
+      case 'villages':
+        router.push('/dashboard/locations/villages');
         break;
-      case "isibos":
-        // For isibo leaders, redirect to the dedicated isibo edit page
-        if (user?.role === "ISIBO_LEADER") {
-          router.push("/dashboard/isibo/edit");
-        } else {
-          router.push("/dashboard/locations/isibos");
-        }
+      case 'isibos':
+        router.push('/dashboard/locations/isibos');
+        break;
+      case 'houses':
+        router.push('/dashboard/locations/houses');
         break;
     }
   };
@@ -77,18 +71,18 @@ export default function LocationsLayout({
     if (!user) return false;
 
     switch (user.role) {
-      case "ADMIN":
+      case 'ADMIN':
         // Admin can see all tabs
         return true;
-      case "CELL_LEADER":
-        // Cell leader can see villages and isibos
-        return tab !== "cells";
-      case "VILLAGE_LEADER":
-        // Village leader can see isibos
-        return tab === "isibos";
-      case "ISIBO_LEADER":
-        // Isibo leader can see isibos
-        return tab === "isibos";
+      case 'CELL_LEADER':
+        // Cell leader can see villages, isibos, and houses
+        return tab !== 'cells';
+      case 'VILLAGE_LEADER':
+        // Village leader can see isibos and houses
+        return tab === 'isibos' || tab === 'houses';
+      case 'ISIBO_LEADER':
+        // Isibo leader can see only houses
+        return tab === 'isibos' || tab === 'houses';
       default:
         return false;
     }
@@ -106,18 +100,23 @@ export default function LocationsLayout({
       <Tabs value={getActiveTab()} onValueChange={handleTabChange}>
         <TabsList>
           {/* Only show cells tab to admins */}
-          {shouldShowTab("cells") && (
+          {shouldShowTab('cells') && (
             <TabsTrigger value="cells">Cells</TabsTrigger>
           )}
 
           {/* Show villages tab to admins and cell leaders */}
-          {shouldShowTab("villages") && (
+          {shouldShowTab('villages') && (
             <TabsTrigger value="villages">Villages</TabsTrigger>
           )}
 
           {/* Show isibos tab to admins, cell leaders, and village leaders */}
-          {shouldShowTab("isibos") && (
+          {shouldShowTab('isibos') && (
             <TabsTrigger value="isibos">Isibos</TabsTrigger>
+          )}
+
+          {/* Show houses tab to all roles */}
+          {shouldShowTab('houses') && (
+            <TabsTrigger value="houses">Houses</TabsTrigger>
           )}
         </TabsList>
       </Tabs>
