@@ -207,7 +207,7 @@ export class IsibosService {
   async findIsiboById(id: string): Promise<Isibo> {
     const isibo = await this.isiboRepository.findOne({
       where: { id },
-      relations: ["leader", "village", "members", "members.user"],
+      relations: ["leader", "village", "houses"],
     });
 
     if (!isibo) {
