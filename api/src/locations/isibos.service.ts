@@ -48,7 +48,7 @@ export class IsibosService {
     // Validate villageId
     const village = await this.villageRepository.findOne({
       where: { id: createIsiboDto.villageId },
-      relations: ["profiles", "cell", "cell.profiles"],
+      relations: ["cell"],
     });
 
     if (!village) {
@@ -63,11 +63,9 @@ export class IsibosService {
         throw new NotFoundException("Isibo leader not found");
       }
 
-      // Update the profile to mark as isibo leader
-      if (leader.profile) {
-        leader.profile.isIsiboLeader = true;
-        await this.usersService.saveProfile(leader.profile);
-      }
+      // Update the user to mark as isibo leader
+      leader.isIsiboLeader = true;
+      await this.usersService.saveUser(leader);
     }
 
     // Ensure name is uppercase
@@ -79,7 +77,7 @@ export class IsibosService {
     const isibo = this.isiboRepository.create({
       name: isiboName,
       village: { id: createIsiboDto.villageId },
-      leader: leader?.profile,
+      leader: leader,
     });
 
     return this.isiboRepository.save(isibo);
@@ -91,13 +89,7 @@ export class IsibosService {
   ): Promise<Isibo> {
     const isibo = await this.isiboRepository.findOne({
       where: { id },
-      relations: [
-        "leader",
-        "village",
-        "village.profiles",
-        "village.cell",
-        "village.cell.profiles",
-      ],
+      relations: ["leader", "village", "village.cell"],
     });
 
     if (!isibo) {
@@ -130,7 +122,7 @@ export class IsibosService {
     if (updateIsiboDto.leaderId) {
       if (isibo.leader) {
         isibo.leader.isIsiboLeader = false;
-        await this.usersService.saveProfile(isibo.leader);
+        await this.usersService.saveUser(isibo.leader);
       }
 
       const leader = await this.usersService.findUserById(
@@ -140,13 +132,11 @@ export class IsibosService {
         throw new NotFoundException("Isibo leader not found");
       }
 
-      // Update the profile to mark as isibo leader
-      if (leader.profile) {
-        leader.profile.isIsiboLeader = true;
-        await this.usersService.saveProfile(leader.profile);
-      }
+      // Update the user to mark as isibo leader
+      leader.isIsiboLeader = true;
+      await this.usersService.saveUser(leader);
 
-      isibo.leader = leader.profile;
+      isibo.leader = leader;
     }
 
     // Update the isibo
@@ -163,13 +153,7 @@ export class IsibosService {
   async deleteIsibo(id: string): Promise<void> {
     const isibo = await this.isiboRepository.findOne({
       where: { id },
-      relations: [
-        "leader",
-        "village",
-        "village.profiles",
-        "village.cell",
-        "village.cell.profiles",
-      ],
+      relations: ["leader", "village", "village.cell"],
     });
 
     if (!isibo) {
@@ -179,7 +163,7 @@ export class IsibosService {
     // If there's a leader, remove the isibo leader flag
     if (isibo.leader) {
       isibo.leader.isIsiboLeader = false;
-      await this.usersService.saveProfile(isibo.leader);
+      await this.usersService.saveUser(isibo.leader);
     }
 
     await this.isiboRepository.softDelete(id);
@@ -220,13 +204,7 @@ export class IsibosService {
   async assignIsiboLeader(id: string, userId: string): Promise<Isibo> {
     const isibo = await this.isiboRepository.findOne({
       where: { id },
-      relations: [
-        "leader",
-        "village",
-        "village.profiles",
-        "village.cell",
-        "village.cell.profiles",
-      ],
+      relations: ["leader", "village", "village.cell"],
     });
 
     if (!isibo) {
@@ -246,54 +224,51 @@ export class IsibosService {
 
     // Update the user's role to ISIBO_LEADER
     leaderUser.role = UserRole.ISIBO_LEADER;
-    leaderUser.profile.isIsiboLeader = true;
+    leaderUser.isIsiboLeader = true;
+    leaderUser.isibo = isibo;
     await this.usersService.saveUser(leaderUser);
-    await this.usersService.saveProfile(leaderUser.profile);
 
-    // Set the isibo's leader
-    isibo.leader = leaderUser.profile;
+    // Update the isibo with the leader information
     isibo.hasLeader = true;
     isibo.leaderId = userId;
+    isibo.leader = leaderUser;
+    await this.isiboRepository.save(isibo);
 
-    return this.isiboRepository.save(isibo);
+    return this.findIsiboById(id);
   }
 
   async removeIsiboLeader(id: string): Promise<Isibo> {
     const isibo = await this.isiboRepository.findOne({
       where: { id },
-      relations: [
-        "leader",
-        "leader.user",
-        "village",
-        "village.profiles",
-        "village.cell",
-        "village.cell.profiles",
-      ],
+      relations: ["leader", "village", "village.cell"],
     });
 
     if (!isibo) {
       throw new NotFoundException("Isibo not found");
     }
 
+    // Check if isibo has a leader
     if (!isibo.hasLeader) {
       throw new NotFoundException("This isibo does not have a leader");
     }
 
-    if (!isibo.leader || !isibo.leader.user) {
-      throw new NotFoundException("Isibo leader user not found");
+    // Find the isibo leader
+    const isiboLeader = await this.usersService.findIsiboLeader(id);
+    if (!isiboLeader) {
+      throw new NotFoundException("Isibo leader not found");
     }
 
-    const leaderUser = isibo.leader.user;
+    // Update the user's role back to CITIZEN
+    isiboLeader.role = UserRole.CITIZEN;
+    isiboLeader.isIsiboLeader = false;
+    await this.usersService.saveUser(isiboLeader);
 
-    leaderUser.role = UserRole.CITIZEN;
-    leaderUser.profile.isIsiboLeader = false;
-    await this.usersService.saveUser(leaderUser);
-    await this.usersService.saveProfile(leaderUser.profile);
-
-    isibo.leader = null;
+    // Update the isibo to remove leader information
     isibo.hasLeader = false;
     isibo.leaderId = null;
+    isibo.leader = null;
+    await this.isiboRepository.save(isibo);
 
-    return this.isiboRepository.save(isibo);
+    return this.findIsiboById(id);
   }
 }

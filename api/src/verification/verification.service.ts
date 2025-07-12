@@ -17,11 +17,6 @@ export class VerificationService {
   ) {}
 
   async createVerification(user: User): Promise<Verification> {
-    if (user.verifiedAt) {
-      user.verifiedAt = null;
-      await this.verificationRepository.manager.getRepository(User).save(user);
-    }
-
     const code = await this.generateUniqueCode();
     const expiresAt = new Date(Date.now() + 30 * 60 * 1000);
 
@@ -51,11 +46,7 @@ export class VerificationService {
       );
     }
 
-    const user = verification.user;
-    user.verifiedAt = new Date();
-
-    await this.verificationRepository.manager.getRepository(User).save(user);
-
+    // Since we removed verifiedAt, we just remove the verification
     await this.verificationRepository.remove(verification);
   }
 
@@ -68,7 +59,7 @@ export class VerificationService {
       subject: "Your Verification Code",
       from: this.configService.get("emails").from,
       text: `Your verification code is: ${verificationCode}`,
-      html: verificationCodeTemplate(user.profile.names, verificationCode),
+      html: verificationCodeTemplate(user.names, verificationCode),
     };
 
     await this.sesService.sendEmail(email);

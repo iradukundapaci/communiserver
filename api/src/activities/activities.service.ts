@@ -604,9 +604,9 @@ export class ActivitiesService {
           (Number(report.task.actualParticipants) || 0) -
           (Number(report.task.expectedParticipants) || 0),
         participants:
-          report.attendance?.map((profile) => ({
-            id: profile.id,
-            name: profile.names,
+          report.attendance?.map((user) => ({
+            id: user.id,
+            name: user.names,
           })) || [],
       })),
     };
@@ -639,9 +639,9 @@ export class ActivitiesService {
               suggestions: report.suggestions,
               evidenceUrls: report.evidenceUrls || [],
               participants:
-                report.attendance?.map((profile) => ({
-                  id: profile.id,
-                  name: profile.names,
+                report.attendance?.map((user) => ({
+                  id: user.id,
+                  name: user.names,
                 })) || [],
             }
           : null,

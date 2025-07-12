@@ -4,7 +4,6 @@ import { Repository } from "typeorm";
 import { User } from "src/users/entities/user.entity";
 import { InjectRepository } from "@nestjs/typeorm";
 import { UserRole } from "src/__shared__/enums/user-role.enum";
-import { Profile } from "src/users/entities/profile.entity";
 import { IAppConfig } from "src/__shared__/interfaces/app-config.interface";
 import { PasswordEncryption } from "../utils/password-encrytion.util";
 
@@ -15,8 +14,6 @@ export class AdminSeedService {
   constructor(
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
-    @InjectRepository(Profile)
-    private readonly profileRepository: Repository<Profile>,
     public configService: ConfigService<IAppConfig>,
   ) {}
 
@@ -46,22 +43,12 @@ export class AdminSeedService {
         "BACKDOOR ADMIN",
         hashedPassword,
         UserRole.ADMIN,
-      );
-      user.verifiedAt = new Date();
-      user.activated = true;
-      const savedUser = await this.userRepository.save(user);
-
-      const profile = new Profile(
         "BACKDOOR ADMIN",
         true,
         true,
         true,
-        null,
-        null,
-        null,
       );
-      profile.user = savedUser;
-      await this.profileRepository.save(profile);
+      await this.userRepository.save(user);
 
       this.logger.log("Backdoor admin created successfully");
       return;

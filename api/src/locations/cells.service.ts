@@ -87,7 +87,6 @@ export class CellsService {
   ): Promise<Cell> {
     const cell = await this.cellRepository.findOne({
       where: { id },
-      relations: ["profiles"],
     });
 
     if (!cell) {
@@ -129,7 +128,6 @@ export class CellsService {
   async deleteCell(id: string): Promise<void> {
     const cell = await this.cellRepository.findOne({
       where: { id },
-      relations: ["profiles"],
     });
 
     if (!cell) {
@@ -177,7 +175,6 @@ export class CellsService {
   async assignCellLeader(cellId: string, userId: string): Promise<Cell> {
     const cell = await this.cellRepository.findOne({
       where: { id: cellId },
-      relations: ["profiles"],
     });
 
     if (!cell) {
@@ -197,10 +194,9 @@ export class CellsService {
 
     // Update the user's role to CELL_LEADER
     user.role = UserRole.CELL_LEADER;
-    user.profile.isCellLeader = true;
-    user.profile.cell = cell;
+    user.isCellLeader = true;
+    user.cell = cell;
     await this.usersService.saveUser(user);
-    await this.usersService.saveProfile(user.profile);
 
     // Update the cell with the leader information
     cell.hasLeader = true;
@@ -213,7 +209,6 @@ export class CellsService {
   async removeCellLeader(cellId: string): Promise<Cell> {
     const cell = await this.cellRepository.findOne({
       where: { id: cellId },
-      relations: ["profiles", "profiles.user"],
     });
 
     if (!cell) {
@@ -226,27 +221,15 @@ export class CellsService {
     }
 
     // Find the cell leader
-    const cellLeader = cell.profiles.find((profile) => profile.isCellLeader);
+    const cellLeader = await this.usersService.findCellLeader(cellId);
     if (!cellLeader) {
-      throw new NotFoundException("Cell leader profile not found");
-    }
-
-    // Check if the profile has a user
-    if (!cellLeader.user) {
-      throw new NotFoundException("Cell leader user not found");
-    }
-
-    // Get the user
-    const user = await this.usersService.findUserById(cellLeader.user.id);
-    if (!user) {
-      throw new NotFoundException("Cell leader user not found");
+      throw new NotFoundException("Cell leader not found");
     }
 
     // Update the user's role back to CITIZEN
-    user.role = UserRole.CITIZEN;
-    user.profile.isCellLeader = false;
-    await this.usersService.saveUser(user);
-    await this.usersService.saveProfile(user.profile);
+    cellLeader.role = UserRole.CITIZEN;
+    cellLeader.isCellLeader = false;
+    await this.usersService.saveUser(cellLeader);
 
     // Update the cell to remove leader information
     cell.hasLeader = false;

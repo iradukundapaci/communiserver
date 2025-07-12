@@ -39,10 +39,6 @@ export function IsAuthorized() {
   return Authorize(JwtGuard);
 }
 
-export function RefreshToken() {
-  return Authorize(JwtRefreshGuard);
-}
-
 export function GatewayToken() {
   return Authorize(JwtGatewayGuard);
 }

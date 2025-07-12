@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import { Button } from "@/components/ui/button";
+import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
@@ -8,29 +8,42 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { IsiboMember, getIsiboById, updateIsibo } from "@/lib/api/isibos";
-import { User, getUsers, createCitizen, CreateCitizenInput } from "@/lib/api/users";
-import { useUser } from "@/lib/contexts/user-context";
-import { ArrowLeft, UserPlus } from "lucide-react";
-import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
-import { toast } from "sonner";
+} from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import { IsiboMember, getIsiboById, updateIsibo } from '@/lib/api/isibos';
+import {
+  User,
+  getUsers,
+  createCitizen,
+  CreateCitizenInput,
+} from '@/lib/api/users';
+import { useUser } from '@/lib/contexts/user-context';
+import { ArrowLeft, UserPlus } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
 
 export default function EditMyIsiboPage() {
   const router = useRouter();
   const { user } = useUser();
 
   const [formData, setFormData] = useState({
-    name: "",
-    villageId: "",
+    name: '',
+    villageId: '',
     memberIds: [] as string[],
   });
-  const [villageName, setVillageName] = useState<string>("");
+  const [villageName, setVillageName] = useState<string>('');
   const [currentMembers, setCurrentMembers] = useState<IsiboMember[]>([]);
   const [availableCitizens, setAvailableCitizens] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -38,18 +51,18 @@ export default function EditMyIsiboPage() {
   const [isLoadingCitizens, setIsLoadingCitizens] = useState(false);
   const [showCreateCitizenDialog, setShowCreateCitizenDialog] = useState(false);
   const [newCitizenData, setNewCitizenData] = useState<CreateCitizenInput>({
-    names: "",
-    email: "",
-    phone: "",
-    cellId: "",
-    villageId: "",
+    names: '',
+    email: '',
+    phone: '',
+    cellId: '',
+    villageId: '',
   });
 
   // Fetch isibo data when component mounts
   useEffect(() => {
     // Redirect if user is not an isibo leader or doesn't have an isibo
-    if (!user || user.role !== "ISIBO_LEADER" || !user.isibo?.id) {
-      router.push("/dashboard");
+    if (!user || user.role !== 'ISIBO_LEADER' || !user.isibo?.id) {
+      router.push('/dashboard');
       return;
     }
 
@@ -65,8 +78,8 @@ export default function EditMyIsiboPage() {
         // Set the form data
         setFormData({
           name: isibo.name,
-          villageId: isibo.village?.id || "",
-          memberIds: isibo.members?.map(m => m.id) || [],
+          villageId: isibo.village?.id || '',
+          memberIds: isibo.members?.map((m: IsiboMember) => m.id) || [],
         });
 
         setCurrentMembers(isibo.members || []);
@@ -77,19 +90,19 @@ export default function EditMyIsiboPage() {
         }
 
         // Set new citizen data with current location info
-        setNewCitizenData(prev => ({
+        setNewCitizenData((prev) => ({
           ...prev,
-          cellId: user.cell?.id || "",
-          villageId: isibo.village?.id || "",
+          cellId: user.cell?.id || '',
+          villageId: isibo.village?.id || '',
         }));
 
         // Fetch available citizens
         await fetchAvailableCitizens();
       } catch (error: unknown) {
         const err = error as { message?: string };
-        toast.error(err.message || "Failed to fetch isibo data");
+        toast.error(err.message || 'Failed to fetch isibo data');
         console.error(error);
-        router.push("/dashboard");
+        router.push('/dashboard');
       } finally {
         setIsLoading(false);
       }
@@ -101,15 +114,15 @@ export default function EditMyIsiboPage() {
   const fetchAvailableCitizens = async () => {
     try {
       setIsLoadingCitizens(true);
-      const response = await getUsers({ role: "CITIZEN", page: 1, size: 100 });
+      const response = await getUsers({ role: 'CITIZEN', page: 1, size: 100 });
       // Filter out citizens who are already members of this isibo
-      const available = response.items.filter(citizen =>
-        !currentMembers.some(member => member.id === citizen.id)
+      const available = response.items.filter(
+        (citizen) => !currentMembers.some((member) => member.id === citizen.id),
       );
       setAvailableCitizens(available);
     } catch (error) {
-      console.error("Failed to fetch citizens:", error);
-      toast.error("Failed to load available citizens");
+      console.error('Failed to fetch citizens:', error);
+      toast.error('Failed to load available citizens');
     } finally {
       setIsLoadingCitizens(false);
     }
@@ -136,25 +149,25 @@ export default function EditMyIsiboPage() {
       ...prev,
       memberIds: checked
         ? [...prev.memberIds, citizenId]
-        : prev.memberIds.filter(id => id !== citizenId)
+        : prev.memberIds.filter((id) => id !== citizenId),
     }));
   };
 
   const handleCreateCitizen = async () => {
     if (!newCitizenData.names.trim() || !newCitizenData.email.trim()) {
-      toast.error("Name and email are required");
+      toast.error('Name and email are required');
       return;
     }
 
     try {
       await createCitizen(newCitizenData);
-      toast.success("Citizen created successfully");
+      toast.success('Citizen created successfully');
       setShowCreateCitizenDialog(false);
       setNewCitizenData({
-        names: "",
-        email: "",
-        phone: "",
-        cellId: user?.cell?.id || "",
+        names: '',
+        email: '',
+        phone: '',
+        cellId: user?.cell?.id || '',
         villageId: formData.villageId,
       });
       // Refresh available citizens
@@ -163,7 +176,7 @@ export default function EditMyIsiboPage() {
       if (error instanceof Error) {
         toast.error(error.message);
       } else {
-        toast.error("Failed to create citizen");
+        toast.error('Failed to create citizen');
       }
     }
   };
@@ -172,12 +185,12 @@ export default function EditMyIsiboPage() {
     e.preventDefault();
 
     if (!user?.isibo?.id) {
-      toast.error("No isibo assigned to your account");
+      toast.error('No isibo assigned to your account');
       return;
     }
 
     if (!formData.name.trim()) {
-      toast.error("Isibo name is required");
+      toast.error('Isibo name is required');
       return;
     }
 
@@ -186,12 +199,12 @@ export default function EditMyIsiboPage() {
     try {
       await updateIsibo(user.isibo.id, {
         name: formData.name,
-        existingMemberIds: formData.memberIds,
+        memberIds: formData.memberIds,
       });
-      toast.success("Isibo updated successfully");
-      router.push("/dashboard");
+      toast.success('Isibo updated successfully');
+      router.push('/dashboard');
     } catch (error) {
-      toast.error("Failed to update isibo");
+      toast.error('Failed to update isibo');
       console.error(error);
     } finally {
       setIsSaving(false);
@@ -212,7 +225,7 @@ export default function EditMyIsiboPage() {
         <Button
           variant="outline"
           size="icon"
-          onClick={() => router.push("/dashboard")}
+          onClick={() => router.push('/dashboard')}
         >
           <ArrowLeft className="h-4 w-4" />
         </Button>
@@ -259,10 +272,14 @@ export default function EditMyIsiboPage() {
                 <div>
                   <h3 className="text-lg font-medium mb-2">Isibo Members</h3>
                   <p className="text-sm text-muted-foreground mb-4">
-                    Select existing citizens or create new ones to add to this isibo.
+                    Select existing citizens or create new ones to add to this
+                    isibo.
                   </p>
                 </div>
-                <Dialog open={showCreateCitizenDialog} onOpenChange={setShowCreateCitizenDialog}>
+                <Dialog
+                  open={showCreateCitizenDialog}
+                  onOpenChange={setShowCreateCitizenDialog}
+                >
                   <DialogTrigger asChild>
                     <Button variant="outline" size="sm">
                       <UserPlus className="h-4 w-4 mr-2" />
@@ -273,7 +290,8 @@ export default function EditMyIsiboPage() {
                     <DialogHeader>
                       <DialogTitle>Create New Citizen</DialogTitle>
                       <DialogDescription>
-                        Create a new citizen account that can be added to this isibo.
+                        Create a new citizen account that can be added to this
+                        isibo.
                       </DialogDescription>
                     </DialogHeader>
                     <div className="space-y-4">
@@ -310,7 +328,10 @@ export default function EditMyIsiboPage() {
                       </div>
                     </div>
                     <DialogFooter>
-                      <Button variant="outline" onClick={() => setShowCreateCitizenDialog(false)}>
+                      <Button
+                        variant="outline"
+                        onClick={() => setShowCreateCitizenDialog(false)}
+                      >
                         Cancel
                       </Button>
                       <Button onClick={handleCreateCitizen}>
@@ -343,7 +364,10 @@ export default function EditMyIsiboPage() {
                         <Checkbox
                           checked={formData.memberIds.includes(member.id)}
                           onCheckedChange={(checked) =>
-                            handleCitizenSelection(member.id, checked as boolean)
+                            handleCitizenSelection(
+                              member.id,
+                              checked as boolean,
+                            )
                           }
                         />
                       </div>
@@ -376,7 +400,10 @@ export default function EditMyIsiboPage() {
                         <Checkbox
                           checked={formData.memberIds.includes(citizen.id)}
                           onCheckedChange={(checked) =>
-                            handleCitizenSelection(citizen.id, checked as boolean)
+                            handleCitizenSelection(
+                              citizen.id,
+                              checked as boolean,
+                            )
                           }
                         />
                       </div>
@@ -384,7 +411,8 @@ export default function EditMyIsiboPage() {
                   </div>
                 ) : (
                   <p className="text-sm text-muted-foreground py-4">
-                    No available citizens found. Create new citizens using the &quot;Create Citizen&quot; button above.
+                    No available citizens found. Create new citizens using the
+                    &quot;Create Citizen&quot; button above.
                   </p>
                 )}
               </div>
@@ -393,13 +421,13 @@ export default function EditMyIsiboPage() {
           <CardFooter className="flex justify-end space-x-2">
             <Button
               variant="outline"
-              onClick={() => router.push("/dashboard")}
+              onClick={() => router.push('/dashboard')}
               disabled={isSaving}
             >
               Cancel
             </Button>
             <Button type="submit" disabled={isSaving}>
-              {isSaving ? "Saving..." : "Save Changes"}
+              {isSaving ? 'Saving...' : 'Save Changes'}
             </Button>
           </CardFooter>
         </form>

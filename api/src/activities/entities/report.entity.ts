@@ -1,5 +1,5 @@
 import { AbstractEntity } from "src/__shared__/entities/abstract.entity";
-import { Profile } from "src/users/entities/profile.entity";
+import { User } from "src/users/entities/user.entity";
 import {
   Column,
   Entity,
@@ -21,13 +21,13 @@ export class Report extends AbstractEntity {
   @JoinColumn({ name: "taskId" })
   task: Task;
 
-  @ManyToMany(() => Profile)
+  @ManyToMany(() => User)
   @JoinTable({
     name: "report_attendance",
     joinColumn: { name: "report_id", referencedColumnName: "id" },
-    inverseJoinColumn: { name: "profile_id", referencedColumnName: "id" },
+    inverseJoinColumn: { name: "user_id", referencedColumnName: "id" },
   })
-  attendance: Profile[];
+  attendance: User[];
 
   @Column("text", { nullable: true })
   comment?: string;

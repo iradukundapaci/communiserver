@@ -1,10 +1,9 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { Expose } from "class-transformer";
 import { IsEnum, IsOptional, IsString } from "class-validator";
 import { PaginationDto } from "src/__shared__/dto/pagination.dto";
 import { UserRole } from "src/__shared__/enums/user-role.enum";
 
-export namespace SearchUsersDto {
+export namespace FetchUserListDto {
   export class Input extends PaginationDto {
     @ApiProperty({
       description: "Search query for name, email, or phone",
@@ -25,24 +24,10 @@ export namespace SearchUsersDto {
   }
 
   export class UserItem {
-    @Expose()
-    @ApiProperty()
     id: string;
-
-    @Expose()
-    @ApiProperty()
     names: string;
-
-    @Expose()
-    @ApiProperty()
     email: string;
-
-    @Expose()
-    @ApiProperty()
     phone: string;
-
-    @Expose()
-    @ApiProperty({ enum: UserRole })
     role: UserRole;
   }
 

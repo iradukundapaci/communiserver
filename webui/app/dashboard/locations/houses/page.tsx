@@ -1,16 +1,15 @@
-"use client";
+'use client';
 
-import { ConfirmationDialog } from "@/components/confirmation-dialog";
-import { PermissionGate } from "@/components/permission-gate";
-import { Button } from "@/components/ui/button";
+import { PermissionGate } from '@/components/permission-gate';
+import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
+} from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
 import {
   Pagination,
   PaginationContent,
@@ -18,14 +17,14 @@ import {
   PaginationLink,
   PaginationNext,
   PaginationPrevious,
-} from "@/components/ui/pagination";
+} from '@/components/ui/pagination';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from '@/components/ui/select';
 import {
   Table,
   TableBody,
@@ -33,22 +32,17 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
-import { Cell, getCells } from "@/lib/api/cells";
-import {
-  House,
-  deleteHouse,
-  getHouses,
-  removeHouseRepresentative,
-} from "@/lib/api/houses";
-import { Isibo, getIsibos } from "@/lib/api/isibos";
-import { Village, getVillages } from "@/lib/api/villages";
-import { useUser } from "@/lib/contexts/user-context";
-import { Permission } from "@/lib/permissions";
-import { Pencil, PlusCircle, Trash2, UserMinus, UserPlus } from "lucide-react";
-import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
-import { toast } from "sonner";
+} from '@/components/ui/table';
+import { Cell, getCells } from '@/lib/api/cells';
+import { House, deleteHouse, getHouses } from '@/lib/api/houses';
+import { Isibo, getIsibos } from '@/lib/api/isibos';
+import { Village, getVillages } from '@/lib/api/villages';
+import { useUser } from '@/lib/contexts/user-context';
+import { Permission } from '@/lib/permissions';
+import { Pencil, PlusCircle, Trash2 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
 
 export default function HousesPage() {
   const router = useRouter();
@@ -57,25 +51,18 @@ export default function HousesPage() {
   const [isibos, setIsibos] = useState<Isibo[]>([]);
   const [villages, setVillages] = useState<Village[]>([]);
   const [cells, setCells] = useState<Cell[]>([]);
-  const [selectedCellId, setSelectedCellId] = useState<string>("");
-  const [selectedVillageId, setSelectedVillageId] = useState<string>("");
-  const [selectedIsiboId, setSelectedIsiboId] = useState<string>("");
+  const [selectedCellId, setSelectedCellId] = useState<string>('');
+  const [selectedVillageId, setSelectedVillageId] = useState<string>('');
+  const [selectedIsiboId, setSelectedIsiboId] = useState<string>('');
   const [isLoading, setIsLoading] = useState(true);
   const [isIsibosLoading, setIsIsibosLoading] = useState(true);
   const [isVillagesLoading, setIsVillagesLoading] = useState(true);
   const [isCellsLoading, setIsCellsLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [, setTotalItems] = useState(0);
-
-  // Confirmation dialog state
-  const [
-    isRemoveRepresentativeDialogOpen,
-    setIsRemoveRepresentativeDialogOpen,
-  ] = useState(false);
-  const [selectedHouseId, setSelectedHouseId] = useState<string>("");
 
   useEffect(() => {
     fetchCells();
@@ -110,9 +97,9 @@ export default function HousesPage() {
 
         // If the user is a location leader, we don't need to fetch all cells
         if (
-          user.role === "CELL_LEADER" ||
-          user.role === "VILLAGE_LEADER" ||
-          user.role === "ISIBO_LEADER"
+          user.role === 'CELL_LEADER' ||
+          user.role === 'VILLAGE_LEADER' ||
+          user.role === 'ISIBO_LEADER'
         ) {
           // Just add the user's cell to the cells array
           // Create a proper Cell object with the required properties
@@ -141,7 +128,7 @@ export default function HousesPage() {
       if (error.message) {
         toast.error(error.message);
       } else {
-        toast.error("Failed to fetch cells");
+        toast.error('Failed to fetch cells');
       }
       console.error(error);
     } finally {
@@ -161,7 +148,7 @@ export default function HousesPage() {
         setSelectedVillageId(user.village.id);
 
         // If the user is a location leader, we don't need to fetch all villages
-        if (user.role === "VILLAGE_LEADER" || user.role === "ISIBO_LEADER") {
+        if (user.role === 'VILLAGE_LEADER' || user.role === 'ISIBO_LEADER') {
           // Just add the user's village to the villages array
           setVillages([
             {
@@ -190,8 +177,8 @@ export default function HousesPage() {
         // Otherwise, select the first village by default
         setSelectedVillageId(response.items[0].id);
       } else {
-        setSelectedVillageId("");
-        setSelectedIsiboId("");
+        setSelectedVillageId('');
+        setSelectedIsiboId('');
         setIsibos([]);
         setHouses([]);
       }
@@ -199,12 +186,12 @@ export default function HousesPage() {
       if (error.message) {
         toast.error(error.message);
       } else {
-        toast.error("Failed to fetch villages");
+        toast.error('Failed to fetch villages');
       }
       console.error(error);
       setVillages([]);
-      setSelectedVillageId("");
-      setSelectedIsiboId("");
+      setSelectedVillageId('');
+      setSelectedIsiboId('');
       setIsibos([]);
       setHouses([]);
     } finally {
@@ -224,7 +211,7 @@ export default function HousesPage() {
         setSelectedIsiboId(user.isibo.id);
 
         // If the user is an isibo leader, we don't need to fetch all isibos
-        if (user.role === "ISIBO_LEADER") {
+        if (user.role === 'ISIBO_LEADER') {
           // Just add the user's isibo to the isibos array
           setIsibos([
             {
@@ -253,18 +240,18 @@ export default function HousesPage() {
         // Otherwise, select the first isibo by default
         setSelectedIsiboId(response.items[0].id);
       } else {
-        setSelectedIsiboId("");
+        setSelectedIsiboId('');
         setHouses([]);
       }
     } catch (error: any) {
       if (error.message) {
         toast.error(error.message);
       } else {
-        toast.error("Failed to fetch isibos");
+        toast.error('Failed to fetch isibos');
       }
       console.error(error);
       setIsibos([]);
-      setSelectedIsiboId("");
+      setSelectedIsiboId('');
       setHouses([]);
     } finally {
       setIsIsibosLoading(false);
@@ -280,7 +267,7 @@ export default function HousesPage() {
         selectedIsiboId,
         currentPage,
         itemsPerPage,
-        searchQuery
+        searchQuery,
       );
       setHouses(response.items || []);
       setTotalPages(response.meta?.totalPages || 1);
@@ -290,7 +277,7 @@ export default function HousesPage() {
       if (error.message) {
         toast.error(error.message);
       } else {
-        toast.error("Failed to fetch houses");
+        toast.error('Failed to fetch houses');
       }
       console.error(error);
       setHouses([]);
@@ -306,16 +293,16 @@ export default function HousesPage() {
   };
 
   const handleDeleteHouse = async (id: string) => {
-    if (window.confirm("Are you sure you want to delete this house?")) {
+    if (window.confirm('Are you sure you want to delete this house?')) {
       try {
         await deleteHouse(id);
-        toast.success("House deleted successfully");
+        toast.success('House deleted successfully');
         fetchHouses();
       } catch (error: any) {
         if (error.message) {
           toast.error(error.message);
         } else {
-          toast.error("Failed to delete house");
+          toast.error('Failed to delete house');
         }
         console.error(error);
       }
@@ -326,42 +313,17 @@ export default function HousesPage() {
     router.push(`/dashboard/locations/houses/${id}/edit`);
   };
 
-  const handleAssignRepresentative = (id: string) => {
-    router.push(`/dashboard/locations/houses/${id}/assign-representative`);
-  };
-
-  const handleRemoveRepresentative = (id: string) => {
-    setSelectedHouseId(id);
-    setIsRemoveRepresentativeDialogOpen(true);
-  };
-
-  const confirmRemoveRepresentative = async () => {
-    try {
-      await removeHouseRepresentative(selectedHouseId);
-      toast.success("House representative removed successfully");
-      fetchHouses();
-      setIsRemoveRepresentativeDialogOpen(false);
-    } catch (error: any) {
-      if (error.message) {
-        toast.error(error.message);
-      } else {
-        toast.error("Failed to remove house representative");
-      }
-      console.error(error);
-    }
-  };
-
   const handleCellChange = (cellId: string) => {
     setSelectedCellId(cellId);
-    setSelectedVillageId(""); // Reset selected village when cell changes
-    setSelectedIsiboId(""); // Reset selected isibo when cell changes
+    setSelectedVillageId(''); // Reset selected village when cell changes
+    setSelectedIsiboId(''); // Reset selected isibo when cell changes
     setIsibos([]); // Clear isibos when cell changes
     setHouses([]); // Clear houses when cell changes
   };
 
   const handleVillageChange = (villageId: string) => {
     setSelectedVillageId(villageId);
-    setSelectedIsiboId(""); // Reset selected isibo when village changes
+    setSelectedIsiboId(''); // Reset selected isibo when village changes
     setIsibos([]); // Clear isibos when village changes
     setHouses([]); // Clear houses when village changes
   };
@@ -373,23 +335,12 @@ export default function HousesPage() {
 
   return (
     <div className="flex flex-col gap-4">
-      {/* Confirmation Dialog for removing representative */}
-      <ConfirmationDialog
-        isOpen={isRemoveRepresentativeDialogOpen}
-        onOpenChange={setIsRemoveRepresentativeDialogOpen}
-        onConfirm={confirmRemoveRepresentative}
-        title="Remove House Representative"
-        description="Are you sure you want to remove the representative from this house? This action cannot be undone."
-        confirmText="Remove Representative"
-        confirmVariant="destructive"
-      />
-
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold">Houses Management</h1>
 
         <PermissionGate permission={Permission.CREATE_HOUSE}>
           <Button
-            onClick={() => router.push("/dashboard/locations/houses/create")}
+            onClick={() => router.push('/dashboard/locations/houses/create')}
           >
             <PlusCircle className="mr-2 h-4 w-4" />
             Create House
@@ -525,8 +476,7 @@ export default function HousesPage() {
                     <TableHeader>
                       <TableRow>
                         <TableHead>House Code</TableHead>
-                        <TableHead>Street</TableHead>
-                        <TableHead>Representative</TableHead>
+                        <TableHead>House Address</TableHead>
                         <TableHead className="w-[200px]">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -536,21 +486,7 @@ export default function HousesPage() {
                           <TableCell className="font-medium">
                             {house.code}
                           </TableCell>
-                          <TableCell>{house.street || "N/A"}</TableCell>
-                          <TableCell>
-                            {house.hasLeader ? (
-                              <div className="flex flex-col">
-                                <span className="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800 mb-1 w-fit">
-                                  Has Representative
-                                </span>
-                                {house.representative?.names}
-                              </div>
-                            ) : (
-                              <span className="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-800 w-fit">
-                                No Representative
-                              </span>
-                            )}
-                          </TableCell>
+                          <TableCell>{house.address || 'N/A'}</TableCell>
                           <TableCell>
                             <div className="flex items-center gap-2">
                               <PermissionGate
@@ -565,47 +501,6 @@ export default function HousesPage() {
                                   <span className="sr-only">Edit</span>
                                 </Button>
                               </PermissionGate>
-
-                              {!house.hasLeader ? (
-                                <PermissionGate
-                                  permission={
-                                    Permission.ASSIGN_HOUSE_REPRESENTATIVES
-                                  }
-                                >
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() =>
-                                      handleAssignRepresentative(house.id)
-                                    }
-                                  >
-                                    <UserPlus className="h-4 w-4" />
-                                    <span className="sr-only">
-                                      Assign Representative
-                                    </span>
-                                  </Button>
-                                </PermissionGate>
-                              ) : (
-                                <PermissionGate
-                                  permission={
-                                    Permission.DEASSIGN_HOUSE_REPRESENTATIVES
-                                  }
-                                >
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() =>
-                                      handleRemoveRepresentative(house.id)
-                                    }
-                                  >
-                                    <UserMinus className="h-4 w-4" />
-                                    <span className="sr-only">
-                                      Remove Representative
-                                    </span>
-                                  </Button>
-                                </PermissionGate>
-                              )}
-
                               <PermissionGate
                                 permission={Permission.DELETE_HOUSE}
                               >
@@ -638,8 +533,8 @@ export default function HousesPage() {
                             }
                             className={
                               currentPage === 1
-                                ? "pointer-events-none opacity-50"
-                                : ""
+                                ? 'pointer-events-none opacity-50'
+                                : ''
                             }
                           />
                         </PaginationItem>
@@ -668,7 +563,7 @@ export default function HousesPage() {
                                 </PaginationLink>
                               </PaginationItem>
                             );
-                          }
+                          },
                         )}
 
                         <PaginationItem>
@@ -676,13 +571,13 @@ export default function HousesPage() {
                             size="default"
                             onClick={() =>
                               setCurrentPage((prev) =>
-                                Math.min(prev + 1, totalPages)
+                                Math.min(prev + 1, totalPages),
                               )
                             }
                             className={
                               currentPage === totalPages
-                                ? "pointer-events-none opacity-50"
-                                : ""
+                                ? 'pointer-events-none opacity-50'
+                                : ''
                             }
                           />
                         </PaginationItem>

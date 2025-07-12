@@ -1,5 +1,5 @@
 import { AbstractEntity } from "src/__shared__/entities/abstract.entity";
-import { Profile } from "src/users/entities/profile.entity";
+import { User } from "src/users/entities/user.entity";
 import {
   BeforeInsert,
   BeforeUpdate,
@@ -31,8 +31,8 @@ export class Village extends AbstractEntity {
     }
   }
 
-  @OneToMany(() => Profile, (profile) => profile.village)
-  profiles: Profile[];
+  @OneToMany(() => User, (user) => user.village)
+  users: User[];
 
   @ManyToOne(() => Cell, (cell) => cell.villages, { nullable: false })
   @JoinColumn({ name: "cell_id" })

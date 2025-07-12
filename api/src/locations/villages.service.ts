@@ -49,7 +49,6 @@ export class VillagesService {
   ): Promise<Village> {
     const cell = await this.cellRepository.findOne({
       where: { id: createVillageDto.cellId },
-      relations: ["profiles"],
     });
 
     if (!cell) {
@@ -84,7 +83,7 @@ export class VillagesService {
   ): Promise<Village> {
     const village = await this.villageRepository.findOne({
       where: { id },
-      relations: ["profiles", "cell", "cell.profiles"],
+      relations: ["cell"],
     });
 
     if (!village) {
@@ -139,7 +138,7 @@ export class VillagesService {
   async deleteVillage(id: string): Promise<void> {
     const village = await this.villageRepository.findOne({
       where: { id },
-      relations: ["profiles", "cell", "cell.profiles"],
+      relations: ["cell"],
     });
 
     if (!village) {
@@ -206,7 +205,8 @@ export class VillagesService {
 
     // Update the user's role to VILLAGE_LEADER
     user.role = UserRole.VILLAGE_LEADER;
-    user.profile.isVillageLeader = true;
+    user.isVillageLeader = true;
+    user.village = village;
     await this.usersService.saveUser(user);
 
     // Update the village with the leader information
@@ -220,7 +220,6 @@ export class VillagesService {
   async removeVillageLeader(villageId: string): Promise<Village> {
     const village = await this.villageRepository.findOne({
       where: { id: villageId },
-      relations: ["profiles", "profiles.user"],
     });
 
     if (!village) {
@@ -232,30 +231,15 @@ export class VillagesService {
       throw new NotFoundException("This village does not have a leader");
     }
 
-    // Find the village leader from the profiles
-    const villageLeaderProfile = village.profiles.find(
-      (profile) => profile.isVillageLeader,
-    );
-    if (!villageLeaderProfile) {
-      throw new NotFoundException("Village leader profile not found");
-    }
-
-    // Check if the profile has a user
-    if (!villageLeaderProfile.user) {
-      throw new NotFoundException("Village leader user not found");
-    }
-
     // Find the village leader
-    const villageLeader = await this.usersService.findUserById(
-      villageLeaderProfile.user.id,
-    );
+    const villageLeader = await this.usersService.findVillageLeader(villageId);
     if (!villageLeader) {
-      throw new NotFoundException("Village leader user not found");
+      throw new NotFoundException("Village leader not found");
     }
 
     // Update the user's role back to CITIZEN
     villageLeader.role = UserRole.CITIZEN;
-    villageLeader.profile.isVillageLeader = false;
+    villageLeader.isVillageLeader = false;
     await this.usersService.saveUser(villageLeader);
 
     // Update the village to remove leader information

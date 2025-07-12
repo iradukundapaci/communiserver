@@ -1,83 +1,109 @@
-"use client";
+'use client';
 
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+} from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Isibo, getIsibos } from "@/lib/api/locations";
-import { changePassword, updateUserProfile } from "@/lib/api/user";
-import { useUser } from "@/lib/contexts/user-context";
-import { useEffect, useState } from "react";
-import { toast } from "sonner";
+} from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { House, Isibo, getHouses, getIsibos } from '@/lib/api/locations';
+import { changePassword, updateUserProfile } from '@/lib/api/user';
+import { useUser } from '@/lib/contexts/user-context';
+import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
 
 export default function ProfilePage() {
-  const { user, manualRefresh } = useUser();
+  const { user, refreshUser } = useUser();
   const [isLoading, setIsLoading] = useState(false);
   const [isibos, setIsibos] = useState<Isibo[]>([]);
+  const [houses, setHouses] = useState<House[]>([]);
   const [isLoadingIsibos, setIsLoadingIsibos] = useState(false);
-
-  // Note: No automatic fetching to prevent infinite loops
-  // Users can manually refresh if needed
+  const [isLoadingHouses, setIsLoadingHouses] = useState(false);
 
   const [formData, setFormData] = useState({
-    names: user?.names || "",
-    email: user?.email || "",
-    phone: user?.phone || "",
-    isiboId: user?.isibo?.id || "",
+    names: user?.names || '',
+    email: user?.email || '',
+    phone: user?.phone || '',
+    isiboId: user?.isibo?.id || '',
+    houseId: user?.house?.id || '',
   });
 
   const [passwordData, setPasswordData] = useState({
-    newPassword: "",
-    confirmPassword: "",
+    newPassword: '',
+    confirmPassword: '',
   });
 
   // Update form data when user changes
   useEffect(() => {
     if (user) {
-      console.log("User object:", user);
+      console.log('User object:', user);
       setFormData({
-        names: user.names || "",
-        email: user.email || "",
-        phone: user.phone || "",
-        isiboId: user?.isibo?.id || "",
+        names: user.names || '',
+        email: user.email || '',
+        phone: user.phone || '',
+        isiboId: user?.isibo?.id || '',
+        houseId: user?.house?.id || '',
       });
     }
-  }, [user?.id, user?.names, user?.email, user?.phone, user?.isibo?.id]); // Only depend on specific user properties
+  }, [user]);
 
   // Fetch isibos when user's village changes or on component mount
   useEffect(() => {
     if (user?.village?.id) {
-      console.log("Fetching isibos for village:", user.village.id);
+      console.log('Fetching isibos for village:', user.village.id);
       fetchIsibos(user.village.id);
     }
   }, [user?.village?.id]);
+
+  // Fetch houses when selected isibo changes
+  useEffect(() => {
+    if (formData.isiboId) {
+      console.log('Fetching houses for isibo:', formData.isiboId);
+      fetchHouses(formData.isiboId);
+    } else {
+      // Clear houses when no isibo is selected
+      setHouses([]);
+    }
+  }, [formData.isiboId]);
 
   const fetchIsibos = async (villageId: string) => {
     try {
       setIsLoadingIsibos(true);
       const response = await getIsibos(villageId);
-      console.log("Isibos response:", response);
+      console.log('Isibos response:', response);
       setIsibos(response.items || []);
     } catch (error) {
-      console.error("Error fetching isibos:", error);
-      toast.error("Failed to fetch isibos");
+      console.error('Error fetching isibos:', error);
+      toast.error('Failed to fetch isibos');
     } finally {
       setIsLoadingIsibos(false);
+    }
+  };
+
+  const fetchHouses = async (isiboId: string) => {
+    try {
+      setIsLoadingHouses(true);
+      const response = await getHouses(isiboId);
+      console.log('Houses response:', response);
+      setHouses(response.items || []);
+    } catch (error) {
+      console.error('Error fetching houses:', error);
+      toast.error('Failed to fetch houses');
+    } finally {
+      setIsLoadingHouses(false);
     }
   };
 
@@ -93,6 +119,8 @@ export default function ProfilePage() {
     setFormData((prev) => ({
       ...prev,
       [name]: value,
+      // Clear house selection when isibo changes
+      ...(name === 'isiboId' ? { houseId: '' } : {}),
     }));
   };
 
@@ -107,18 +135,16 @@ export default function ProfilePage() {
   const handleProfileUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    console.log("Submitting form data:", formData);
+    console.log('Submitting form data:', formData);
 
     try {
       setIsLoading(true);
       await updateUserProfile(formData);
-      await manualRefresh(); // Refresh the user context
-      toast.success("Profile updated successfully");
-    } catch (error) {
-      console.error("Profile update error:", error);
-      toast.error(
-        error instanceof Error ? error.message : "Failed to update profile"
-      );
+      await refreshUser(); // Refresh the user context
+      toast.success('Profile updated successfully');
+    } catch (error: any) {
+      console.error('Profile update error:', error);
+      toast.error(error?.message || 'Failed to update profile');
     } finally {
       setIsLoading(false);
     }
@@ -128,12 +154,12 @@ export default function ProfilePage() {
     e.preventDefault();
 
     if (passwordData.newPassword !== passwordData.confirmPassword) {
-      toast.error("Passwords do not match");
+      toast.error('Passwords do not match');
       return;
     }
 
     if (passwordData.newPassword.length < 8) {
-      toast.error("Password must be at least 8 characters long");
+      toast.error('Password must be at least 8 characters long');
       return;
     }
 
@@ -141,14 +167,12 @@ export default function ProfilePage() {
       setIsLoading(true);
       await changePassword(passwordData.newPassword);
       setPasswordData({
-        newPassword: "",
-        confirmPassword: "",
+        newPassword: '',
+        confirmPassword: '',
       });
-      toast.success("Password changed successfully");
-    } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "Failed to change password"
-      );
+      toast.success('Password changed successfully');
+    } catch (error: any) {
+      toast.error(error?.message || 'Failed to change password');
     } finally {
       setIsLoading(false);
     }
@@ -230,7 +254,7 @@ export default function ProfilePage() {
                       <div className="flex items-center gap-2">
                         <Input
                           id="cell"
-                          value={user.cell?.name || "Not assigned"}
+                          value={user.cell?.name || 'Not assigned'}
                           disabled
                         />
                         {user.isCellLeader && (
@@ -249,7 +273,7 @@ export default function ProfilePage() {
                       <div className="flex items-center gap-2">
                         <Input
                           id="village"
-                          value={user.village?.name || "Not assigned"}
+                          value={user.village?.name || 'Not assigned'}
                           disabled
                         />
                         {user.isVillageLeader && (
@@ -269,7 +293,7 @@ export default function ProfilePage() {
                         <div className="flex items-center gap-2">
                           <Input
                             id="isibo"
-                            value={user.isibo?.name || "Not assigned"}
+                            value={user.isibo?.name || 'Not assigned'}
                             disabled
                           />
                           <Badge
@@ -283,7 +307,7 @@ export default function ProfilePage() {
                         <Select
                           value={formData.isiboId}
                           onValueChange={(value) =>
-                            handleSelectChange("isiboId", value)
+                            handleSelectChange('isiboId', value)
                           }
                           disabled={isLoadingIsibos || !user.village?.id}
                         >
@@ -300,12 +324,34 @@ export default function ProfilePage() {
                         </Select>
                       )}
                     </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="houseId">House</Label>
+                      <Select
+                        value={formData.houseId}
+                        onValueChange={(value) =>
+                          handleSelectChange('houseId', value)
+                        }
+                        disabled={isLoadingHouses || !formData.isiboId}
+                      >
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Select a house" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {houses.map((house) => (
+                            <SelectItem key={house.id} value={house.id}>
+                              {house.address + ' ' + house.code}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
                 </div>
 
                 <div className="flex justify-end">
                   <Button type="submit" disabled={isLoading}>
-                    {isLoading ? "Updating..." : "Update Profile"}
+                    {isLoading ? 'Updating...' : 'Update Profile'}
                   </Button>
                 </div>
               </form>
@@ -347,7 +393,7 @@ export default function ProfilePage() {
 
                 <div className="flex justify-end">
                   <Button type="submit" disabled={isLoading}>
-                    {isLoading ? "Updating..." : "Change Password"}
+                    {isLoading ? 'Updating...' : 'Change Password'}
                   </Button>
                 </div>
               </form>

@@ -13,7 +13,7 @@ import {
   UnauthorizedResponse,
 } from "../__shared__/decorators";
 import { AuthService } from "./auth.service";
-import { IsAuthorized, RefreshToken } from "./decorators/authorize.decorator";
+import { IsAuthorized } from "./decorators/authorize.decorator";
 import { GetUser } from "./decorators/get-user.decorator";
 import { EmailDto } from "./dto/email-dto";
 import { ForgotPasswordDto } from "./dto/forgot-password.dto";
@@ -35,17 +35,6 @@ export class AuthController {
   ): Promise<GenericResponse<SignInDto.Output>> {
     const payload = await this.authService.signIn(signInDTO);
     return new GenericResponse("Logged in successfully", payload);
-  }
-
-  @PatchOperation("/refresh-token", "Refresh token")
-  @RefreshToken()
-  @OkResponse(SignInDto.Output)
-  @ErrorResponses(UnauthorizedResponse)
-  async refreshToken(
-    @GetUser() user: User,
-  ): Promise<GenericResponse<SignInDto.Output>> {
-    const tokens = await this.authService.refreshToken(user);
-    return new GenericResponse("Token refreshed successfully", tokens);
   }
 
   @PostOperation("/logout", "Sign out a user")

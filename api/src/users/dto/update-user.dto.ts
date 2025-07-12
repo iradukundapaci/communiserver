@@ -1,6 +1,6 @@
 import { IsEmail, IsOptional, IsString } from "class-validator";
 
-export namespace UpdateProfileDto {
+export namespace UpdateUserDto {
   export class Input {
     @IsString()
     @IsOptional()

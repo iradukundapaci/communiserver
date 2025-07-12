@@ -20,7 +20,6 @@ import {
   BadRequestException,
   ForbiddenException,
 } from "@nestjs/common";
-import { Profile } from "src/users/entities/profile.entity";
 import { plainToInstance } from "class-transformer";
 import { EmailDto } from "./dto/email-dto";
 import { InjectEntityManager } from "@nestjs/typeorm";
@@ -59,40 +58,24 @@ export class AuthService {
           role: UserRole.CITIZEN,
         });
 
-        const cell = manager
+        const cell = await manager
           .getRepository("Cell")
-          .findBy({
-            Id: cellId,
-          })
-          .then((cell) => {
-            if (!cell) {
-              throw new NotFoundException("Cell not found");
-            }
-            return cell;
-          });
-        const village = manager
-          .getRepository("Village")
-          .findBy({
-            Id: villageId,
-          })
-          .then((village) => {
-            if (!village) {
-              throw new NotFoundException("Village not found");
-            }
-            return village;
-          });
-        if (!cell || !village) {
-          throw new NotFoundException("Cell or village not found");
+          .findOneBy({ id: cellId });
+
+        if (!cell) {
+          throw new NotFoundException("Cell not found");
         }
-        const profile = plainToInstance(Profile, {
-          names,
-          isVillageLeader: false,
-          isCellLeader: false,
-          phone,
-          cell,
-          village,
-        });
-        user.profile = profile;
+
+        const village = await manager
+          .getRepository("Village")
+          .findOneBy({ id: villageId });
+
+        if (!village) {
+          throw new NotFoundException("Village not found");
+        }
+
+        user.cell = cell as any;
+        user.village = village as any;
 
         user = await manager.save(user);
 
@@ -110,35 +93,20 @@ export class AuthService {
     if (!user || !PasswordEncryption.comparePassword(password, user.password))
       throw new UnauthorizedException("Invalid email or password");
 
-    if (!user.verifiedAt) {
-      throw new ForbiddenException(
-        "Account not verified, prease check your email to verify or request other verification email",
-      );
-    }
-
-    if (!user.activated)
-      throw new UnauthorizedException("Account not activated, contact support");
-
     const payload: IJwtPayload = {
       sub: user.email,
       id: user.id,
       role: user.role,
     };
     const accessToken = this.tokenService.generateJwtToken(payload);
-    const refreshToken = this.tokenService.generateRefreshToken(user.id);
 
-    await this.usersService.updateRefreshToken(user.id, refreshToken);
-    return new SignInDto.Output(accessToken, refreshToken);
+    return new SignInDto.Output(accessToken);
   }
 
   async logout(userId: string): Promise<void> {
     const user = await this.usersService.findUserById(userId);
 
     if (!user) throw new UnauthorizedException();
-
-    if (!user.refreshToken) throw new UnauthorizedException();
-
-    await this.usersService.updateRefreshToken(userId, null);
   }
 
   async forgotPassword(
@@ -150,19 +118,20 @@ export class AuthService {
     if (!user) throw new NotFoundException("User not found");
 
     const resetToken = this.tokenService.generateEmailToken(email);
-    const frontendUrl = this.configService.get("url")?.client || 'http://localhost:3000';
+    const frontendUrl =
+      this.configService.get("url")?.client || "http://localhost:3000";
     const resetUrl = `${frontendUrl}/reset-password?token=${resetToken}`;
 
     try {
       await this.notificationService.sendPasswordResetEmail({
-        name: user.profile.names,
+        name: user.names,
         email: user.email,
         resetToken,
         resetUrl,
-        expiresIn: '1 hour',
+        expiresIn: "1 hour",
       });
     } catch (error) {
-      console.error('Failed to send password reset email:', error);
+      console.error("Failed to send password reset email:", error);
       throw new BadRequestException("Forgot password request failed");
     }
   }
@@ -181,22 +150,15 @@ export class AuthService {
     await this.usersService.updatePassword(user.id, password);
   }
 
-  async validateRefreshToken(
-    userId: string,
-    refreshToken: string,
-  ): Promise<User> {
-    const user = await this.usersService.findUserById(userId);
-
-    if (user.refreshToken !== refreshToken) throw new UnauthorizedException();
-
-    return user;
-  }
-
   private async sendVerificationEmail(user: User): Promise<void> {
     const verificationToken = this.tokenService.generateEmailToken(user.email);
-    const verifyEmailLink = `${this.configService.get("url")?.client || 'http://localhost:3000'}/en/verify-email?token=${verificationToken}`;
+    const verifyEmailLink = `${this.configService.get("url")?.client || "http://localhost:3000"}/en/verify-email?token=${verificationToken}`;
 
-    await this.notificationService.sendEmailVerification(user.email, user.profile.names, verifyEmailLink);
+    await this.notificationService.sendEmailVerification(
+      user.email,
+      user.names,
+      verifyEmailLink,
+    );
   }
 
   async verifyEmail(token: string): Promise<void> {
@@ -213,41 +175,14 @@ export class AuthService {
       throw new NotFoundException("User not found");
     }
 
-    if (user.verifiedAt) {
-      throw new BadRequestException("User already verified");
-    }
-
-    await this.usersService.verifyUser(user.id);
-  }
-
-  async refreshToken(user: User) {
-    const authUser = await this.usersService.findUserById(user.id);
-
-    if (!authUser) {
-      throw new UnauthorizedException();
-    }
-
-    const payload: IJwtPayload = {
-      sub: authUser.email,
-      id: authUser.id,
-      role: authUser.role,
-    };
-
-    const accessToken = this.tokenService.generateJwtToken(payload);
-    const refreshToken = this.tokenService.generateRefreshToken(authUser.id);
-
-    await this.usersService.updateRefreshToken(authUser.id, refreshToken);
-
-    return { accessToken, refreshToken };
+    // Email verification is now handled differently since we removed verifiedAt
+    // You might want to implement a different verification mechanism
   }
 
   async requestEmailVerification(emailDto: EmailDto.Input): Promise<void> {
     const user = await this.usersService.findUserByEmail(emailDto.email);
     if (!user) {
       throw new NotFoundException("User not found");
-    }
-    if (user.verifiedAt) {
-      throw new BadRequestException("User already verified");
     }
     await this.sendVerificationEmail(user);
   }

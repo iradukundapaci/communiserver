@@ -4,6 +4,7 @@ import {
   ApiRequestBody,
   BadRequestResponse,
   ConflictResponse,
+  DeleteOperation,
   ErrorResponses,
   ForbiddenResponse,
   GetOperation,
@@ -27,10 +28,10 @@ import { CreateCellLeaderDTO } from "./dto/create-cell-leader.dto";
 import { CreateCitizenDTO } from "./dto/create-citizen.dto";
 import { CreateIsiboLeaderDTO } from "./dto/create-isibo-leader.dto";
 import { CreateVillageLeaderDTO } from "./dto/create-village-leader.dto";
-import { FetchProfileDto } from "./dto/fetch-profile.dto";
 import { FetchUserDto } from "./dto/fetch-user.dto";
+import { FetchUserListDto } from "./dto/fetch-user-list.dto";
 import { PasswordDto } from "./dto/update-password.dto";
-import { UpdateProfileDto } from "./dto/update-profile.dto";
+import { UpdateUserDto } from "./dto/update-user.dto";
 
 import { User } from "./entities/user.entity";
 import { UsersService } from "./users.service";
@@ -40,37 +41,25 @@ import { UsersService } from "./users.service";
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
-  @OkResponse(FetchProfileDto.Output)
-  @IsAuthorized()
-  @GetOperation("me", "Get my profile")
-  @ErrorResponses(UnauthorizedResponse, ForbiddenResponse, NotFoundResponse)
-  async getProfile(
-    @GetUser() user: User,
-  ): Promise<GenericResponse<FetchProfileDto.Output>> {
-    const loggedinUser = await this.usersService.getProfile(user.id);
-    return new GenericResponse("Profile retrieved successfully", loggedinUser);
-  }
-
-  @OkResponse(UpdateProfileDto.Output)
-  @ApiRequestBody(UpdateProfileDto.Input)
+  @OkResponse(UpdateUserDto.Output)
+  @ApiRequestBody(UpdateUserDto.Input)
   @ErrorResponses(
     UnauthorizedResponse,
-    ConflictResponse,
     ForbiddenResponse,
     NotFoundResponse,
+    ConflictResponse,
     BadRequestResponse,
   )
-  @PatchOperation("", "Update my profile")
-  @IsAuthorized()
-  async updateProfile(
+  @PatchOperation("", "Update my user")
+  async updateUser(
     @GetUser() user: User,
-    @Body() updateProfileDto: UpdateProfileDto.Input,
-  ): Promise<GenericResponse<UpdateProfileDto.Output>> {
-    const updatedUser = await this.usersService.updateProfile(
+    @Body() updateUserDto: UpdateUserDto.Input,
+  ): Promise<GenericResponse<UpdateUserDto.Output>> {
+    const updatedUser = await this.usersService.updateUser(
       user.id,
-      updateProfileDto,
+      updateUserDto,
     );
-    return new GenericResponse("Profile updated successfully", updatedUser);
+    return new GenericResponse("User updated successfully", updatedUser);
   }
 
   @OkResponse()
@@ -89,27 +78,50 @@ export class UsersController {
     return new GenericResponse("Password updated successfully");
   }
 
+  @PaginatedOkResponse(FetchUserListDto.Output)
+  @IsAdminOrVillageLeaderOrIsiboLeader()
   @GetOperation("", "Get all users")
-  @IsAuthorized()
-  @PaginatedOkResponse(FetchUserDto.Output)
-  @ErrorResponses(UnauthorizedResponse, ForbiddenResponse, NotFoundResponse)
-  async getAllUsers(
-    @Query() fetchUserDto: FetchUserDto.Input,
-    @GetUser() user: User,
-  ) {
-    const result = await this.usersService.findAllUsers(fetchUserDto, user);
-    return new GenericResponse("Users retrieved successfully", result);
+  @ErrorResponses(UnauthorizedResponse, ForbiddenResponse)
+  async findAllUsers(
+    @Query() fetchUserDto: FetchUserListDto.Input,
+    @GetUser() currentUser: User,
+  ): Promise<GenericResponse<FetchUserListDto.Output>> {
+    const users = await this.usersService.findAllUsers(
+      fetchUserDto,
+      currentUser,
+    );
+    return new GenericResponse("Users retrieved successfully", users);
   }
 
-  @OkResponse(FetchProfileDto.Output)
+  @OkResponse(FetchUserDto.Output)
+  @IsAuthorized()
+  @GetOperation("me", "Get my user")
+  @ErrorResponses(UnauthorizedResponse, ForbiddenResponse, NotFoundResponse)
+  async getUser(
+    @GetUser() user: User,
+  ): Promise<GenericResponse<FetchUserDto.Output>> {
+    const loggedinUser = await this.usersService.getUser(user.id);
+    return new GenericResponse("User retrieved successfully", loggedinUser);
+  }
+
+  @OkResponse(FetchUserDto.Output)
   @IsAuthorized()
   @GetOperation(":id", "Get a user by id")
   @ErrorResponses(UnauthorizedResponse, ForbiddenResponse, NotFoundResponse)
-  async getUser(
+  async getUserById(
     @Param("id") id: string,
-  ): Promise<GenericResponse<FetchProfileDto.Output>> {
-    const user = await this.usersService.getProfile(id);
+  ): Promise<GenericResponse<FetchUserDto.Output>> {
+    const user = await this.usersService.getUser(id);
     return new GenericResponse("User retrieved successfully", user);
+  }
+
+  @DeleteOperation(":id", "Delete a user")
+  @IsAdminOrVillageLeaderOrIsiboLeader()
+  @OkResponse()
+  @ErrorResponses(UnauthorizedResponse, ForbiddenResponse, NotFoundResponse)
+  async deleteUser(@Param("id") id: string): Promise<GenericResponse> {
+    await this.usersService.deleteUser(id);
+    return new GenericResponse("User deleted successfully");
   }
 
   @PostOperation("cell-leaders", "Create a new cell leader")
@@ -180,5 +192,4 @@ export class UsersController {
     await this.usersService.createCitizen(createCitizenDto, user);
     return new GenericResponse("Citizen created successfully");
   }
-
 }

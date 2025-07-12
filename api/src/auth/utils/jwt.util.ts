@@ -28,14 +28,6 @@ export class TokenService {
     });
   }
 
-  generateRefreshToken(userId: string): string {
-    const payload = { sub: userId };
-    return this.jwtService.sign(payload, {
-      expiresIn: this.jwtRefreshConfig.expiresIn,
-      secret: this.jwtRefreshConfig.secret,
-    });
-  }
-
   getTokenPayload<T>(token: string): T {
     const payload = this.jwtService.verify(token, {
       secret: this.jwtConfig.secret,

@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import { type Icon } from "@tabler/icons-react";
+import { type Icon } from '@tabler/icons-react';
 
 import {
   SidebarGroup,
@@ -8,10 +8,10 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-} from "@/components/ui/sidebar";
+} from '@/components/ui/sidebar';
 
-import { useUser } from "@/lib/contexts/user-context";
-import { useRouter } from "next/navigation";
+import { useUser } from '@/lib/contexts/user-context';
+import { useRouter } from 'next/navigation';
 
 export function NavMain({
   items,
@@ -27,16 +27,11 @@ export function NavMain({
 
   const handleClick = (
     e: React.MouseEvent<HTMLAnchorElement>,
-    item: { title: string; url: string }
+    item: { title: string; url: string },
   ) => {
     e.preventDefault();
 
-    // Special handling for Locations menu item for isibo leaders
-    if (item.title === "Locations" && user?.role === "ISIBO_LEADER") {
-      router.push("/dashboard/isibo/edit");
-    } else {
-      router.push(item.url);
-    }
+    router.push(item.url);
   };
 
   return (

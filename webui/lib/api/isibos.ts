@@ -1,19 +1,7 @@
 // Isibos API service
-import { getAuthTokens } from "./auth";
+import { getAuthTokens } from './auth';
 
 // Types
-export interface Isibo {
-  id: string;
-  name: string;
-  hasLeader: boolean;
-  leaderId: string | null;
-  village?: {
-    id: string;
-    name: string;
-  };
-  members?: IsiboMember[];
-}
-
 export interface IsiboMember {
   id: string;
   names: string;
@@ -25,6 +13,24 @@ export interface IsiboMember {
   };
 }
 
+export interface Isibo {
+  id: string;
+  name: string;
+  hasLeader: boolean;
+  leaderId: string | null;
+  village?: {
+    id: string;
+    name: string;
+  };
+  houses?: House[];
+  members?: IsiboMember[];
+}
+
+export interface House {
+  id: string;
+  code: string;
+}
+
 export interface Citizen {
   names: string;
   email: string;
@@ -34,16 +40,16 @@ export interface Citizen {
 export interface CreateIsiboInput {
   name: string;
   villageId: string;
-  leaderId?: string;
-  members?: Citizen[]; // Array of citizen data to create
+  isiboLeaderId?: string;
+  members?: Citizen[];
 }
 
 export interface UpdateIsiboInput {
   name?: string;
   villageId?: string;
-  leaderId?: string;
-  newMembers?: Citizen[]; // New citizens to create
-  existingMemberIds?: string[]; // Existing member profile IDs to keep
+  isiboLeaderId?: string;
+  memberIds?: string[];
+  newMembers?: Citizen[];
 }
 
 export interface AssignIsiboLeaderInput {
@@ -78,13 +84,13 @@ export async function getIsibos(
   villageId: string,
   page: number = 1,
   size: number = 10,
-  search?: string
+  search?: string,
 ): Promise<PaginatedResponse<Isibo>> {
   try {
     const tokens = getAuthTokens();
 
     if (!tokens) {
-      throw new Error("Not authenticated");
+      throw new Error('Not authenticated');
     }
 
     let url = `/api/v1/isibos?villageId=${villageId}&page=${page}&size=${size}`;
@@ -93,10 +99,10 @@ export async function getIsibos(
     }
 
     const response = await fetch(url, {
-      method: "GET",
+      method: 'GET',
       headers: {
         Authorization: `Bearer ${tokens.accessToken}`,
-        "Content-Type": "application/json",
+        'Content-Type': 'application/json',
       },
     });
 
@@ -104,91 +110,17 @@ export async function getIsibos(
       const errorData = await response.json();
       if (response.status === 403) {
         throw new Error(
-          "You do not have permission to view isibos in this village"
+          'You do not have permission to view isibos in this village',
         );
       } else {
-        throw new Error(errorData.message || "Failed to fetch isibos");
+        throw new Error(errorData.message || 'Failed to fetch isibos');
       }
     }
 
     const data: ApiResponse<PaginatedResponse<Isibo>> = await response.json();
     return data.payload;
   } catch (error) {
-    console.error("Get isibos error:", error);
-    throw error;
-  }
-}
-
-/**
- * Search isibos by name
- * @param query Search query
- * @param villageId Optional village ID to filter by
- * @returns Promise with matching isibos
- */
-export async function searchIsibos(query: string, villageId?: string): Promise<Isibo[]> {
-  try {
-    const tokens = getAuthTokens();
-
-    if (!tokens) {
-      throw new Error("Not authenticated");
-    }
-
-    let url = `/api/v1/isibos/search?q=${encodeURIComponent(query)}`;
-    if (villageId) {
-      url += `&villageId=${encodeURIComponent(villageId)}`;
-    }
-
-    const response = await fetch(url, {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${tokens.accessToken}`,
-        "Content-Type": "application/json",
-      },
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || "Failed to search isibos");
-    }
-
-    const data: ApiResponse<Isibo[]> = await response.json();
-    return data.payload;
-  } catch (error) {
-    console.error("Search isibos error:", error);
-    throw error;
-  }
-}
-
-/**
- * Get isibos by village ID
- * @param villageId Village ID
- * @returns Promise with isibos in the village
- */
-export async function getIsibosByVillage(villageId: string): Promise<Isibo[]> {
-  try {
-    const tokens = getAuthTokens();
-
-    if (!tokens) {
-      throw new Error("Not authenticated");
-    }
-
-    const response = await fetch(`/api/v1/isibos/by-village/${villageId}`, {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${tokens.accessToken}`,
-        "Content-Type": "application/json",
-      },
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || "Failed to fetch isibos by village");
-    }
-
-    const data: ApiResponse<Isibo[]> = await response.json();
-    return data.payload;
-  } catch (error) {
-    console.error("Get isibos by village error:", error);
+    console.error('Get isibos error:', error);
     throw error;
   }
 }
@@ -203,32 +135,32 @@ export async function getIsiboById(id: string): Promise<Isibo> {
     const tokens = getAuthTokens();
 
     if (!tokens) {
-      throw new Error("Not authenticated");
+      throw new Error('Not authenticated');
     }
 
     const response = await fetch(`/api/v1/isibos/${id}`, {
-      method: "GET",
+      method: 'GET',
       headers: {
         Authorization: `Bearer ${tokens.accessToken}`,
-        "Content-Type": "application/json",
+        'Content-Type': 'application/json',
       },
     });
 
     if (!response.ok) {
       const errorData = await response.json();
       if (response.status === 403) {
-        throw new Error("You do not have permission to view this isibo");
+        throw new Error('You do not have permission to view this isibo');
       } else if (response.status === 404) {
-        throw new Error("Isibo not found");
+        throw new Error('Isibo not found');
       } else {
-        throw new Error(errorData.message || "Failed to fetch isibo");
+        throw new Error(errorData.message || 'Failed to fetch isibo');
       }
     }
 
     const data: ApiResponse<Isibo> = await response.json();
     return data.payload;
   } catch (error) {
-    console.error("Get isibo error:", error);
+    console.error('Get isibo error:', error);
     throw error;
   }
 }
@@ -243,27 +175,27 @@ export async function createIsibo(isiboData: CreateIsiboInput): Promise<Isibo> {
     const tokens = getAuthTokens();
 
     if (!tokens) {
-      throw new Error("Not authenticated");
+      throw new Error('Not authenticated');
     }
 
-    const response = await fetch("/api/v1/isibos", {
-      method: "POST",
+    const response = await fetch('/api/v1/isibos', {
+      method: 'POST',
       headers: {
         Authorization: `Bearer ${tokens.accessToken}`,
-        "Content-Type": "application/json",
+        'Content-Type': 'application/json',
       },
       body: JSON.stringify(isiboData),
     });
 
     if (!response.ok) {
       const errorData = await response.json();
-      throw new Error(errorData.message || "Failed to create isibo");
+      throw new Error(errorData.message || 'Failed to create isibo');
     }
 
     const data: ApiResponse<Isibo> = await response.json();
     return data.payload;
   } catch (error) {
-    console.error("Create isibo error:", error);
+    console.error('Create isibo error:', error);
     throw error;
   }
 }
@@ -276,20 +208,20 @@ export async function createIsibo(isiboData: CreateIsiboInput): Promise<Isibo> {
  */
 export async function updateIsibo(
   id: string,
-  isiboData: UpdateIsiboInput
+  isiboData: UpdateIsiboInput,
 ): Promise<Isibo> {
   try {
     const tokens = getAuthTokens();
 
     if (!tokens) {
-      throw new Error("Not authenticated");
+      throw new Error('Not authenticated');
     }
 
     const response = await fetch(`/api/v1/isibos/${id}`, {
-      method: "PATCH",
+      method: 'PATCH',
       headers: {
         Authorization: `Bearer ${tokens.accessToken}`,
-        "Content-Type": "application/json",
+        'Content-Type': 'application/json',
       },
       body: JSON.stringify(isiboData),
     });
@@ -297,18 +229,18 @@ export async function updateIsibo(
     if (!response.ok) {
       const errorData = await response.json();
       if (response.status === 403) {
-        throw new Error("You do not have permission to update this isibo");
+        throw new Error('You do not have permission to update this isibo');
       } else if (response.status === 404) {
-        throw new Error("Isibo not found");
+        throw new Error('Isibo not found');
       } else {
-        throw new Error(errorData.message || "Failed to update isibo");
+        throw new Error(errorData.message || 'Failed to update isibo');
       }
     }
 
     const data: ApiResponse<Isibo> = await response.json();
     return data.payload;
   } catch (error) {
-    console.error("Update isibo error:", error);
+    console.error('Update isibo error:', error);
     throw error;
   }
 }
@@ -323,26 +255,26 @@ export async function deleteIsibo(id: string): Promise<string> {
     const tokens = getAuthTokens();
 
     if (!tokens) {
-      throw new Error("Not authenticated");
+      throw new Error('Not authenticated');
     }
 
     const response = await fetch(`/api/v1/isibos/${id}`, {
-      method: "DELETE",
+      method: 'DELETE',
       headers: {
         Authorization: `Bearer ${tokens.accessToken}`,
-        "Content-Type": "application/json",
+        'Content-Type': 'application/json',
       },
     });
 
     if (!response.ok) {
       const errorData = await response.json();
-      throw new Error(errorData.message || "Failed to delete isibo");
+      throw new Error(errorData.message || 'Failed to delete isibo');
     }
 
     const data: ApiResponse<null> = await response.json();
     return data.message;
   } catch (error) {
-    console.error("Delete isibo error:", error);
+    console.error('Delete isibo error:', error);
     throw error;
   }
 }
@@ -355,33 +287,33 @@ export async function deleteIsibo(id: string): Promise<string> {
  */
 export async function assignIsiboLeader(
   isiboId: string,
-  userId: string
+  userId: string,
 ): Promise<Isibo> {
   try {
     const tokens = getAuthTokens();
 
     if (!tokens) {
-      throw new Error("Not authenticated");
+      throw new Error('Not authenticated');
     }
 
     const response = await fetch(`/api/v1/isibos/${isiboId}/assign-leader`, {
-      method: "PATCH",
+      method: 'PATCH',
       headers: {
         Authorization: `Bearer ${tokens.accessToken}`,
-        "Content-Type": "application/json",
+        'Content-Type': 'application/json',
       },
       body: JSON.stringify({ userId }),
     });
 
     if (!response.ok) {
       const errorData = await response.json();
-      throw new Error(errorData.message || "Failed to assign isibo leader");
+      throw new Error(errorData.message || 'Failed to assign isibo leader');
     }
 
     const data: ApiResponse<Isibo> = await response.json();
     return data.payload;
   } catch (error) {
-    console.error("Assign isibo leader error:", error);
+    console.error('Assign isibo leader error:', error);
     throw error;
   }
 }
@@ -396,26 +328,26 @@ export async function removeIsiboLeader(isiboId: string): Promise<Isibo> {
     const tokens = getAuthTokens();
 
     if (!tokens) {
-      throw new Error("Not authenticated");
+      throw new Error('Not authenticated');
     }
 
     const response = await fetch(`/api/v1/isibos/${isiboId}/remove-leader`, {
-      method: "PATCH",
+      method: 'PATCH',
       headers: {
         Authorization: `Bearer ${tokens.accessToken}`,
-        "Content-Type": "application/json",
+        'Content-Type': 'application/json',
       },
     });
 
     if (!response.ok) {
       const errorData = await response.json();
-      throw new Error(errorData.message || "Failed to remove isibo leader");
+      throw new Error(errorData.message || 'Failed to remove isibo leader');
     }
 
     const data: ApiResponse<Isibo> = await response.json();
     return data.payload;
   } catch (error) {
-    console.error("Remove isibo leader error:", error);
+    console.error('Remove isibo leader error:', error);
     throw error;
   }
 }

@@ -11,11 +11,9 @@ export namespace SignInDto {
 
   export class Output {
     accessToken: string;
-    refreshToken: string;
 
-    constructor(accessToken: string, refreshToken: string) {
+    constructor(accessToken: string) {
       this.accessToken = accessToken;
-      this.refreshToken = refreshToken;
     }
   }
 }

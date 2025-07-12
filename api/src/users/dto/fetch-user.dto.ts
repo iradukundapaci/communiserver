@@ -1,50 +1,29 @@
-import { ApiProperty } from "@nestjs/swagger";
-import { Expose } from "class-transformer";
-import { IsEnum, IsOptional, IsString } from "class-validator";
-import { PaginationDto } from "src/__shared__/dto/pagination.dto";
 import { UserRole } from "src/__shared__/enums/user-role.enum";
 
 export namespace FetchUserDto {
-  export class Input extends PaginationDto {
-    @ApiProperty({
-      description: "Search query for name, email, or phone",
-      required: false,
-    })
-    @IsString()
-    @IsOptional()
-    q?: string;
-
-    @ApiProperty({
-      description: "Filter by user role",
-      required: false,
-      enum: UserRole,
-    })
-    @IsEnum(UserRole)
-    @IsOptional()
-    role?: UserRole;
-  }
-
-  export class UserItem {
+  export class Output {
     id: string;
     names: string;
     email: string;
-    phone: string;
     role: UserRole;
-    activated: boolean;
-    profileID: string;
+    phone: string;
+    cell: Location;
+    village: Location;
+    isibo: Location;
+    house: House;
+    isIsiboLeader: boolean;
+    isVillageLeader: boolean;
+    isCellLeader: boolean;
   }
 
-  export class Output {
-    @ApiProperty({ type: [UserItem] })
-    items: UserItem[];
+  class Location {
+    id: string;
+    name: string;
+  }
 
-    @ApiProperty()
-    meta: {
-      totalItems: number;
-      itemCount: number;
-      itemsPerPage: number;
-      totalPages: number;
-      currentPage: number;
-    };
+  class House {
+    id: string;
+    code: string;
+    address?: string;
   }
 }

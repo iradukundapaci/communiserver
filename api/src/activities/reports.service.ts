@@ -137,14 +137,14 @@ export class ReportsService {
 
     if (attendanceIds.length > 0) {
       // Validate that all attendance IDs exist
-      const profiles = await this.usersService.findProfilesByIds(attendanceIds);
+      const users = await this.usersService.findUsersByIds(attendanceIds);
 
-      if (profiles.length !== attendanceIds.length) {
-        throw new NotFoundException("One or more attendee profiles not found");
+      if (users.length !== attendanceIds.length) {
+        throw new NotFoundException("One or more attendee users not found");
       }
 
       // Assign attendance to report
-      report.attendance = profiles;
+      report.attendance = users;
       await this.reportRepository.save(report);
     } else {
       // Clear attendance if empty array is provided
@@ -168,17 +168,7 @@ export class ReportsService {
       report.task.actualParticipants = dto.attendanceIds.length;
     }
 
-    // Update task financial data
-    if (dto.estimatedCost !== undefined)
-      report.task.estimatedCost = dto.estimatedCost;
-    if (dto.actualCost !== undefined) report.task.actualCost = dto.actualCost;
-    if (dto.expectedParticipants !== undefined)
-      report.task.expectedParticipants = dto.expectedParticipants;
-    // Don't allow manual override of actualParticipants - it's calculated from attendance
-    if (dto.expectedFinancialImpact !== undefined)
-      report.task.expectedFinancialImpact = dto.expectedFinancialImpact;
-    if (dto.actualFinancialImpact !== undefined)
-      report.task.actualFinancialImpact = dto.actualFinancialImpact;
+    // Update report fields
     if (dto.comment !== undefined) report.comment = dto.comment;
     if (dto.materialsUsed !== undefined)
       report.materialsUsed = dto.materialsUsed;

@@ -1,15 +1,15 @@
 "use client";
 
 import { PermissionGate } from "@/components/permission-gate";
-import { useUser } from "@/lib/contexts/user-context";
+import { useAuth } from "@/contexts/auth-context";
 import { Permission } from "@/lib/permissions";
-import { clearAuthTokens } from "@/lib/api/auth";
 import {
   IconBuilding,
   IconCalendarEvent,
   IconChartBar,
   IconClipboardList,
   IconDashboard,
+  IconHome,
   IconLogout,
   IconSettings,
   IconUserCircle,
@@ -28,7 +28,7 @@ import {
 export function DashboardSidebar(
   props: React.ComponentPropsWithoutRef<typeof SidebarGroup>
 ) {
-  const { clearUser } = useUser();
+  const { logout } = useAuth();
   const router = useRouter();
 
   // Handle navigation
@@ -38,17 +38,7 @@ export function DashboardSidebar(
 
   // Handle logout
   const handleLogout = () => {
-    // Clear auth tokens and user data
-    clearAuthTokens();
-    clearUser();
-
-    // Redirect to home page
-    router.push("/");
-
-    // Show success message
-    import("sonner").then(({ toast }) => {
-      toast.success("Logged out successfully");
-    });
+    logout();
   };
 
   return (
@@ -195,14 +185,27 @@ export function DashboardSidebar(
             </SidebarMenuItem>
           </PermissionGate>
 
-          <PermissionGate permission={Permission.VIEW_LEADERS}>
+          <PermissionGate permission={Permission.CREATE_HOUSE}>
             <SidebarMenuItem>
               <SidebarMenuButton
-                onClick={() => navigateTo("/dashboard/users")}
+                onClick={() => navigateTo("/dashboard/houses")}
+              >
+                <div className="cursor-pointer">
+                  <IconHome />
+                  <span>Manage Houses</span>
+                </div>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          </PermissionGate>
+
+          <PermissionGate permission={Permission.ADD_CITIZENS}>
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                onClick={() => navigateTo("/dashboard/citizens")}
               >
                 <div className="cursor-pointer">
                   <IconUsers />
-                  <span>Users</span>
+                  <span>Manage Citizens</span>
                 </div>
               </SidebarMenuButton>
             </SidebarMenuItem>
@@ -219,15 +222,17 @@ export function DashboardSidebar(
             </SidebarMenuItem>
           </PermissionGate>
 
-          {/* Reports - Available to all users */}
-          <SidebarMenuItem>
-            <SidebarMenuButton onClick={() => navigateTo("/dashboard/reports")}>
-              <div className="cursor-pointer">
-                <IconClipboardList />
-                <span>Reports</span>
-              </div>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
+          {/* House Representative Section */}
+          <PermissionGate permission={Permission.VIEW_HOUSE}>
+            <SidebarMenuItem>
+              <SidebarMenuButton onClick={() => navigateTo("/dashboard/house")}>
+                <div className="cursor-pointer">
+                  <IconHome />
+                  <span>My House</span>
+                </div>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          </PermissionGate>
 
           {/* Common Items for All Users */}
           <SidebarMenuItem>

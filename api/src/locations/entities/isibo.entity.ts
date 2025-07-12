@@ -1,5 +1,5 @@
 import { AbstractEntity } from "src/__shared__/entities/abstract.entity";
-import { Profile } from "src/users/entities/profile.entity";
+import { User } from "src/users/entities/user.entity";
 import {
   BeforeInsert,
   BeforeUpdate,
@@ -31,12 +31,12 @@ export class Isibo extends AbstractEntity {
     }
   }
 
-  @ManyToOne(() => Profile, { nullable: true })
+  @ManyToOne(() => User, { nullable: true })
   @JoinColumn({ name: "leader_id" })
-  leader: Profile;
+  leader: User;
 
-  @OneToMany(() => Profile, (profile) => profile.cell)
-  profiles: Profile[];
+  @OneToMany(() => User, (user) => user.isibo)
+  users: User[];
 
   @ManyToOne(() => Village, (village) => village.isibos, { nullable: false })
   @JoinColumn({ name: "village_id" })

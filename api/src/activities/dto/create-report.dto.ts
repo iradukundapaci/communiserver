@@ -1,90 +1,110 @@
+import { ApiProperty } from "@nestjs/swagger";
 import {
   IsArray,
-  IsNotEmpty,
-  IsNumber,
   IsOptional,
   IsString,
-  IsUUID,
-  Min,
+  IsUrl,
+  ValidateNested,
 } from "class-validator";
-import { Profile } from "src/users/entities/profile.entity";
+import { Type } from "class-transformer";
+import { User } from "src/users/entities/user.entity";
 
 export namespace CreateReportDTO {
   export class Input {
-    @IsUUID()
-    @IsNotEmpty()
-    activityId: string;
-
-    @IsUUID()
-    @IsNotEmpty()
+    @ApiProperty({
+      description: "The ID of the task this report is for",
+    })
+    @IsString()
     taskId: string;
 
-    @IsArray()
-    @IsUUID("4", { each: true })
-    @IsOptional()
-    attendanceIds?: string[];
+    @ApiProperty({
+      description: "The ID of the activity this report is for",
+    })
+    @IsString()
+    activityId: string;
 
-    // Task financial data (copied from task for easy access)
-    @IsNumber()
-    @Min(0)
-    @IsOptional()
-    estimatedCost?: number;
-
-    @IsNumber()
-    @Min(0)
-    @IsOptional()
-    actualCost?: number;
-
-    @IsNumber()
-    @Min(0)
-    @IsOptional()
-    expectedParticipants?: number;
-
-    @IsNumber()
-    @Min(0)
-    @IsOptional()
-    actualParticipants?: number;
-
-    @IsNumber()
-    @IsOptional()
-    expectedFinancialImpact?: number;
-
-    @IsNumber()
-    @IsOptional()
-    actualFinancialImpact?: number;
-
+    @ApiProperty({
+      description: "General comment about the task execution",
+      required: false,
+    })
     @IsString()
     @IsOptional()
     comment?: string;
 
+    @ApiProperty({
+      description: "List of materials used during task execution",
+      type: [String],
+      required: false,
+    })
     @IsArray()
     @IsString({ each: true })
     @IsOptional()
     materialsUsed?: string[];
 
+    @ApiProperty({
+      description: "Challenges faced during task execution",
+      required: false,
+    })
     @IsString()
     @IsOptional()
     challengesFaced?: string;
 
+    @ApiProperty({
+      description: "Suggestions for improvement",
+      required: false,
+    })
     @IsString()
     @IsOptional()
     suggestions?: string;
 
+    @ApiProperty({
+      description: "URLs to evidence (photos, documents, etc.)",
+      type: [String],
+      required: false,
+    })
+    @IsArray()
+    @IsUrl({}, { each: true })
+    @IsOptional()
+    evidenceUrls?: string[];
+
+    @ApiProperty({
+      description: "IDs of users who attended/participated",
+      type: [String],
+      required: false,
+    })
     @IsArray()
     @IsString({ each: true })
     @IsOptional()
-    evidenceUrls?: string[];
+    attendanceIds?: string[];
   }
 
   export class Output {
     id: string;
-    activity: { id: string; title: string };
-    task: { id: string; title: string };
-    attendance: Profile[];
+    task: {
+      id: string;
+      title: string;
+      description: string;
+      status: string;
+      isibo: {
+        id: string;
+        name: string;
+      };
+    };
+    activity: {
+      id: string;
+      title: string;
+      description: string;
+      date: Date;
+      village: {
+        id: string;
+        name: string;
+      };
+    };
     comment?: string;
     materialsUsed?: string[];
     challengesFaced?: string;
     suggestions?: string;
     evidenceUrls?: string[];
+    attendance: User[];
   }
 }

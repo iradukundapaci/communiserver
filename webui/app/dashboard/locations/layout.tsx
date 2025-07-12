@@ -24,7 +24,7 @@ export default function LocationsLayout({
       case 'VILLAGE_LEADER':
         return 'isibos';
       case 'ISIBO_LEADER':
-        return 'isibos';
+        return 'houses';
       default:
         return 'cells';
     }
@@ -82,7 +82,7 @@ export default function LocationsLayout({
         return tab === 'isibos' || tab === 'houses';
       case 'ISIBO_LEADER':
         // Isibo leader can see only houses
-        return tab === 'isibos' || tab === 'houses';
+        return tab === 'houses';
       default:
         return false;
     }

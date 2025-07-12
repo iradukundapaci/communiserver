@@ -6,7 +6,7 @@ import {
 } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { paginate } from "nestjs-typeorm-paginate";
-import { Repository } from "typeorm";
+import { Not, Repository } from "typeorm";
 import { UsersService } from "../users/users.service";
 import { CreateHouseDto } from "./dto/create-house.dto";
 import { UpdateHouseDto } from "./dto/update-house.dto";
@@ -35,7 +35,10 @@ export class HousesService {
     code: string,
   ): Promise<void> {
     const existingHouse = await this.houseRepository.findOne({
-      where: { isibo: { id: isiboId }, code },
+      where: {
+        isibo: { id: Not(isiboId) },
+        code,
+      },
     });
 
     if (existingHouse) {
@@ -52,9 +55,9 @@ export class HousesService {
       relations: [
         "leader",
         "village",
-        "village.profiles",
+        "village.users",
         "village.cell",
-        "village.cell.profiles",
+        "village.cell.users",
       ],
     });
 
@@ -70,18 +73,31 @@ export class HousesService {
       isibo: { id: createHouseDto.isiboId },
     });
 
+    // Save the house first to get the ID
+    const savedHouse = await this.houseRepository.save(house);
+
     // Assign members if provided
     if (createHouseDto.members && createHouseDto.members.length > 0) {
       const memberIds = await this.createCitizensAndGetIds(
         createHouseDto.members,
         isibo.village.id,
         isibo.id,
-        house.id,
+        savedHouse.id,
       );
-      await this.assignMembersToHouse(house.id, memberIds);
+      await this.assignMembersToHouse(savedHouse.id, memberIds);
     }
 
-    return house;
+    // Fetch the house with members to return the complete data
+    const houseWithMembers = await this.houseRepository.findOne({
+      where: { id: savedHouse.id },
+      relations: ["isibo", "members"],
+    });
+
+    if (!houseWithMembers) {
+      throw new NotFoundException("House not found after creation");
+    }
+
+    return houseWithMembers;
   }
 
   async updateHouse(
@@ -91,13 +107,13 @@ export class HousesService {
     const house = await this.houseRepository.findOne({
       where: { id },
       relations: [
-        "representative",
         "isibo",
         "isibo.leader",
         "isibo.village",
-        "isibo.village.profiles",
+        "isibo.village.users",
         "isibo.village.cell",
-        "isibo.village.cell.profiles",
+        "isibo.village.cell.users",
+        "members",
       ],
     });
 
@@ -105,7 +121,6 @@ export class HousesService {
       throw new NotFoundException("House not found");
     }
 
-    // Update the house
     if (updateHouseDto.code) {
       await this.validateHouseCode(house.isibo.id, updateHouseDto.code);
       house.code = updateHouseDto.code;
@@ -115,25 +130,63 @@ export class HousesService {
       house.address = updateHouseDto.address;
     }
 
-    return this.houseRepository.save(house);
+    // Handle member assignment if provided
+    if (updateHouseDto.memberIds && updateHouseDto.memberIds.length > 0) {
+      // Assign existing citizens to the house
+      await this.assignMembersToHouse(house.id, updateHouseDto.memberIds);
+    } else if (updateHouseDto.members && updateHouseDto.members.length > 0) {
+      // Create new citizens and assign them to the house
+      const memberIds = await this.createCitizensAndGetIds(
+        updateHouseDto.members,
+        house.isibo.village.id,
+        house.isibo.id,
+        house.id,
+      );
+      await this.assignMembersToHouse(house.id, memberIds);
+    }
+
+    const savedHouse = await this.houseRepository.save(house);
+
+    // Fetch the house with members to return the complete data
+    const houseWithMembers = await this.houseRepository.findOne({
+      where: { id: savedHouse.id },
+      relations: ["isibo", "members"],
+    });
+
+    if (!houseWithMembers) {
+      throw new NotFoundException("House not found after update");
+    }
+
+    return houseWithMembers;
   }
 
   async deleteHouse(id: string): Promise<void> {
     const house = await this.houseRepository.findOne({
       where: { id },
       relations: [
-        "representative",
         "isibo",
         "isibo.leader",
         "isibo.village",
-        "isibo.village.profiles",
+        "isibo.village.users",
         "isibo.village.cell",
-        "isibo.village.cell.profiles",
+        "isibo.village.cell.users",
+        "members",
       ],
     });
 
     if (!house) {
       throw new NotFoundException("House not found");
+    }
+
+    // Delete all members of the house
+    if (house.members && house.members.length > 0) {
+      for (const member of house.members) {
+        try {
+          await this.usersService.deleteUser(member.id);
+        } catch (error) {
+          console.error(`Failed to delete member ${member.id}:`, error);
+        }
+      }
     }
 
     await this.houseRepository.softDelete(id);
@@ -142,8 +195,8 @@ export class HousesService {
   async findAllHouses(dto: FetchHouseDto.Input): Promise<FetchHouseDto.Output> {
     const queryBuilder = this.houseRepository
       .createQueryBuilder("house")
-      .leftJoinAndSelect("house.representative", "representative")
       .leftJoin("house.isibo", "isibo")
+      .leftJoinAndSelect("house.members", "members")
       .where("isibo.id = :isiboId", { isiboId: dto.isiboId });
 
     if (dto.q) {
@@ -152,16 +205,27 @@ export class HousesService {
       });
     }
 
-    return paginate(queryBuilder, {
+    const result = await paginate(queryBuilder, {
       page: dto.page,
       limit: dto.size,
     });
+
+    return {
+      items: result.items || [],
+      meta: {
+        totalItems: result.meta.totalItems || 0,
+        itemCount: result.meta.itemCount || 0,
+        itemsPerPage: result.meta.itemsPerPage || dto.size,
+        totalPages: result.meta.totalPages || 0,
+        currentPage: result.meta.currentPage || dto.page,
+      },
+    };
   }
 
   async findHouseById(id: string): Promise<House> {
     const house = await this.houseRepository.findOne({
       where: { id },
-      relations: ["representative", "isibo", "members"],
+      relations: ["isibo", "members"],
     });
 
     if (!house) {
@@ -177,7 +241,7 @@ export class HousesService {
     isiboId: string,
     houseId: string,
   ): Promise<string[]> {
-    const profileIds: string[] = [];
+    const userIds: string[] = [];
 
     const village = await this.villageRepository.findOne({
       where: { id: villageId },
@@ -190,7 +254,6 @@ export class HousesService {
 
     for (const citizen of citizens) {
       try {
-        // Check if user already exists
         const existingUser = await this.usersService.findUserByEmail(
           citizen.email,
         );
@@ -200,7 +263,6 @@ export class HousesService {
           );
         }
 
-        // Create citizen using the users service
         const citizenData: CreateCitizenDTO.Input = {
           names: citizen.names,
           email: citizen.email,
@@ -213,15 +275,13 @@ export class HousesService {
 
         await this.usersService.createCitizen(citizenData);
 
-        // Get the created user to get their profile ID
         const createdUser = await this.usersService.findUserByEmail(
           citizen.email,
         );
-        if (createdUser && createdUser.profile) {
-          profileIds.push(createdUser.profile.id);
+        if (createdUser) {
+          userIds.push(createdUser.id);
         }
       } catch (error) {
-        // If citizen creation fails, we should handle it appropriately
         console.error(`Failed to create citizen ${citizen.email}:`, error);
         throw new BadRequestException(
           `Failed to create citizen ${citizen.email}: ${error.message}`,
@@ -229,35 +289,30 @@ export class HousesService {
       }
     }
 
-    return profileIds;
+    return userIds;
   }
 
   async assignMembersToHouse(
     houseId: string,
     memberIds: string[],
   ): Promise<void> {
-    // First, remove all current members from this isibo
-    await this.usersService.removeHouseFromProfiles(houseId);
+    await this.usersService.removeHouseFromUsers(houseId);
 
-    // Then assign new members if any
     if (memberIds.length > 0) {
-      // Validate that all member IDs exist and are citizens
-      const profiles = await this.usersService.findProfilesByIds(memberIds);
+      const users = await this.usersService.findUsersByIds(memberIds);
 
-      if (profiles.length !== memberIds.length) {
-        throw new NotFoundException("One or more member profiles not found");
+      if (users.length !== memberIds.length) {
+        throw new NotFoundException("One or more member users not found");
       }
 
-      // Check that all users have CITIZEN role
-      const nonCitizens = profiles.filter(
-        (profile) => profile.user.role !== UserRole.CITIZEN,
+      const nonCitizens = users.filter(
+        (user) => user.role !== UserRole.CITIZEN,
       );
       if (nonCitizens.length > 0) {
         throw new BadRequestException("All members must have CITIZEN role");
       }
 
-      // Assign members to house
-      await this.usersService.assignProfilesToHouse(memberIds, houseId);
+      await this.usersService.assignUsersToHouse(memberIds, houseId);
     }
   }
 }

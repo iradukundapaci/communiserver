@@ -7,6 +7,7 @@ import { AuthService } from "../auth.service";
 import { Request } from "express";
 import "dotenv/config";
 import { IAppConfig } from "src/__shared__/interfaces/app-config.interface";
+import { UsersService } from "src/users/users.service";
 
 @Injectable()
 export class JwtRefreshStrategy extends PassportStrategy(
@@ -16,6 +17,7 @@ export class JwtRefreshStrategy extends PassportStrategy(
   constructor(
     private readonly authService: AuthService,
     private readonly configService: ConfigService<IAppConfig>,
+    private readonly usersService: UsersService,
   ) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
@@ -27,9 +29,7 @@ export class JwtRefreshStrategy extends PassportStrategy(
 
   async validate(req: Request, payload: IJwtPayload) {
     const { id } = payload;
-    const refreshToken = req.get("Authorization").replace("Bearer", "").trim();
-    if (!refreshToken) throw new UnauthorizedException();
-    const user = await this.authService.validateRefreshToken(id, refreshToken);
+    const user = await this.usersService.findUserById(id);
     if (!user) throw new UnauthorizedException();
     return user;
   }

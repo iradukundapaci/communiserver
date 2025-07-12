@@ -17,10 +17,9 @@ import { CreateCellLeaderDTO } from "./dto/create-cell-leader.dto";
 import { CreateCitizenDTO } from "./dto/create-citizen.dto";
 import { CreateIsiboLeaderDTO } from "./dto/create-isibo-leader.dto";
 import { CreateVillageLeaderDTO } from "./dto/create-village-leader.dto";
-import { FetchProfileDto } from "./dto/fetch-profile.dto";
 import { FetchUserDto } from "./dto/fetch-user.dto";
-import { UpdateProfileDto } from "./dto/update-profile.dto";
-import { Profile } from "./entities/profile.entity";
+import { FetchUserListDto } from "./dto/fetch-user-list.dto";
+import { UpdateUserDto } from "./dto/update-user.dto";
 import { User } from "./entities/user.entity";
 
 @Injectable()
@@ -28,8 +27,6 @@ export class UsersService {
   constructor(
     @InjectRepository(User)
     private readonly usersRepository: Repository<User>,
-    @InjectRepository(Profile)
-    private readonly profilesRepository: Repository<Profile>,
     private readonly verificationService: VerificationService,
     private readonly notificationService: NotificationService,
     private readonly configService: ConfigService<IAppConfig>,
@@ -62,7 +59,6 @@ export class UsersService {
 
     const village = await manager.getRepository("Village").findOne({
       where: { id: villageId },
-      relations: ["profiles"],
     });
 
     if (!village) {
@@ -70,9 +66,12 @@ export class UsersService {
     }
 
     // Check if village already has a leader
-    const hasVillageLeader = village.profiles.some(
-      (profile) => profile.isVillageLeader,
-    );
+    const hasVillageLeader = await manager.getRepository("User").exists({
+      where: {
+        village: { id: villageId },
+        isVillageLeader: true,
+      },
+    });
     if (hasVillageLeader) {
       throw new ConflictException("Village already has a leader");
     }
@@ -87,7 +86,6 @@ export class UsersService {
   ): Promise<{ cell: any; village: any }> {
     const cell = await manager.getRepository("Cell").findOne({
       where: { id: cellId },
-      relations: ["profiles"],
     });
 
     if (!cell) {
@@ -95,7 +93,12 @@ export class UsersService {
     }
 
     // Check if cell already has a leader
-    const hasCellLeader = cell.profiles.some((profile) => profile.isCellLeader);
+    const hasCellLeader = await manager.getRepository("User").exists({
+      where: {
+        cell: { id: cellId },
+        isCellLeader: true,
+      },
+    });
     if (hasCellLeader) {
       throw new ConflictException("Cell already has a leader");
     }
@@ -167,10 +170,6 @@ export class UsersService {
       phone: dto.phone,
       password: hashedPassword,
       role: UserRole.CITIZEN,
-    });
-
-    user.verifiedAt = new Date();
-    const profile = plainToInstance(Profile, {
       names: dto.names,
       cell,
       village,
@@ -179,9 +178,7 @@ export class UsersService {
       isVillageLeader,
       isCellLeader,
       isIsiboLeader,
-      phone: dto.phone,
     });
-    user.profile = profile;
 
     user = await manager.save(user);
 
@@ -311,8 +308,8 @@ export class UsersService {
           true,
         );
 
-        // Set the user's profile as the isibo leader
-        isibo.leader = user.profile;
+        // Set the user as the isibo leader
+        isibo.leader = user;
         await manager.save(isibo);
       });
     } catch (error) {
@@ -349,16 +346,13 @@ export class UsersService {
 
         // If the current user is an isibo leader, auto-assign to their isibo
         if (currentUser) {
-          const userProfile = await this.findUserById(currentUser.id);
+          const user = await this.findUserById(currentUser.id);
 
-          if (
-            userProfile.role === UserRole.ISIBO_LEADER &&
-            userProfile.profile.isibo
-          ) {
-            finalIsiboId = userProfile.profile.isibo.id;
-            finalVillageId = userProfile.profile.village?.id || villageId;
-            finalCellId = userProfile.profile.cell?.id || cellId;
-            finalHouseId = userProfile.profile.house?.id || houseId;
+          if (user.role === UserRole.ISIBO_LEADER && user.isibo) {
+            finalIsiboId = user.isibo.id;
+            finalVillageId = user.village?.id || villageId;
+            finalCellId = user.cell?.id || cellId;
+            finalHouseId = user.house?.id || houseId;
           }
         }
 
@@ -409,19 +403,19 @@ export class UsersService {
       let role = "CITIZEN";
       let location = "";
 
-      if (user.profile.isCellLeader) {
+      if (user.isCellLeader) {
         role = "CELL_LEADER";
-        location = user.profile.cell?.name || "Unknown Cell";
-      } else if (user.profile.isVillageLeader) {
+        location = user.cell?.name || "Unknown Cell";
+      } else if (user.isVillageLeader) {
         role = "VILLAGE_LEADER";
-        location = user.profile.village?.name || "Unknown Village";
-      } else if (user.profile.isIsiboLeader) {
+        location = user.village?.name || "Unknown Village";
+      } else if (user.isIsiboLeader) {
         role = "ISIBO_LEADER";
-        location = user.profile.isibo?.name || "Unknown Isibo";
+        location = user.isibo?.name || "Unknown Isibo";
       }
 
       await this.notificationService.sendAccountCreationEmail({
-        name: user.profile.names,
+        name: user.names,
         email: user.email,
         role,
         temporaryPassword: password,
@@ -437,30 +431,31 @@ export class UsersService {
   async findUserByEmail(email: string): Promise<User | undefined> {
     return this.usersRepository.findOne({
       where: { email },
-      relations: ["profile"],
     });
   }
 
   async findUserById(userId: string): Promise<User> {
     const user = await this.usersRepository.findOne({
       where: { id: userId },
-      relations: ["profile"],
     });
 
     if (!user) throw new NotFoundException("User not found");
     return user;
   }
 
+  async findUsersByIds(userIds: string[]): Promise<User[]> {
+    return this.usersRepository.find({
+      where: { id: In(userIds) },
+    });
+  }
+
   async findCellLeader(cellId: string): Promise<User> {
     const cellLeader = await this.usersRepository.findOne({
       where: {
         role: UserRole.CELL_LEADER,
-        profile: {
-          cell: { id: cellId },
-          isCellLeader: true,
-        },
+        cell: { id: cellId },
+        isCellLeader: true,
       },
-      relations: ["profile"],
     });
     if (!cellLeader) throw new NotFoundException("Cell leader not found");
     return cellLeader;
@@ -470,12 +465,9 @@ export class UsersService {
     const villageLeader = await this.usersRepository.findOne({
       where: {
         role: UserRole.VILLAGE_LEADER,
-        profile: {
-          village: { id: villageId },
-          isVillageLeader: true,
-        },
+        village: { id: villageId },
+        isVillageLeader: true,
       },
-      relations: ["profile"],
     });
     if (!villageLeader) throw new NotFoundException("Village leader not found");
     return villageLeader;
@@ -485,49 +477,40 @@ export class UsersService {
     const isiboLeader = await this.usersRepository.findOne({
       where: {
         role: UserRole.ISIBO_LEADER,
-        profile: {
-          isibo: { id: isiboId },
-          isIsiboLeader: true,
-        },
+        isibo: { id: isiboId },
+        isIsiboLeader: true,
       },
-      relations: ["profile"],
     });
     if (!isiboLeader) throw new NotFoundException("Isibo leader not found");
     return isiboLeader;
-  }
-
-  async saveProfile(profile: Profile): Promise<Profile> {
-    return this.profilesRepository.save(profile);
   }
 
   async saveUser(user: User): Promise<User> {
     return this.usersRepository.save(user);
   }
 
-  async getProfile(userId: string) {
-    const userProfile = await this.findUserById(userId);
-    return plainToInstance(FetchProfileDto.Output, {
-      id: userProfile.id,
-      names: userProfile.profile.names,
-      email: userProfile.email,
-      activated: userProfile.activated,
-      role: userProfile.role,
-      phone: userProfile.phone,
-      cell: userProfile.profile.cell,
-      village: userProfile.profile.village,
-      isibo: userProfile.profile.isibo,
-      house: userProfile.profile.house,
-      isIsiboLeader: userProfile.profile.isIsiboLeader,
-      isVillageLeader: userProfile.profile.isVillageLeader,
-      isCellLeader: userProfile.profile.isCellLeader,
-      profileID: userProfile.profile.id,
+  async getUser(userId: string) {
+    const user = await this.findUserById(userId);
+    return plainToInstance(FetchUserDto.Output, {
+      id: user.id,
+      names: user.names,
+      email: user.email,
+      role: user.role,
+      phone: user.phone,
+      cell: user.cell,
+      village: user.village,
+      isibo: user.isibo,
+      house: user.house,
+      isIsiboLeader: user.isIsiboLeader,
+      isVillageLeader: user.isVillageLeader,
+      isCellLeader: user.isCellLeader,
     });
   }
 
-  async updateProfile(
+  async updateUser(
     userId: string,
-    { names, email, phone, isiboId, houseId }: UpdateProfileDto.Input,
-  ): Promise<UpdateProfileDto.Output> {
+    { names, email, phone, isiboId, houseId }: UpdateUserDto.Input,
+  ): Promise<UpdateUserDto.Output> {
     const user = await this.findUserById(userId);
 
     const isEmailChanged = email && email !== user.email;
@@ -542,14 +525,13 @@ export class UsersService {
       }
     }
 
-    user.profile.names = names ?? user.profile.names;
+    user.names = names ?? user.names;
     user.phone = phone ?? user.phone;
-    user.profile.isibo = isiboId ? ({ id: isiboId } as any) : null;
-    user.profile.house = houseId ? ({ id: houseId } as any) : null;
+    user.isibo = isiboId ? ({ id: isiboId } as any) : null;
+    user.house = houseId ? ({ id: houseId } as any) : null;
 
     if (isEmailChanged) {
       user.email = email!;
-      user.verifiedAt = null;
       await this.usersRepository.save(user);
 
       const verification =
@@ -560,74 +542,61 @@ export class UsersService {
         verifyEmailLink,
       );
     } else {
-      await this.profilesRepository.save(user.profile);
       await this.usersRepository.save(user);
     }
 
     return {
       id: user.id,
-      names: user.profile.names,
+      names: user.names,
       email: user.email,
       phoneNumber: user.phone,
-      isiboId: user.profile.isibo?.id,
-      isIsiboLeader: user.profile.isIsiboLeader,
-      isVillageLeader: user.profile.isVillageLeader,
-      isCellLeader: user.profile.isCellLeader,
-      houseId: user.profile.house?.id,
+      isiboId: user.isibo?.id,
+      isIsiboLeader: user.isIsiboLeader,
+      isVillageLeader: user.isVillageLeader,
+      isCellLeader: user.isCellLeader,
+      houseId: user.house?.id,
     };
   }
 
-  async findAllUsers(fetchUserDto: FetchUserDto.Input, currentUser?: User) {
+  async findAllUsers(fetchUserDto: FetchUserListDto.Input, currentUser?: User) {
     try {
       const { q, role, page, size } = fetchUserDto;
 
       const queryBuilder = this.usersRepository
         .createQueryBuilder("user")
-        .leftJoinAndSelect("user.profile", "profile")
-        .leftJoinAndSelect("profile.isibo", "isibo")
+        .leftJoinAndSelect("user.isibo", "isibo")
         .select([
           "user.id",
           "user.email",
           "user.phone",
           "user.role",
-          "user.activated",
+          "user.names",
           "user.createdAt",
-          "profile.names",
-          "profile.id",
           "isibo.id",
           "isibo.name",
         ]);
 
       // Apply role-based filtering
       if (currentUser) {
-        const userProfile = await this.findUserById(currentUser.id);
+        const user = await this.findUserById(currentUser.id);
 
-        if (
-          userProfile.role === UserRole.ISIBO_LEADER &&
-          userProfile.profile.isibo
-        ) {
+        if (user.role === UserRole.ISIBO_LEADER && user.isibo) {
           // Isibo leaders can only see citizens in their isibo
-          queryBuilder.andWhere("profile.isibo.id = :isiboId", {
-            isiboId: userProfile.profile.isibo.id,
+          queryBuilder.andWhere("user.isibo.id = :isiboId", {
+            isiboId: user.isibo.id,
           });
           queryBuilder.andWhere("user.role = :citizenRole", {
             citizenRole: UserRole.CITIZEN,
           });
-        } else if (
-          userProfile.role === UserRole.VILLAGE_LEADER &&
-          userProfile.profile.village
-        ) {
+        } else if (user.role === UserRole.VILLAGE_LEADER && user.village) {
           // Village leaders can see users in their village
-          queryBuilder.andWhere("profile.village.id = :villageId", {
-            villageId: userProfile.profile.village.id,
+          queryBuilder.andWhere("user.village.id = :villageId", {
+            villageId: user.village.id,
           });
-        } else if (
-          userProfile.role === UserRole.CELL_LEADER &&
-          userProfile.profile.cell
-        ) {
+        } else if (user.role === UserRole.CELL_LEADER && user.cell) {
           // Cell leaders can see users in their cell
-          queryBuilder.andWhere("profile.cell.id = :cellId", {
-            cellId: userProfile.profile.cell.id,
+          queryBuilder.andWhere("user.cell.id = :cellId", {
+            cellId: user.cell.id,
           });
         }
         // Admins can see all users (no additional filtering)
@@ -636,7 +605,7 @@ export class UsersService {
       // Apply search filter if query is provided
       if (q) {
         queryBuilder.andWhere(
-          "(profile.names ILIKE :query OR user.email ILIKE :query OR user.phone ILIKE :query)",
+          "(user.names ILIKE :query OR user.email ILIKE :query OR user.phone ILIKE :query)",
           { query: `%${q}%` },
         );
       }
@@ -659,16 +628,14 @@ export class UsersService {
       // Transform results
       const transformedItems = items.map((user) => ({
         id: user.id,
-        names: user.profile.names,
+        names: user.names,
         email: user.email,
         phone: user.phone,
         role: user.role,
-        activated: user.activated,
-        profileID: user.profile.id,
-        isibo: user.profile.isibo
+        isibo: user.isibo
           ? {
-              id: user.profile.isibo.id,
-              name: user.profile.isibo.name,
+              id: user.isibo.id,
+              name: user.isibo.name,
             }
           : null,
       }));
@@ -706,44 +673,23 @@ export class UsersService {
     await this.usersRepository.save(user);
   }
 
-  async verifyUser(userId: string): Promise<void> {
-    await this.usersRepository.update(userId, {
-      verifiedAt: new Date().toISOString(),
-    });
-  }
-
-  async updateRefreshToken(
-    userId: string,
-    refreshToken: string,
-  ): Promise<void> {
-    await this.usersRepository.update(userId, { refreshToken });
-  }
-
-  async findProfilesByIds(profileIds: string[]): Promise<Profile[]> {
-    return this.profilesRepository.find({
-      where: { id: In(profileIds) },
-      relations: ["user"],
-    });
-  }
-
-  async removeHouseFromProfiles(houseId: string): Promise<void> {
-    await this.profilesRepository.update(
+  async removeHouseFromUsers(houseId: string): Promise<void> {
+    await this.usersRepository.update(
       { house: { id: houseId } },
       { house: null },
     );
   }
 
-  async assignProfilesToHouse(
-    profileIds: string[],
-    houseId: string,
-  ): Promise<void> {
-    if (profileIds.length > 0) {
-      await this.profilesRepository.update(
-        { id: In(profileIds) },
+  async assignUsersToHouse(userIds: string[], houseId: string): Promise<void> {
+    if (userIds.length > 0) {
+      await this.usersRepository.update(
+        { id: In(userIds) },
         { house: { id: houseId } },
       );
     }
   }
+
+  async deleteUser(userId: string): Promise<void> {}
 
   private async validateAndGetLocationsForCitizen(
     manager: EntityManager,

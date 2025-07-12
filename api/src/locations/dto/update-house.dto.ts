@@ -1,4 +1,10 @@
-import { IsArray, IsOptional, IsString, ValidateNested } from "class-validator";
+import {
+  IsArray,
+  IsOptional,
+  IsString,
+  ValidateNested,
+  IsUUID,
+} from "class-validator";
 import { Citizen } from "../entities/citizen.entity";
 import { Type } from "class-transformer";
 
@@ -11,6 +17,11 @@ export namespace UpdateHouseDto {
     @IsString()
     @IsOptional()
     address?: string;
+
+    @IsArray()
+    @IsUUID("4", { each: true })
+    @IsOptional()
+    memberIds?: string[];
 
     @IsArray()
     @ValidateNested({ each: true })
