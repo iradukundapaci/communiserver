@@ -84,6 +84,48 @@ export interface UpdateReportInput {
   evidenceUrls?: string[];
 }
 
+export interface GenerateReportSummaryInput {
+  title: string;
+  subtitle?: string;
+  includeStats?: boolean;
+  includeReportDetails?: boolean;
+  // Filter parameters (same as report filters)
+  activityId?: string;
+  q?: string;
+  dateFrom?: string;
+  dateTo?: string;
+  hasEvidence?: boolean;
+  minCost?: number;
+  maxCost?: number;
+  minParticipants?: number;
+  maxParticipants?: number;
+  isiboId?: string;
+}
+
+export interface EmailReportSummaryInput extends GenerateReportSummaryInput {
+  recipientEmail: string;
+  message?: string;
+}
+
+export interface ReportSummaryStats {
+  totalReports: number;
+  totalActivities: number;
+  totalIsibos: number;
+  totalCost: number;
+  totalParticipants: number;
+  averageAttendance: number;
+  reportsWithEvidence: number;
+  reportsWithChallenges: number;
+  reportsWithSuggestions: number;
+}
+
+export interface EmailReportSummaryResponse {
+  success: boolean;
+  message: string;
+  emailSent: boolean;
+  reportGenerated: boolean;
+}
+
 export interface PaginatedResponse<T> {
   items: T[];
   meta: {
@@ -311,5 +353,78 @@ export async function getTaskReport(taskId: string): Promise<Report | null> {
   } catch (error) {
     console.error("Get task report error:", error);
     return null;
+  }
+}
+
+/**
+ * Generate a PDF summary report
+ * @param input Report summary generation parameters
+ * @returns Promise with PDF blob
+ */
+export async function generateReportSummary(input: GenerateReportSummaryInput): Promise<Blob> {
+  try {
+    const tokens = getAuthTokens();
+
+    if (!tokens) {
+      throw new Error("Not authenticated");
+    }
+
+    const response = await fetch("/api/v1/reports/summary/generate", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${tokens.accessToken}`,
+      },
+      body: JSON.stringify(input),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || "Failed to generate report summary");
+    }
+
+    return await response.blob();
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      throw error;
+    }
+    throw new Error("Failed to generate report summary");
+  }
+}
+
+/**
+ * Generate and email a PDF summary report
+ * @param input Email report summary parameters
+ * @returns Promise with email response
+ */
+export async function emailReportSummary(input: EmailReportSummaryInput): Promise<EmailReportSummaryResponse> {
+  try {
+    const tokens = getAuthTokens();
+
+    if (!tokens) {
+      throw new Error("Not authenticated");
+    }
+
+    const response = await fetch("/api/v1/reports/summary/email", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${tokens.accessToken}`,
+      },
+      body: JSON.stringify(input),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || "Failed to email report summary");
+    }
+
+    const data = await response.json();
+    return data.data;
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      throw error;
+    }
+    throw new Error("Failed to email report summary");
   }
 }

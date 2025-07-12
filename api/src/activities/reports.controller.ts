@@ -1,4 +1,4 @@
-import { Body, Controller, Param, Query, UseGuards } from "@nestjs/common";
+import { Body, Controller, Param, Query, UseGuards, Res } from "@nestjs/common";
 import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
 import {
   ApiRequestBody,
@@ -22,10 +22,13 @@ import {
 import { JwtGuard } from "src/auth/guards/jwt.guard";
 import { RolesGuard } from "src/auth/guards/roles.guard";
 import { CreateReportDTO } from "./dto/create-report.dto";
-import { FetchReportDTO } from "./dto/fetch-report.dto";
+import { FetchReportDTO, GenerateReportSummaryDTO, EmailReportSummaryDTO } from "./dto/fetch-report.dto";
 import { UpdateReportDTO } from "./dto/update-report.dto";
 import { Report } from "./entities/report.entity";
 import { ReportsService } from "./reports.service";
+import { GetUser } from "src/auth/decorators/get-user.decorator";
+import { User } from "src/users/entities/user.entity";
+import { Response } from "express";
 
 @ApiTags("Reports")
 @ApiBearerAuth()
@@ -93,5 +96,37 @@ export class ReportsController {
   async remove(@Param("id") id: string): Promise<GenericResponse> {
     await this.reportsService.delete(id);
     return new GenericResponse("Report deleted successfully");
+  }
+
+  @PostOperation("summary/generate", "Generate a PDF summary report")
+  @IsAuthorized()
+  @ApiRequestBody(GenerateReportSummaryDTO.Input)
+  @ErrorResponses(UnauthorizedResponse, BadRequestResponse)
+  async generateSummary(
+    @Body() dto: GenerateReportSummaryDTO.Input,
+    @GetUser() user: User,
+    @Res() res: Response,
+  ): Promise<void> {
+    const result = await this.reportsService.generateReportSummary(dto, user);
+
+    res.set({
+      'Content-Type': 'application/pdf',
+      'Content-Disposition': `attachment; filename="${result.filename}"`,
+      'Content-Length': result.pdfBuffer.length.toString(),
+    });
+
+    res.send(result.pdfBuffer);
+  }
+
+  @PostOperation("summary/email", "Generate and email a PDF summary report")
+  @IsAuthorized()
+  @ApiRequestBody(EmailReportSummaryDTO.Input)
+  @ErrorResponses(UnauthorizedResponse, BadRequestResponse)
+  async emailSummary(
+    @Body() dto: EmailReportSummaryDTO.Input,
+    @GetUser() user: User,
+  ): Promise<GenericResponse<EmailReportSummaryDTO.Output>> {
+    const result = await this.reportsService.emailReportSummary(dto, user);
+    return new GenericResponse(result.message, result);
   }
 }

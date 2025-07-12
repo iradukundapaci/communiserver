@@ -16,11 +16,12 @@ import { Activity, getActivities } from "@/lib/api/activities";
 import { Report, getReports } from "@/lib/api/reports";
 import { searchIsibos } from "@/lib/api/isibos";
 import { useUser } from "@/lib/contexts/user-context";
-import { FileText, RefreshCw, Search, Filter, Calendar, DollarSign, X } from "lucide-react";
+import { FileText, RefreshCw, Search, Filter, Calendar, DollarSign, X, FileBarChart } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { EnhancedSearchableSelect } from "@/components/ui/enhanced-searchable-select";
+import { ReportSummaryDialog } from "@/components/reports/report-summary-dialog";
 
 interface GroupedReport {
   activity: Activity;
@@ -47,6 +48,7 @@ export default function ReportsPage() {
   const [selectedIsibo, setSelectedIsibo] = useState<Isibo | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+  const [showSummaryDialog, setShowSummaryDialog] = useState(false);
   const [filters, setFilters] = useState({
     activityId: "all_activities",
     searchQuery: "",
@@ -325,6 +327,14 @@ export default function ReportsPage() {
             <div className="flex gap-2">
               <Button
                 variant="outline"
+                onClick={() => setShowSummaryDialog(true)}
+                className="bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100"
+              >
+                <FileBarChart className="h-4 w-4 mr-2" />
+                Generate Summary
+              </Button>
+              <Button
+                variant="outline"
                 onClick={handleRefresh}
                 disabled={isLoading}
               >
@@ -558,7 +568,7 @@ export default function ReportsPage() {
               <div className="flex items-center gap-2 flex-wrap">
                 {filters.searchQuery && (
                   <Badge variant="outline" className="bg-white border-blue-300 text-blue-700 hover:bg-blue-100">
-                    Search: "{filters.searchQuery.length > 20 ? filters.searchQuery.substring(0, 20) + '...' : filters.searchQuery}"
+                    Search: &quot;{filters.searchQuery.length > 20 ? filters.searchQuery.substring(0, 20) + '...' : filters.searchQuery}&quot;
                     <X
                       className="h-3 w-3 ml-1 cursor-pointer hover:text-blue-900"
                       onClick={() => handleFilterChange("searchQuery", "")}
@@ -725,6 +735,12 @@ export default function ReportsPage() {
           </div>
         </CardContent>
       </Card>
+
+      <ReportSummaryDialog
+        open={showSummaryDialog}
+        onOpenChange={setShowSummaryDialog}
+        filters={filters}
+      />
     </div>
   );
 }

@@ -16,7 +16,7 @@ export class SesService {
    * @returns Promise<void>
    */
   async sendEmail(email: ISesMail): Promise<void> {
-    const msg = {
+    const msg: any = {
       to: email.to,
       cc: email.cc,
       bcc: email.bcc,
@@ -26,6 +26,24 @@ export class SesService {
       text: email.text,
       html: email.html,
     };
+
+    // Handle attachments if they exist
+    if (email.attachments && email.attachments.length > 0) {
+      msg.attachments = email.attachments.map((attachment: any) => {
+        // Convert Buffer to base64 string for SendGrid
+        const content = attachment.content instanceof Buffer
+          ? attachment.content.toString('base64')
+          : attachment.content;
+
+        return {
+          content,
+          filename: attachment.filename,
+          type: attachment.contentType || 'application/octet-stream',
+          disposition: 'attachment',
+        };
+      });
+    }
+
     await sgMail.send(msg);
   }
 }
