@@ -25,6 +25,7 @@ interface SearchableSelectProps {
   // Async search support
   onSearch?: (query: string) => Promise<SearchableSelectOption[]>;
   searchDelay?: number;
+  size?: "sm" | "default" | "lg";
 }
 
 export function SearchableSelect({
@@ -39,6 +40,7 @@ export function SearchableSelect({
   loading = false,
   onSearch,
   searchDelay = 300,
+  size = "default",
 }: SearchableSelectProps) {
   const [open, setOpen] = React.useState(false);
   const [searchValue, setSearchValue] = React.useState("");
@@ -109,14 +111,25 @@ export function SearchableSelect({
     setSearchValue("");
   };
 
+  const getSizeClasses = () => {
+    switch (size) {
+      case "sm":
+        return "h-8 text-xs px-2";
+      case "lg":
+        return "h-11 text-base px-4";
+      default:
+        return "h-9 text-sm px-3";
+    }
+  };
+
   return (
-    <div className={cn("relative", className)}>
+    <div className={cn("relative w-full max-w-sm", className)}>
       {/* Trigger button */}
       <Button
         variant="outline"
         role="combobox"
         aria-expanded={open}
-        className="w-full justify-between"
+        className={cn("w-full justify-between", getSizeClasses())}
         disabled={disabled || loading}
         onClick={() => setOpen(!open)}
       >

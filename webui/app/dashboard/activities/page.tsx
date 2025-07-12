@@ -786,15 +786,19 @@ function ActivitiesTab() {
         {/* Search and Quick Filters */}
         <div className="space-y-4">
           {/* Main search bar with integrated search icon */}
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-            <Input
-              placeholder="Search activities by title or description..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleSearch(e)}
-              className="pl-10 pr-4 h-11 text-base"
-            />
+          <div className="flex items-center gap-2 w-1/3">
+            <div className="flex-1">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                <Input
+                  placeholder="Search activities by title or description..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleSearch(e)}
+                  className="pl-10 pr-4 h-11 text-base w-full"
+                />
+              </div>
+            </div>
           </div>
 
           {/* Quick filters row */}

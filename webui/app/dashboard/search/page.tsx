@@ -289,19 +289,22 @@ export default function GlobalSearchPage() {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="flex gap-2">
+          <div className="flex items-center gap-2 w-1/2">
             <div className="flex-1">
-              <Input
-                placeholder="Search for activities, tasks, reports, users, or locations..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-              />
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Search for activities, tasks, reports, users, or locations..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                  className="w-full"
+                />
+                <Button onClick={handleSearch} disabled={isLoading} className="shrink-0">
+                  <Search className="h-4 w-4 mr-2" />
+                  {isLoading ? 'Searching...' : 'Search'}
+                </Button>
+              </div>
             </div>
-            <Button onClick={handleSearch} disabled={isLoading}>
-              <Search className="h-4 w-4 mr-2" />
-              {isLoading ? 'Searching...' : 'Search'}
-            </Button>
           </div>
 
           {error && (

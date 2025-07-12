@@ -200,11 +200,11 @@ export default function CreateReportPage() {
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Activity Selection */}
-            <div className="grid grid-cols-4 items-center gap-4">
+            <div className="grid grid-cols-4 items-center gap-4 max-w-2xl">
               <Label htmlFor="activity" className="text-right">
                 Activity
               </Label>
-              <div className="col-span-3">
+              <div className="col-span-2">
                 <Select
                   value={formData.activityId}
                   onValueChange={(value) =>
@@ -227,11 +227,11 @@ export default function CreateReportPage() {
             </div>
 
             {/* Task Selection */}
-            <div className="grid grid-cols-4 items-center gap-4">
+            <div className="grid grid-cols-4 items-center gap-4 max-w-2xl">
               <Label htmlFor="task" className="text-right">
                 Task
               </Label>
-              <div className="col-span-3">
+              <div className="col-span-2">
                 <Select
                   value={formData.taskId}
                   onValueChange={(value) => handleSelectChange("taskId", value)}

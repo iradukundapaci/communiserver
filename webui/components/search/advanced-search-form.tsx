@@ -103,13 +103,14 @@ export function AdvancedSearchForm({
             placeholder={filter.placeholder}
             value={value || ''}
             onChange={(e) => handleInputChange(filter.id, e.target.value)}
+            className="max-w-sm"
           />
         );
 
       case 'select':
         return (
           <Select value={value || ''} onValueChange={(val) => handleInputChange(filter.id, val)}>
-            <SelectTrigger>
+            <SelectTrigger className="max-w-sm">
               <SelectValue placeholder={filter.placeholder} />
             </SelectTrigger>
             <SelectContent>
@@ -124,7 +125,7 @@ export function AdvancedSearchForm({
 
       case 'multiselect':
         return (
-          <div className="space-y-2">
+          <div className="space-y-2 max-w-sm">
             <Select onValueChange={(val) => {
               const currentValues = value || [];
               if (!currentValues.includes(val)) {
@@ -166,12 +167,15 @@ export function AdvancedSearchForm({
           <DatePickerWithRange
             date={value}
             onDateChange={(dateRange) => handleInputChange(filter.id, dateRange)}
+            className="max-w-sm"
+            allowClear={true}
+            size="default"
           />
         );
 
       case 'number-range':
         return (
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-2 gap-2 max-w-sm">
             <Input
               type="number"
               placeholder="Min"
@@ -208,22 +212,25 @@ export function AdvancedSearchForm({
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Main search input */}
-        <div className="flex gap-2">
+        <div className="flex items-center gap-2 w-1/3">
           <div className="flex-1">
-            <Input
-              placeholder={placeholder}
-              value={searchData.q || ''}
-              onChange={(e) => handleInputChange('q', e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-            />
+            <div className="flex gap-2">
+              <Input
+                placeholder={placeholder}
+                value={searchData.q || ''}
+                onChange={(e) => handleInputChange('q', e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                className="w-full"
+              />
+              <Button onClick={handleSearch} disabled={isLoading} size="default" className="shrink-0">
+                <Search className="h-4 w-4 mr-2" />
+                Search
+              </Button>
+              <Button variant="outline" onClick={handleReset} size="default" className="shrink-0">
+                Reset
+              </Button>
+            </div>
           </div>
-          <Button onClick={handleSearch} disabled={isLoading}>
-            <Search className="h-4 w-4 mr-2" />
-            Search
-          </Button>
-          <Button variant="outline" onClick={handleReset}>
-            Reset
-          </Button>
         </div>
 
         {/* Advanced filters toggle */}
@@ -249,7 +256,7 @@ export function AdvancedSearchForm({
         {showAdvancedFilters && (
           <div className="space-y-4 border-t pt-4">
             {/* Add filter dropdown */}
-            <div>
+            <div className="max-w-sm">
               <Label>Add Filter</Label>
               <Select onValueChange={addFilter}>
                 <SelectTrigger>
@@ -296,7 +303,7 @@ export function AdvancedSearchForm({
             })}
 
             {/* Sorting */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-lg">
               <div>
                 <Label>Sort By</Label>
                 <Select

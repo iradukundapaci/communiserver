@@ -174,7 +174,7 @@ export function CreateIsiboDialog({ onIsiboCreated, trigger }: CreateIsiboDialog
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Left Column - Basic Info */}
             <div className="space-y-4">
-              <div>
+              <div className="w-2/3">
                 <Label htmlFor="name">Isibo Name *</Label>
                 <Input
                   id="name"
@@ -182,10 +182,11 @@ export function CreateIsiboDialog({ onIsiboCreated, trigger }: CreateIsiboDialog
                   onChange={(e) => setName(e.target.value)}
                   placeholder="Enter isibo name"
                   required
+                  className="w-full"
                 />
               </div>
 
-              <div>
+              <div className="w-2/3">
                 <Label>Village *</Label>
                 <SearchableSelect
                   placeholder="Search and select village..."
@@ -197,10 +198,11 @@ export function CreateIsiboDialog({ onIsiboCreated, trigger }: CreateIsiboDialog
                     label: `${selectedVillage.name} (${selectedVillage.cell?.name})`,
                     data: selectedVillage,
                   } : null}
+                  className="w-full"
                 />
               </div>
 
-              <div>
+              <div className="w-2/3">
                 <Label>Leader (Optional)</Label>
                 <SearchableSelect
                   placeholder="Search and select leader..."
@@ -212,6 +214,7 @@ export function CreateIsiboDialog({ onIsiboCreated, trigger }: CreateIsiboDialog
                     label: `${selectedLeader.names} (${selectedLeader.email})`,
                     data: selectedLeader,
                   } : null}
+                  className="w-full"
                 />
               </div>
 

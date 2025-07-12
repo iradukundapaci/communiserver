@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { SearchableSelect } from "@/components/ui/searchable-select";
+import { EnhancedSearchableSelect } from "@/components/ui/enhanced-searchable-select";
 import { WideDialog, WideDialogContent, WideDialogTrigger, WideDialogForm } from "@/components/ui/wide-dialog";
 import { createActivity, type CreateActivityInput, type CreateTaskInput } from "@/lib/api/activities";
 import { searchVillages, type Village } from "@/lib/api/villages";
@@ -161,7 +161,7 @@ export function CreateActivityDialog({ onActivityCreated, trigger }: CreateActiv
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Left Column - Basic Info */}
             <div className="space-y-4">
-              <div>
+              <div className="w-2/3">
                 <Label htmlFor="title">Activity Title *</Label>
                 <Input
                   id="title"
@@ -169,10 +169,11 @@ export function CreateActivityDialog({ onActivityCreated, trigger }: CreateActiv
                   onChange={(e) => setTitle(e.target.value)}
                   placeholder="Enter activity title"
                   required
+                  className="w-full"
                 />
               </div>
 
-              <div>
+              <div className="w-2/3">
                 <Label htmlFor="description">Description *</Label>
                 <Textarea
                   id="description"
@@ -181,10 +182,11 @@ export function CreateActivityDialog({ onActivityCreated, trigger }: CreateActiv
                   placeholder="Describe the activity"
                   rows={4}
                   required
+                  className="w-full"
                 />
               </div>
 
-              <div>
+              <div className="w-1/2">
                 <Label htmlFor="date">Date *</Label>
                 <div className="relative">
                   <Input
@@ -193,14 +195,15 @@ export function CreateActivityDialog({ onActivityCreated, trigger }: CreateActiv
                     value={date}
                     onChange={(e) => setDate(e.target.value)}
                     required
+                    className="w-full"
                   />
                   <IconCalendar className="absolute right-3 top-3 h-4 w-4 text-gray-400" />
                 </div>
               </div>
 
-              <div>
+              <div className="w-2/3">
                 <Label>Village *</Label>
-                <SearchableSelect
+                <EnhancedSearchableSelect
                   placeholder="Search and select village..."
                   onSearch={handleVillageSearch}
                   onSelect={(option) => setSelectedVillage(option.data)}
@@ -210,6 +213,7 @@ export function CreateActivityDialog({ onActivityCreated, trigger }: CreateActiv
                     label: `${selectedVillage.name} (${selectedVillage.cell?.name})`,
                     data: selectedVillage,
                   } : null}
+                  className="w-full"
                 />
               </div>
             </div>
@@ -287,7 +291,7 @@ function TaskForm({ task, villageId, onUpdate, onRemove, onIsiboSearch }: TaskFo
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
         <div>
           <Label>Task Title *</Label>
           <Input
@@ -295,12 +299,13 @@ function TaskForm({ task, villageId, onUpdate, onRemove, onIsiboSearch }: TaskFo
             onChange={(e) => onUpdate({ title: e.target.value })}
             placeholder="Enter task title"
             required
+            className="w-full"
           />
         </div>
 
         <div>
           <Label>Assigned Isibo *</Label>
-          <SearchableSelect
+          <EnhancedSearchableSelect
             placeholder="Search isibo..."
             onSearch={handleIsiboSearchWrapper}
             onSelect={(option) => {
@@ -317,16 +322,18 @@ function TaskForm({ task, villageId, onUpdate, onRemove, onIsiboSearch }: TaskFo
               data: selectedIsibo,
             } : null}
             disabled={!villageId}
+            className="w-full"
           />
         </div>
 
-        <div className="sm:col-span-2 lg:col-span-4">
+        <div className="sm:col-span-2 lg:col-span-3">
           <Label>Description</Label>
           <Textarea
             value={task.description}
             onChange={(e) => onUpdate({ description: e.target.value })}
             placeholder="Describe the task"
             rows={2}
+            className="w-2/3"
           />
         </div>
 
@@ -338,7 +345,7 @@ function TaskForm({ task, villageId, onUpdate, onRemove, onIsiboSearch }: TaskFo
             value={task.estimatedCost || ""}
             onChange={(e) => onUpdate({ estimatedCost: parseFloat(e.target.value) || 0 })}
             placeholder="0"
-            className="max-w-lg"
+            className="w-full"
           />
         </div>
 
@@ -362,7 +369,7 @@ function TaskForm({ task, villageId, onUpdate, onRemove, onIsiboSearch }: TaskFo
               value={task.expectedParticipants || ""}
               onChange={(e) => onUpdate({ expectedParticipants: parseInt(e.target.value) || 0 })}
               placeholder="Will be calculated automatically"
-              className="max-w-lg"
+              className="w-full"
               disabled={!!task.isiboId}
             />
           </div>
@@ -376,7 +383,7 @@ function TaskForm({ task, villageId, onUpdate, onRemove, onIsiboSearch }: TaskFo
             value={task.expectedFinancialImpact || ""}
             onChange={(e) => onUpdate({ expectedFinancialImpact: parseFloat(e.target.value) || 0 })}
             placeholder="0"
-            className="max-w-lg"
+            className="w-full"
           />
         </div>
       </div>

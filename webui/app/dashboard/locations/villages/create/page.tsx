@@ -136,7 +136,7 @@ export default function CreateVillagePage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="space-y-2 max-w-md">
+              <div className="space-y-2 w-1/3">
                 <Label htmlFor="name">Village Name</Label>
                 <Input
                   id="name"

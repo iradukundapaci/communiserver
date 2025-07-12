@@ -240,7 +240,7 @@ export function UpdateIsiboDialog({
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Left Column - Basic Info */}
             <div className="space-y-4">
-              <div>
+              <div className="w-2/3">
                 <Label htmlFor="name">Isibo Name *</Label>
                 <Input
                   id="name"
@@ -248,10 +248,11 @@ export function UpdateIsiboDialog({
                   onChange={(e) => setName(e.target.value)}
                   placeholder="Enter isibo name"
                   required
+                  className="w-full"
                 />
               </div>
 
-              <div>
+              <div className="w-2/3">
                 <Label>Village</Label>
                 <SearchableSelect
                   placeholder="Search and select village..."
@@ -267,10 +268,11 @@ export function UpdateIsiboDialog({
                         }
                       : null
                   }
+                  className="w-full"
                 />
               </div>
 
-              <div>
+              <div className="w-2/3">
                 <Label>Leader</Label>
                 <SearchableSelect
                   placeholder="Search and select leader..."
@@ -286,6 +288,7 @@ export function UpdateIsiboDialog({
                         }
                       : null
                   }
+                  className="w-full"
                 />
               </div>
 

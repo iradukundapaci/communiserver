@@ -3,13 +3,14 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { SearchableSelect } from "@/components/ui/searchable-select";
+import { EnhancedSearchableSelect } from "@/components/ui/enhanced-searchable-select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { IconFilter, IconX, IconSearch, IconMapPin } from "@tabler/icons-react";
 import { useState, useEffect } from "react";
 import { Cell, searchCells, Sector } from "@/lib/api/cells";
 import { searchVillages, Village } from "@/lib/api/villages";
+import { searchSectors } from "@/lib/api/sectors";
 
 export interface ActivityFilterState {
   q?: string;
@@ -55,6 +56,14 @@ export function ActivityFilters({
 
   const handleDateToChange = (value: string) => {
     onFiltersChange({ ...filters, dateTo: value || undefined });
+  };
+
+  const handleStatusChange = (status: string) => {
+    onFiltersChange({ ...filters, status: status || undefined });
+  };
+
+  const handleTypeChange = (type: string) => {
+    onFiltersChange({ ...filters, type: type || undefined });
   };
 
   const handleVillageSelect = (village: Village | null) => {
@@ -164,6 +173,8 @@ export function ActivityFilters({
     if (filters.sectorId && !filters.cellId && !filters.villageId) count++;
     if (filters.dateFrom) count++;
     if (filters.dateTo) count++;
+    if (filters.status) count++;
+    if (filters.type) count++;
     return count;
   };
 
@@ -207,24 +218,24 @@ export function ActivityFilters({
       
       <CardContent className="space-y-4">
         {/* Always visible - Search */}
-        <div className="flex space-x-2">
+        <div className="flex items-center gap-2 w-1/3 mb-4">
           <div className="flex-1">
             <Label htmlFor="search">Search Activities</Label>
-            <div className="relative">
-              <IconSearch className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-              <Input
-                id="search"
-                placeholder="Search by title or description..."
-                value={filters.q || ""}
-                onChange={(e) => handleSearchChange(e.target.value)}
-                className="pl-10"
-              />
+            <div className="flex gap-2 mt-1">
+              <div className="relative flex-1">
+                <IconSearch className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                <Input
+                  id="search"
+                  placeholder="Search by title or description..."
+                  value={filters.q || ""}
+                  onChange={(e) => handleSearchChange(e.target.value)}
+                  className="pl-10 w-full"
+                />
+              </div>
+              <Button onClick={onApplyFilters} size="default" className="shrink-0">
+                Apply Filters
+              </Button>
             </div>
-          </div>
-          <div className="flex items-end">
-            <Button onClick={onApplyFilters}>
-              Apply Filters
-            </Button>
           </div>
         </div>
 
@@ -232,10 +243,10 @@ export function ActivityFilters({
         {isExpanded && (
           <>
             {/* Location Filters */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="max-w-sm">
                 <Label>Sector</Label>
-                <SearchableSelect
+                <EnhancedSearchableSelect
                   placeholder="Search sectors..."
                   onSearch={handleSectorSearch}
                   onSelect={(option) => handleSectorSelect(option.data)}
@@ -245,12 +256,13 @@ export function ActivityFilters({
                     label: `${selectedSector.name} (${selectedSector.district?.name})`,
                     data: selectedSector,
                   } : null}
+                  className="w-full"
                 />
               </div>
 
-              <div>
+              <div className="max-w-sm">
                 <Label>Cell</Label>
-                <SearchableSelect
+                <EnhancedSearchableSelect
                   placeholder="Search cells..."
                   onSearch={handleCellSearch}
                   onSelect={(option) => handleCellSelect(option.data)}
@@ -260,12 +272,13 @@ export function ActivityFilters({
                     label: `${selectedCell.name} (${selectedCell.sector?.name})`,
                     data: selectedCell,
                   } : null}
+                  className="w-full"
                 />
               </div>
 
-              <div>
+              <div className="max-w-sm">
                 <Label>Village</Label>
-                <SearchableSelect
+                <EnhancedSearchableSelect
                   placeholder="Search villages..."
                   onSearch={handleVillageSearch}
                   onSelect={(option) => handleVillageSelect(option.data)}
@@ -275,29 +288,93 @@ export function ActivityFilters({
                     label: `${selectedVillage.name} (${selectedVillage.cell?.name})`,
                     data: selectedVillage,
                   } : null}
+                  className="w-full"
                 />
               </div>
             </div>
 
             {/* Date Range Filters */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-3">
+              <Label>Date Range</Label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-lg">
+                <div>
+                  <Label htmlFor="dateFrom" className="text-sm text-muted-foreground">From</Label>
+                  <Input
+                    id="dateFrom"
+                    type="date"
+                    value={filters.dateFrom || ""}
+                    onChange={(e) => handleDateFromChange(e.target.value)}
+                    className="max-w-sm"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="dateTo" className="text-sm text-muted-foreground">To</Label>
+                  <Input
+                    id="dateTo"
+                    type="date"
+                    value={filters.dateTo || ""}
+                    onChange={(e) => handleDateToChange(e.target.value)}
+                    className="max-w-sm"
+                  />
+                </div>
+              </div>
+              {(filters.dateFrom || filters.dateTo) && (
+                <div className="text-sm text-muted-foreground">
+                  {filters.dateFrom && filters.dateTo ? (
+                    `Showing activities from ${filters.dateFrom} to ${filters.dateTo}`
+                  ) : filters.dateFrom ? (
+                    `Showing activities from ${filters.dateFrom} onwards`
+                  ) : (
+                    `Showing activities up to ${filters.dateTo}`
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Status and Type Filters */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-lg">
               <div>
-                <Label htmlFor="dateFrom">Date From</Label>
-                <Input
-                  id="dateFrom"
-                  type="date"
-                  value={filters.dateFrom || ""}
-                  onChange={(e) => handleDateFromChange(e.target.value)}
-                />
+                <Label htmlFor="status">Status</Label>
+                <Select
+                  value={filters.status || ""}
+                  onValueChange={(value) => handleStatusChange(value)}
+                >
+                  <SelectTrigger className="max-w-sm">
+                    <SelectValue placeholder="Select status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="PENDING">Pending</SelectItem>
+                    <SelectItem value="IN_PROGRESS">In Progress</SelectItem>
+                    <SelectItem value="COMPLETED">Completed</SelectItem>
+                    <SelectItem value="CANCELLED">Cancelled</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               <div>
-                <Label htmlFor="dateTo">Date To</Label>
-                <Input
-                  id="dateTo"
-                  type="date"
-                  value={filters.dateTo || ""}
-                  onChange={(e) => handleDateToChange(e.target.value)}
-                />
+                <Label htmlFor="type">Type</Label>
+                <Select
+                  value={filters.type || ""}
+                  onValueChange={(value) => handleTypeChange(value)}
+                >
+                  <SelectTrigger className="max-w-sm">
+                    <SelectValue placeholder="Select type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="MEETING">Meeting</SelectItem>
+                    <SelectItem value="TRAINING">Training</SelectItem>
+                    <SelectItem value="COMMUNITY_SERVICE">Community Service</SelectItem>
+                    <SelectItem value="HEALTH_CAMPAIGN">Health Campaign</SelectItem>
+                    <SelectItem value="EDUCATION">Education</SelectItem>
+                    <SelectItem value="INFRASTRUCTURE">Infrastructure</SelectItem>
+                    <SelectItem value="AGRICULTURE">Agriculture</SelectItem>
+                    <SelectItem value="ENVIRONMENT">Environment</SelectItem>
+                    <SelectItem value="SOCIAL_WELFARE">Social Welfare</SelectItem>
+                    <SelectItem value="ECONOMIC_DEVELOPMENT">Economic Development</SelectItem>
+                    <SelectItem value="CULTURAL">Cultural</SelectItem>
+                    <SelectItem value="SPORTS">Sports</SelectItem>
+                    <SelectItem value="OTHER">Other</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 
@@ -358,9 +435,27 @@ export function ActivityFilters({
                   {filters.dateTo && (
                     <Badge variant="outline" className="flex items-center gap-1">
                       To: {filters.dateTo}
-                      <IconX 
-                        className="h-3 w-3 cursor-pointer hover:text-red-600" 
+                      <IconX
+                        className="h-3 w-3 cursor-pointer hover:text-red-600"
                         onClick={() => handleDateToChange("")}
+                      />
+                    </Badge>
+                  )}
+                  {filters.status && (
+                    <Badge variant="outline" className="flex items-center gap-1">
+                      Status: {filters.status}
+                      <IconX
+                        className="h-3 w-3 cursor-pointer hover:text-red-600"
+                        onClick={() => handleStatusChange("")}
+                      />
+                    </Badge>
+                  )}
+                  {filters.type && (
+                    <Badge variant="outline" className="flex items-center gap-1">
+                      Type: {filters.type}
+                      <IconX
+                        className="h-3 w-3 cursor-pointer hover:text-red-600"
+                        onClick={() => handleTypeChange("")}
                       />
                     </Badge>
                   )}

@@ -12,7 +12,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { DatePickerWithRange } from "@/components/ui/date-range-picker";
 import { Activity, getActivities } from "@/lib/api/activities";
 import { Report, getReports } from "@/lib/api/reports";
 import { useUser } from "@/lib/contexts/user-context";
@@ -20,7 +19,6 @@ import { FileText, RefreshCw, Search, Filter, Calendar, DollarSign, X } from "lu
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { DateRange } from "react-day-picker";
 
 interface GroupedReport {
   activity: Activity;
@@ -50,7 +48,8 @@ export default function ReportsPage() {
   const [filters, setFilters] = useState({
     activityId: "all_activities",
     searchQuery: "",
-    dateRange: undefined as DateRange | undefined,
+    dateFrom: "",
+    dateTo: "",
     hasEvidence: "all" as "all" | "yes" | "no",
     minCost: "",
     maxCost: "",
@@ -158,14 +157,20 @@ export default function ReportsPage() {
     }
 
     // Date range filter
-    if (filters.dateRange?.from || filters.dateRange?.to) {
+    if (filters.dateFrom || filters.dateTo) {
       filtered = filtered.filter(group => {
         const activityDate = new Date(group.activity.date);
-        const fromDate = filters.dateRange?.from;
-        const toDate = filters.dateRange?.to;
 
-        if (fromDate && activityDate < fromDate) return false;
-        if (toDate && activityDate > toDate) return false;
+        if (filters.dateFrom) {
+          const fromDate = new Date(filters.dateFrom);
+          if (activityDate < fromDate) return false;
+        }
+
+        if (filters.dateTo) {
+          const toDate = new Date(filters.dateTo);
+          if (activityDate > toDate) return false;
+        }
+
         return true;
       });
     }
@@ -247,15 +252,24 @@ export default function ReportsPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filters, groupedReports]);
 
-  const handleFilterChange = (field: string, value: string | DateRange | undefined) => {
+  const handleFilterChange = (field: string, value: string | undefined) => {
     setFilters(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleDateFromChange = (dateFrom: string) => {
+    setFilters(prev => ({ ...prev, dateFrom: dateFrom || "" }));
+  };
+
+  const handleDateToChange = (dateTo: string) => {
+    setFilters(prev => ({ ...prev, dateTo: dateTo || "" }));
   };
 
   const handleResetFilters = () => {
     setFilters({
       activityId: "all_activities",
       searchQuery: "",
-      dateRange: undefined,
+      dateFrom: "",
+      dateTo: "",
       hasEvidence: "all",
       minCost: "",
       maxCost: "",
@@ -268,7 +282,7 @@ export default function ReportsPage() {
   const getActiveFiltersCount = () => {
     let count = 0;
     if (filters.searchQuery) count++;
-    if (filters.dateRange?.from || filters.dateRange?.to) count++;
+    if (filters.dateFrom || filters.dateTo) count++;
     if (filters.hasEvidence !== "all") count++;
     if (filters.minCost || filters.maxCost) count++;
     if (filters.minParticipants || filters.maxParticipants) count++;
@@ -318,14 +332,18 @@ export default function ReportsPage() {
           {/* Search and Quick Filters */}
           <div className="space-y-4">
             {/* Main search bar with integrated actions */}
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-              <Input
-                placeholder="Search reports, activities, or tasks..."
-                value={filters.searchQuery}
-                onChange={(e) => handleFilterChange("searchQuery", e.target.value)}
-                className="pl-10 pr-4 h-11 text-base"
-              />
+            <div className="flex items-center gap-2 w-1/3">
+              <div className="flex-1">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                  <Input
+                    placeholder="Search reports, activities, or tasks..."
+                    value={filters.searchQuery}
+                    onChange={(e) => handleFilterChange("searchQuery", e.target.value)}
+                    className="pl-10 pr-4 h-11 text-base w-full"
+                  />
+                </div>
+              </div>
             </div>
 
             {/* Quick filters row */}
@@ -419,12 +437,39 @@ export default function ReportsPage() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label className="text-sm font-medium">Activity Date Range</Label>
-                      <DatePickerWithRange
-                        date={filters.dateRange}
-                        onDateChange={(dateRange) => handleFilterChange("dateRange", dateRange)}
-                        placeholder="Select date range..."
-                        className="w-full"
-                      />
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <div>
+                          <Label htmlFor="dateFrom" className="text-xs text-muted-foreground">From</Label>
+                          <Input
+                            id="dateFrom"
+                            type="date"
+                            value={filters.dateFrom || ""}
+                            onChange={(e) => handleDateFromChange(e.target.value)}
+                            className="w-full"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="dateTo" className="text-xs text-muted-foreground">To</Label>
+                          <Input
+                            id="dateTo"
+                            type="date"
+                            value={filters.dateTo || ""}
+                            onChange={(e) => handleDateToChange(e.target.value)}
+                            className="w-full"
+                          />
+                        </div>
+                      </div>
+                      {(filters.dateFrom || filters.dateTo) && (
+                        <div className="text-xs text-muted-foreground">
+                          {filters.dateFrom && filters.dateTo ? (
+                            `Showing activities from ${filters.dateFrom} to ${filters.dateTo}`
+                          ) : filters.dateFrom ? (
+                            `Showing activities from ${filters.dateFrom} onwards`
+                          ) : (
+                            `Showing activities up to ${filters.dateTo}`
+                          )}
+                        </div>
+                      )}
                     </div>
                     <div className="space-y-2">
                       <Label className="text-sm font-medium">Isibo</Label>
@@ -536,13 +581,16 @@ export default function ReportsPage() {
                     />
                   </Badge>
                 )}
-                {filters.dateRange?.from && (
+                {(filters.dateFrom || filters.dateTo) && (
                   <Badge variant="outline" className="bg-white border-blue-300 text-blue-700 hover:bg-blue-100">
                     <Calendar className="h-3 w-3 mr-1" />
                     Date Range
                     <X
                       className="h-3 w-3 ml-1 cursor-pointer hover:text-blue-900"
-                      onClick={() => handleFilterChange("dateRange", undefined)}
+                      onClick={() => {
+                        handleDateFromChange("");
+                        handleDateToChange("");
+                      }}
                     />
                   </Badge>
                 )}

@@ -154,7 +154,7 @@ export function CreateReportDialog({
                 <div>
                   <h3 className="text-lg font-medium mb-4">Financial Information</h3>
                   <div className="grid grid-cols-1 gap-4">
-                    <div>
+                    <div className="w-1/2">
                       <Label htmlFor="actualCost">Actual Cost</Label>
                       <Input
                         id="actualCost"
@@ -163,10 +163,10 @@ export function CreateReportDialog({
                         step="0.01"
                         value={actualCost}
                         onChange={(e) => setActualCost(parseFloat(e.target.value) || 0)}
-                        className="max-w-lg"
+                        className="w-full"
                       />
                     </div>
-                    <div>
+                    <div className="w-1/2">
                       <Label htmlFor="actualFinancialImpact">Actual Financial Impact</Label>
                       <Input
                         id="actualFinancialImpact"
@@ -175,7 +175,7 @@ export function CreateReportDialog({
                         step="0.01"
                         value={actualFinancialImpact}
                         onChange={(e) => setActualFinancialImpact(parseFloat(e.target.value) || 0)}
-                        className="max-w-lg"
+                        className="w-full"
                       />
                     </div>
                   </div>
@@ -196,7 +196,7 @@ export function CreateReportDialog({
               <div>
                 <h3 className="text-lg font-medium mb-4">Report Details</h3>
                 <div className="space-y-4">
-                  <div>
+                  <div className="w-3/4">
                     <Label htmlFor="comment">Comments</Label>
                     <Textarea
                       id="comment"
@@ -204,11 +204,11 @@ export function CreateReportDialog({
                       onChange={(e) => setComment(e.target.value)}
                       placeholder="Add any comments about the task execution..."
                       rows={3}
-                      className="max-w-lg"
+                      className="w-full"
                     />
                   </div>
 
-                  <div>
+                  <div className="w-3/4">
                     <Label htmlFor="materials">Materials Used</Label>
                     <Textarea
                       id="materials"
@@ -216,11 +216,11 @@ export function CreateReportDialog({
                       onChange={(e) => handleMaterialsChange(e.target.value)}
                       placeholder="List materials used (one per line)..."
                       rows={3}
-                      className="max-w-lg"
+                      className="w-full"
                     />
                   </div>
 
-                  <div>
+                  <div className="w-3/4">
                     <Label htmlFor="challenges">Challenges Faced</Label>
                     <Textarea
                       id="challenges"
@@ -228,11 +228,11 @@ export function CreateReportDialog({
                       onChange={(e) => setChallengesFaced(e.target.value)}
                       placeholder="Describe any challenges encountered..."
                       rows={3}
-                      className="max-w-lg"
+                      className="w-full"
                     />
                   </div>
 
-                  <div>
+                  <div className="w-3/4">
                     <Label htmlFor="suggestions">Suggestions</Label>
                     <Textarea
                       id="suggestions"
@@ -240,7 +240,7 @@ export function CreateReportDialog({
                       onChange={(e) => setSuggestions(e.target.value)}
                       placeholder="Provide suggestions for improvement..."
                       rows={3}
-                      className="max-w-lg"
+                      className="w-full"
                     />
                   </div>
                 </div>

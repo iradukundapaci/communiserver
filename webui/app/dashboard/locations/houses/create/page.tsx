@@ -135,7 +135,7 @@ export default function CreateHousePage() {
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-2xl">
                   <div>
                     <Label htmlFor="code">House Code *</Label>
                     <Input
@@ -145,6 +145,7 @@ export default function CreateHousePage() {
                       onChange={handleInputChange}
                       placeholder="Enter house code"
                       required
+                      className="max-w-sm"
                     />
                   </div>
                   <div>
@@ -155,6 +156,7 @@ export default function CreateHousePage() {
                       value={formData.address}
                       onChange={handleInputChange}
                       placeholder="Enter house address"
+                      className="max-w-sm"
                     />
                   </div>
                 </div>
