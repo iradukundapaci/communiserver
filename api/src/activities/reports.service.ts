@@ -6,7 +6,7 @@ import {
 } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { paginate } from "nestjs-typeorm-paginate";
-import { Repository } from "typeorm";
+import { Repository, Brackets } from "typeorm";
 import { UsersService } from "../users/users.service";
 import { CreateReportDTO } from "./dto/create-report.dto";
 import { FetchReportDTO } from "./dto/fetch-report.dto";
@@ -88,23 +88,146 @@ export class ReportsService {
       .leftJoinAndSelect("report.task", "task")
       .leftJoinAndSelect("task.isibo", "isibo")
       .leftJoinAndSelect("report.activity", "activity")
-      .leftJoinAndSelect("activity.village", "village");
+      .leftJoinAndSelect("activity.village", "village")
+      .leftJoinAndSelect("village.cell", "cell")
+      .leftJoinAndSelect("report.attendance", "attendance");
 
+    // Apply search query
+    if (dto.q) {
+      queryBuilder.andWhere(
+        new Brackets((qb) => {
+          qb.where("report.comment ILIKE :searchKey", {
+            searchKey: `%${dto.q}%`,
+          }).orWhere("report.suggestions ILIKE :searchKey", {
+            searchKey: `%${dto.q}%`,
+          }).orWhere("report.challengesFaced ILIKE :searchKey", {
+            searchKey: `%${dto.q}%`,
+          });
+        }),
+      );
+    }
+
+    // Apply task filters
     if (dto.taskId) {
       queryBuilder.andWhere("task.id = :taskId", { taskId: dto.taskId });
     }
 
+    if (dto.taskIds && dto.taskIds.length > 0) {
+      queryBuilder.andWhere("task.id IN (:...taskIds)", {
+        taskIds: dto.taskIds,
+      });
+    }
+
+    // Apply activity filters
     if (dto.activityId) {
       queryBuilder.andWhere("activity.id = :activityId", {
         activityId: dto.activityId,
       });
     }
 
+    if (dto.activityIds && dto.activityIds.length > 0) {
+      queryBuilder.andWhere("activity.id IN (:...activityIds)", {
+        activityIds: dto.activityIds,
+      });
+    }
+
+    // Apply isibo filters
     if (dto.isiboId) {
       queryBuilder.andWhere("isibo.id = :isiboId", {
         isiboId: dto.isiboId,
       });
     }
+
+    if (dto.isiboIds && dto.isiboIds.length > 0) {
+      queryBuilder.andWhere("isibo.id IN (:...isiboIds)", {
+        isiboIds: dto.isiboIds,
+      });
+    }
+
+    // Apply cost filters
+    if (dto.minActualCost !== undefined) {
+      queryBuilder.andWhere("task.actualCost >= :minActualCost", {
+        minActualCost: dto.minActualCost,
+      });
+    }
+
+    if (dto.maxActualCost !== undefined) {
+      queryBuilder.andWhere("task.actualCost <= :maxActualCost", {
+        maxActualCost: dto.maxActualCost,
+      });
+    }
+
+    // Apply participant filters
+    if (dto.minActualParticipants !== undefined) {
+      queryBuilder.andWhere("task.actualParticipants >= :minActualParticipants", {
+        minActualParticipants: dto.minActualParticipants,
+      });
+    }
+
+    if (dto.maxActualParticipants !== undefined) {
+      queryBuilder.andWhere("task.actualParticipants <= :maxActualParticipants", {
+        maxActualParticipants: dto.maxActualParticipants,
+      });
+    }
+
+    // Apply date filters
+    if (dto.createdFrom) {
+      queryBuilder.andWhere("report.createdAt >= :createdFrom", {
+        createdFrom: dto.createdFrom,
+      });
+    }
+
+    if (dto.createdTo) {
+      queryBuilder.andWhere("report.createdAt <= :createdTo", {
+        createdTo: dto.createdTo,
+      });
+    }
+
+    if (dto.startDate) {
+      queryBuilder.andWhere("report.createdAt >= :startDate", {
+        startDate: dto.startDate,
+      });
+    }
+
+    if (dto.endDate) {
+      queryBuilder.andWhere("report.createdAt <= :endDate", {
+        endDate: dto.endDate,
+      });
+    }
+
+    // Apply evidence filter
+    if (dto.hasEvidence !== undefined) {
+      if (dto.hasEvidence) {
+        queryBuilder.andWhere("report.evidenceUrls IS NOT NULL AND array_length(report.evidenceUrls, 1) > 0");
+      } else {
+        queryBuilder.andWhere("(report.evidenceUrls IS NULL OR array_length(report.evidenceUrls, 1) = 0)");
+      }
+    }
+
+    // Apply location name filters
+    if (dto.villageName) {
+      queryBuilder.andWhere("village.name ILIKE :villageName", {
+        villageName: `%${dto.villageName}%`,
+      });
+    }
+
+    if (dto.cellName) {
+      queryBuilder.andWhere("cell.name ILIKE :cellName", {
+        cellName: `%${dto.cellName}%`,
+      });
+    }
+
+    // Apply materials filter
+    if (dto.materialsUsed && dto.materialsUsed.length > 0) {
+      queryBuilder.andWhere("report.materialsUsed && :materialsUsed", {
+        materialsUsed: dto.materialsUsed,
+      });
+    }
+
+    // Apply sorting
+    const sortBy = dto.sortBy || 'createdAt';
+    const sortOrder = dto.sortOrder || 'DESC';
+    queryBuilder.orderBy(`report.${sortBy}`, sortOrder);
 
     return paginate(queryBuilder, {
       page: dto.page,

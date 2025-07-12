@@ -21,6 +21,7 @@ import { LocationsModule } from "./locations/locations.module";
 import { NotificationsModule } from "./notifications/notifications.module";
 import { UsersModule } from "./users/users.module";
 import { VerificationModule } from "./verification/verification.module";
+import { SharedModule } from "./__shared__/shared.module";
 
 @Module({
   imports: [
@@ -37,6 +38,7 @@ import { VerificationModule } from "./verification/verification.module";
     AnalyticsModule,
     LocationsModule,
     VerificationModule,
+    SharedModule,
   ],
   providers: [
     {

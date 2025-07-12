@@ -43,6 +43,8 @@ import TasksTabComponent from "./tasks-tab";
 import { Select } from "@radix-ui/react-select";
 import { SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ConfirmationDialog } from "@/components/confirmation-dialog";
+// import { AdvancedSearchForm, SearchFilter, SearchFormData } from "@/components/search/advanced-search-form";
+// import { searchAPI, ActivitySearchParams } from "@/lib/api/search";
 
 export default function ActivitiesPage() {
   const searchParams = useSearchParams();
@@ -589,6 +591,8 @@ function ActivitiesTab() {
     activityId: null,
     activityTitle: "",
   });
+  // const [villages, setVillages] = useState<any[]>([]);
+  // const [searchFilters, setSearchFilters] = useState<ActivitySearchParams>({});
 
   const fetchActivities = async (
     query: string = searchQuery,

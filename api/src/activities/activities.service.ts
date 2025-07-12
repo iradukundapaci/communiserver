@@ -169,10 +169,11 @@ export class ActivitiesService {
     const queryBuilder = this.activityRepository
       .createQueryBuilder("activity")
       .leftJoinAndSelect("activity.village", "village")
+      .leftJoinAndSelect("village.cell", "cell")
       .leftJoinAndSelect("activity.tasks", "tasks")
-      .leftJoinAndSelect("tasks.isibo", "isibo")
-      .orderBy("activity.createdAt", "DESC");
+      .leftJoinAndSelect("tasks.isibo", "isibo");
 
+    // Apply search query
     if (DTO.q) {
       queryBuilder.andWhere(
         new Brackets((qb) => {
@@ -185,11 +186,81 @@ export class ActivitiesService {
       );
     }
 
+    // Apply location filters
     if (DTO.villageId) {
       queryBuilder.andWhere("village.id = :villageId", {
         villageId: DTO.villageId,
       });
     }
+
+    if (DTO.villageIds && DTO.villageIds.length > 0) {
+      queryBuilder.andWhere("village.id IN (:...villageIds)", {
+        villageIds: DTO.villageIds,
+      });
+    }
+
+    if (DTO.cellId) {
+      queryBuilder.andWhere("cell.id = :cellId", {
+        cellId: DTO.cellId,
+      });
+    }
+
+    // Apply organizer filters
+    if (DTO.organizerId) {
+      queryBuilder.andWhere("activity.organizerId = :organizerId", {
+        organizerId: DTO.organizerId,
+      });
+    }
+
+    if (DTO.organizerIds && DTO.organizerIds.length > 0) {
+      queryBuilder.andWhere("activity.organizerId IN (:...organizerIds)", {
+        organizerIds: DTO.organizerIds,
+      });
+    }
+
+    // Apply status filter
+    if (DTO.status) {
+      queryBuilder.andWhere("activity.status = :status", {
+        status: DTO.status,
+      });
+    }
+
+    // Apply date filters
+    if (DTO.dateFrom) {
+      queryBuilder.andWhere("activity.date >= :dateFrom", {
+        dateFrom: DTO.dateFrom,
+      });
+    }
+
+    if (DTO.dateTo) {
+      queryBuilder.andWhere("activity.date <= :dateTo", {
+        dateTo: DTO.dateTo,
+      });
+    }
+
+    if (DTO.startDate) {
+      queryBuilder.andWhere("activity.createdAt >= :startDate", {
+        startDate: DTO.startDate,
+      });
+    }
+
+    if (DTO.endDate) {
+      queryBuilder.andWhere("activity.createdAt <= :endDate", {
+        endDate: DTO.endDate,
+      });
+    }
+
+    // Apply activity type filter
+    if (DTO.activityType) {
+      queryBuilder.andWhere("activity.type = :activityType", {
+        activityType: DTO.activityType,
+      });
+    }
+
+    // Apply sorting
+    const sortBy = DTO.sortBy || 'createdAt';
+    const sortOrder = DTO.sortOrder || 'DESC';
+    queryBuilder.orderBy(`activity.${sortBy}`, sortOrder);
 
     const paginatedResult = await paginate<Activity>(queryBuilder, {
       page: DTO.page,

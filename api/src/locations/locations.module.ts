@@ -16,6 +16,8 @@ import { IsibosController } from "./isibos.controller";
 import { IsibosService } from "./isibos.service";
 import { VillagesController } from "./villages.controller";
 import { VillagesService } from "./villages.service";
+import { SearchLocationsController } from "./search-locations.controller";
+import { SearchLocationsService } from "./search-locations.service";
 @Module({
   imports: [
     TypeOrmModule.forFeature([
@@ -34,8 +36,9 @@ import { VillagesService } from "./villages.service";
     VillagesController,
     IsibosController,
     HousesController,
+    SearchLocationsController,
   ],
-  providers: [CellsService, VillagesService, IsibosService, HousesService],
-  exports: [CellsService, VillagesService, IsibosService, HousesService],
+  providers: [CellsService, VillagesService, IsibosService, HousesService, SearchLocationsService],
+  exports: [CellsService, VillagesService, IsibosService, HousesService, SearchLocationsService],
 })
 export class LocationsModule {}

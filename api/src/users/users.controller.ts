@@ -28,6 +28,7 @@ import { CreateCellLeaderDTO } from "./dto/create-cell-leader.dto";
 import { CreateCitizenDTO } from "./dto/create-citizen.dto";
 import { CreateIsiboLeaderDTO } from "./dto/create-isibo-leader.dto";
 import { CreateVillageLeaderDTO } from "./dto/create-village-leader.dto";
+import { SearchUsersDto } from "./dto/search-users.dto";
 import { FetchUserDto } from "./dto/fetch-user.dto";
 import { FetchUserListDto } from "./dto/fetch-user-list.dto";
 import { PasswordDto } from "./dto/update-password.dto";
@@ -191,5 +192,14 @@ export class UsersController {
   ): Promise<GenericResponse> {
     await this.usersService.createCitizen(createCitizenDto, user);
     return new GenericResponse("Citizen created successfully");
+  }
+
+  @GetOperation("search", "Search users with advanced filters")
+  @PaginatedOkResponse(SearchUsersDto.UserItem)
+  @IsAuthorized()
+  async searchUsers(
+    @Query() searchDto: SearchUsersDto.Input,
+  ): Promise<SearchUsersDto.Output> {
+    return this.usersService.searchUsers(searchDto);
   }
 }

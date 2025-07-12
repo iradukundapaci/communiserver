@@ -34,6 +34,8 @@ import * as React from "react";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { ConfirmationDialog } from "@/components/confirmation-dialog";
+// import { AdvancedSearchForm, SearchFilter, SearchFormData } from "@/components/search/advanced-search-form";
+// import { searchAPI, TaskSearchParams } from "@/lib/api/search";
 
 interface CreateTaskDialogProps {
   onTaskCreated: () => void;
@@ -299,6 +301,8 @@ export default function TasksTab() {
     taskId: null,
     taskTitle: "",
   });
+  // const [searchFilters, setSearchFilters] = useState<TaskSearchParams>({});
+  // const [isibos, setIsibos] = useState<any[]>([]);
 
   const fetchTasks = useCallback(async (
     activityId: string = selectedActivityId,
@@ -421,6 +425,8 @@ export default function TasksTab() {
       await deleteTask(deleteConfirmation.taskId);
       toast.success("Task deleted successfully");
       // If "ALL_ACTIVITIES" is selected, pass an empty string to fetch all tasks
+      const activityIdParam =
+        selectedActivityId === "ALL_ACTIVITIES" ? "" : selectedActivityId;
       const activityIdParam =
         selectedActivityId === "ALL_ACTIVITIES" ? "" : selectedActivityId;
       fetchTasks(activityIdParam, 1, true);

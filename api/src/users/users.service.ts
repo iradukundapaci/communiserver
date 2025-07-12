@@ -12,12 +12,14 @@ import { VerificationService } from "src/verification/verification.service";
 import { NotificationService } from "src/notifications/notification.service";
 import { ConfigService } from "@nestjs/config";
 import { IAppConfig } from "src/__shared__/interfaces/app-config.interface";
-import { EntityManager, In, Not, Repository } from "typeorm";
+import { EntityManager, In, Not, Repository, Brackets } from "typeorm";
 import { CreateCellLeaderDTO } from "./dto/create-cell-leader.dto";
 import { CreateCitizenDTO } from "./dto/create-citizen.dto";
 import { CreateIsiboLeaderDTO } from "./dto/create-isibo-leader.dto";
 import { CreateVillageLeaderDTO } from "./dto/create-village-leader.dto";
 import { FetchUserDto } from "./dto/fetch-user.dto";
+import { SearchUsersDto } from "./dto/search-users.dto";
+import { paginate } from "nestjs-typeorm-paginate";
 import { FetchUserListDto } from "./dto/fetch-user-list.dto";
 import { UpdateUserDto } from "./dto/update-user.dto";
 import { User } from "./entities/user.entity";
@@ -773,5 +775,128 @@ export class UsersService {
     }
 
     return { cell, village, isibo, house };
+  }
+
+  async searchUsers(dto: SearchUsersDto.Input): Promise<SearchUsersDto.Output> {
+    const queryBuilder = this.usersRepository
+      .createQueryBuilder("user")
+      .leftJoinAndSelect("user.village", "village")
+      .leftJoinAndSelect("user.cell", "cell")
+      .leftJoinAndSelect("user.house", "house");
+
+    // Apply search query
+    if (dto.q) {
+      queryBuilder.andWhere(
+        new Brackets((qb) => {
+          qb.where("user.names ILIKE :searchKey", {
+            searchKey: `%${dto.q}%`,
+          }).orWhere("user.email ILIKE :searchKey", {
+            searchKey: `%${dto.q}%`,
+          }).orWhere("user.phone ILIKE :searchKey", {
+            searchKey: `%${dto.q}%`,
+          });
+        }),
+      );
+    }
+
+    // Apply role filters
+    if (dto.role) {
+      queryBuilder.andWhere("user.role = :role", {
+        role: dto.role,
+      });
+    }
+
+    if (dto.roles && dto.roles.length > 0) {
+      queryBuilder.andWhere("user.role IN (:...roles)", {
+        roles: dto.roles,
+      });
+    }
+
+    // Apply location filters
+    if (dto.villageIds && dto.villageIds.length > 0) {
+      queryBuilder.andWhere("village.id IN (:...villageIds)", {
+        villageIds: dto.villageIds,
+      });
+    }
+
+    if (dto.cellIds && dto.cellIds.length > 0) {
+      queryBuilder.andWhere("cell.id IN (:...cellIds)", {
+        cellIds: dto.cellIds,
+      });
+    }
+
+    if (dto.houseIds && dto.houseIds.length > 0) {
+      queryBuilder.andWhere("house.id IN (:...houseIds)", {
+        houseIds: dto.houseIds,
+      });
+    }
+
+    // Apply date filters
+    if (dto.createdFrom) {
+      queryBuilder.andWhere("user.createdAt >= :createdFrom", {
+        createdFrom: dto.createdFrom,
+      });
+    }
+
+    if (dto.createdTo) {
+      queryBuilder.andWhere("user.createdAt <= :createdTo", {
+        createdTo: dto.createdTo,
+      });
+    }
+
+    if (dto.startDate) {
+      queryBuilder.andWhere("user.createdAt >= :startDate", {
+        startDate: dto.startDate,
+      });
+    }
+
+    if (dto.endDate) {
+      queryBuilder.andWhere("user.createdAt <= :endDate", {
+        endDate: dto.endDate,
+      });
+    }
+
+    // Apply active filter
+    if (dto.isActive !== undefined) {
+      queryBuilder.andWhere("user.isActive = :isActive", {
+        isActive: dto.isActive,
+      });
+    }
+
+    // Apply location name filters
+    if (dto.villageName) {
+      queryBuilder.andWhere("village.name ILIKE :villageName", {
+        villageName: `%${dto.villageName}%`,
+      });
+    }
+
+    if (dto.cellName) {
+      queryBuilder.andWhere("cell.name ILIKE :cellName", {
+        cellName: `%${dto.cellName}%`,
+      });
+    }
+
+    // Apply sorting
+    const sortBy = dto.sortBy || 'createdAt';
+    const sortOrder = dto.sortOrder || 'DESC';
+    queryBuilder.orderBy(`user.${sortBy}`, sortOrder);
+
+    const paginatedResult = await paginate(queryBuilder, {
+      page: dto.page,
+      limit: dto.size,
+    });
+
+    return {
+      items: paginatedResult.items.map((user) =>
+        plainToInstance(SearchUsersDto.UserItem, user)
+      ),
+      meta: {
+        totalItems: paginatedResult.meta.totalItems || 0,
+        itemCount: paginatedResult.meta.itemCount || 0,
+        itemsPerPage: paginatedResult.meta.itemsPerPage || 0,
+        totalPages: paginatedResult.meta.totalPages || 0,
+        currentPage: paginatedResult.meta.currentPage || 0,
+      },
+    };
   }
 }

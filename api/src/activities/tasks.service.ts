@@ -6,7 +6,7 @@ import {
 import { InjectRepository } from "@nestjs/typeorm";
 import { plainToInstance } from "class-transformer";
 import { paginate } from "nestjs-typeorm-paginate";
-import { Not, Repository } from "typeorm";
+import { Not, Repository, Brackets } from "typeorm";
 import { IsibosService } from "../locations/isibos.service";
 import { CreateTaskDTO } from "./dto/create-task.dto";
 import { FetchTaskDTO } from "./dto/fetch-task.dto";
@@ -111,26 +111,130 @@ export class TasksService {
     const queryBuilder = this.taskRepository
       .createQueryBuilder("task")
       .leftJoinAndSelect("task.activity", "activity")
-      .leftJoinAndSelect("task.isibo", "isibo")
-      .orderBy("task.createdAt", "DESC");
+      .leftJoinAndSelect("activity.village", "village")
+      .leftJoinAndSelect("village.cell", "cell")
+      .leftJoinAndSelect("task.isibo", "isibo");
 
+    // Apply search query
+    if (dto.q) {
+      queryBuilder.andWhere(
+        new Brackets((qb) => {
+          qb.where("task.title ILIKE :searchKey", {
+            searchKey: `%${dto.q}%`,
+          }).orWhere("task.description ILIKE :searchKey", {
+            searchKey: `%${dto.q}%`,
+          });
+        }),
+      );
+    }
+
+    // Apply activity filters
     if (dto.activityId) {
       queryBuilder.andWhere("activity.id = :activityId", {
         activityId: dto.activityId,
       });
     }
 
+    if (dto.activityIds && dto.activityIds.length > 0) {
+      queryBuilder.andWhere("activity.id IN (:...activityIds)", {
+        activityIds: dto.activityIds,
+      });
+    }
+
+    // Apply status filters
     if (dto.status) {
       queryBuilder.andWhere("task.status = :status", {
         status: dto.status,
       });
     }
 
+    if (dto.statuses && dto.statuses.length > 0) {
+      queryBuilder.andWhere("task.status IN (:...statuses)", {
+        statuses: dto.statuses,
+      });
+    }
+
+    // Apply isibo filters
     if (dto.isiboId) {
       queryBuilder.andWhere("isibo.id = :isiboId", {
         isiboId: dto.isiboId,
       });
     }
+
+    if (dto.isiboIds && dto.isiboIds.length > 0) {
+      queryBuilder.andWhere("isibo.id IN (:...isiboIds)", {
+        isiboIds: dto.isiboIds,
+      });
+    }
+
+    // Apply cost filters
+    if (dto.minEstimatedCost !== undefined) {
+      queryBuilder.andWhere("task.estimatedCost >= :minEstimatedCost", {
+        minEstimatedCost: dto.minEstimatedCost,
+      });
+    }
+
+    if (dto.maxEstimatedCost !== undefined) {
+      queryBuilder.andWhere("task.estimatedCost <= :maxEstimatedCost", {
+        maxEstimatedCost: dto.maxEstimatedCost,
+      });
+    }
+
+    // Apply participant filters
+    if (dto.minExpectedParticipants !== undefined) {
+      queryBuilder.andWhere("task.expectedParticipants >= :minExpectedParticipants", {
+        minExpectedParticipants: dto.minExpectedParticipants,
+      });
+    }
+
+    if (dto.maxExpectedParticipants !== undefined) {
+      queryBuilder.andWhere("task.expectedParticipants <= :maxExpectedParticipants", {
+        maxExpectedParticipants: dto.maxExpectedParticipants,
+      });
+    }
+
+    // Apply date filters
+    if (dto.createdFrom) {
+      queryBuilder.andWhere("task.createdAt >= :createdFrom", {
+        createdFrom: dto.createdFrom,
+      });
+    }
+
+    if (dto.createdTo) {
+      queryBuilder.andWhere("task.createdAt <= :createdTo", {
+        createdTo: dto.createdTo,
+      });
+    }
+
+    if (dto.startDate) {
+      queryBuilder.andWhere("task.createdAt >= :startDate", {
+        startDate: dto.startDate,
+      });
+    }
+
+    if (dto.endDate) {
+      queryBuilder.andWhere("task.createdAt <= :endDate", {
+        endDate: dto.endDate,
+      });
+    }
+
+    // Apply location name filters
+    if (dto.villageName) {
+      queryBuilder.andWhere("village.name ILIKE :villageName", {
+        villageName: `%${dto.villageName}%`,
+      });
+    }
+
+    if (dto.cellName) {
+      queryBuilder.andWhere("cell.name ILIKE :cellName", {
+        cellName: `%${dto.cellName}%`,
+      });
+    }
+
+    // Apply sorting
+    const sortBy = dto.sortBy || 'createdAt';
+    const sortOrder = dto.sortOrder || 'DESC';
+    queryBuilder.orderBy(`task.${sortBy}`, sortOrder);
 
     const paginatedResult = await paginate<Task>(queryBuilder, {
       page: dto.page,
