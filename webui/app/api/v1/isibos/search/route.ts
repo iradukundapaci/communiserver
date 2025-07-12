@@ -12,7 +12,16 @@ export async function GET(request: NextRequest) {
     if (!q.trim()) {
       return NextResponse.json({
         message: "Search query is required",
-        payload: []
+        payload: {
+          items: [],
+          meta: {
+            totalItems: 0,
+            itemCount: 0,
+            itemsPerPage: 50,
+            totalPages: 0,
+            currentPage: 1,
+          }
+        }
       });
     }
     
@@ -47,7 +56,7 @@ export async function GET(request: NextRequest) {
         const data = await response.json();
         return NextResponse.json({
           message: "Isibos search results",
-          payload: data.payload.items
+          payload: data.payload  // Return the full paginated response structure
         });
       }
     } catch (fetchError) {
@@ -128,7 +137,16 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       message: "Isibos search results",
-      payload: filteredIsibos
+      payload: {
+        items: filteredIsibos,
+        meta: {
+          totalItems: filteredIsibos.length,
+          itemCount: filteredIsibos.length,
+          itemsPerPage: 50,
+          totalPages: 1,
+          currentPage: 1,
+        }
+      }
     });
   } catch (error) {
     console.error("Error in isibos search route handler:", error);

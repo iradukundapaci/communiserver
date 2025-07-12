@@ -260,6 +260,11 @@ export default function ReportsPage() {
   const handleIsiboSearch = async (query: string) => {
     try {
       const isibos = await searchIsibos(query);
+      // Add defensive check to ensure isibos is an array
+      if (!Array.isArray(isibos)) {
+        console.warn("searchIsibos returned non-array:", isibos);
+        return [];
+      }
       return isibos.map(isibo => ({
         value: isibo.id,
         label: isibo.name,

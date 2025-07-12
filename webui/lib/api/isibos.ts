@@ -163,10 +163,18 @@ export async function searchIsibos(
     }
 
     const data: ApiResponse<PaginatedResponse<Isibo>> = await response.json();
+
+    // Add defensive checks to ensure we return an array
+    if (!data || !data.payload || !Array.isArray(data.payload.items)) {
+      console.warn('Invalid response structure from isibos search:', data);
+      return [];
+    }
+
     return data.payload.items;
   } catch (error) {
     console.error('Search isibos error:', error);
-    throw error;
+    // Return empty array instead of throwing to prevent UI crashes
+    return [];
   }
 }
 
