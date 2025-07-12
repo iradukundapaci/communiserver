@@ -14,11 +14,13 @@ import {
 } from "@/components/ui/select";
 import { Activity, getActivities } from "@/lib/api/activities";
 import { Report, getReports } from "@/lib/api/reports";
+import { searchIsibos } from "@/lib/api/isibos";
 import { useUser } from "@/lib/contexts/user-context";
 import { FileText, RefreshCw, Search, Filter, Calendar, DollarSign, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { EnhancedSearchableSelect } from "@/components/ui/enhanced-searchable-select";
 
 interface GroupedReport {
   activity: Activity;
@@ -42,7 +44,7 @@ export default function ReportsPage() {
   const [groupedReports, setGroupedReports] = useState<GroupedReport[]>([]);
   const [filteredReports, setFilteredReports] = useState<GroupedReport[]>([]);
   const [activities, setActivities] = useState<Activity[]>([]);
-  const [isibos, setIsibos] = useState<Isibo[]>([]);
+  const [selectedIsibo, setSelectedIsibo] = useState<Isibo | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
   const [filters, setFilters] = useState({
@@ -208,9 +210,9 @@ export default function ReportsPage() {
     }
 
     // Isibo filter
-    if (filters.isiboId !== "all_isibos") {
+    if (selectedIsibo) {
       filtered = filtered.filter(group =>
-        group.reports.some(report => report.task?.isibo?.id === filters.isiboId)
+        group.reports.some(report => report.task?.isibo?.id === selectedIsibo.id)
       );
     }
 
@@ -226,23 +228,12 @@ export default function ReportsPage() {
     }
   };
 
-  const fetchIsibos = async () => {
-    try {
-      // Import getIsibos function
-      const { getIsibos } = await import("@/lib/api/isibos");
-      // Get all isibos by using "all" as villageId or fetch from all villages
-      const response = await getIsibos("all", 1, 100);
-      setIsibos(response.items);
-    } catch (error) {
-      console.error("Failed to fetch isibos:", error);
-    }
-  };
+
 
   useEffect(() => {
     if (user) {
       fetchGroupedReports();
       fetchActivities();
-      fetchIsibos();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, filters.activityId]);
@@ -264,6 +255,20 @@ export default function ReportsPage() {
     setFilters(prev => ({ ...prev, dateTo: dateTo || "" }));
   };
 
+  const handleIsiboSearch = async (query: string) => {
+    try {
+      const isibos = await searchIsibos(query);
+      return isibos.map(isibo => ({
+        value: isibo.id,
+        label: isibo.name,
+        data: isibo,
+      }));
+    } catch (error) {
+      console.error("Isibo search error:", error);
+      return [];
+    }
+  };
+
   const handleResetFilters = () => {
     setFilters({
       activityId: "all_activities",
@@ -277,6 +282,7 @@ export default function ReportsPage() {
       maxParticipants: "",
       isiboId: "all_isibos",
     });
+    setSelectedIsibo(null);
   };
 
   const getActiveFiltersCount = () => {
@@ -286,7 +292,7 @@ export default function ReportsPage() {
     if (filters.hasEvidence !== "all") count++;
     if (filters.minCost || filters.maxCost) count++;
     if (filters.minParticipants || filters.maxParticipants) count++;
-    if (filters.isiboId !== "all_isibos") count++;
+    if (selectedIsibo) count++;
     if (filters.activityId !== "all_activities") count++;
     return count;
   };
@@ -473,22 +479,18 @@ export default function ReportsPage() {
                     </div>
                     <div className="space-y-2">
                       <Label className="text-sm font-medium">Isibo</Label>
-                      <Select
-                        value={filters.isiboId}
-                        onValueChange={(value) => handleFilterChange("isiboId", value)}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="All Isibos" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all_isibos">All Isibos</SelectItem>
-                          {isibos.map((isibo) => (
-                            <SelectItem key={isibo.id} value={isibo.id}>
-                              {isibo.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <EnhancedSearchableSelect
+                        placeholder="Search and select isibo..."
+                        onSearch={handleIsiboSearch}
+                        onSelect={(option) => setSelectedIsibo(option.data || null)}
+                        onClear={() => setSelectedIsibo(null)}
+                        value={selectedIsibo ? {
+                          value: selectedIsibo.id,
+                          label: selectedIsibo.name,
+                          data: selectedIsibo,
+                        } : null}
+                        className="w-full"
+                      />
                     </div>
                   </div>
                 </div>
@@ -591,6 +593,15 @@ export default function ReportsPage() {
                         handleDateFromChange("");
                         handleDateToChange("");
                       }}
+                    />
+                  </Badge>
+                )}
+                {selectedIsibo && (
+                  <Badge variant="outline" className="bg-white border-blue-300 text-blue-700 hover:bg-blue-100">
+                    Isibo: {selectedIsibo.name}
+                    <X
+                      className="h-3 w-3 ml-1 cursor-pointer hover:text-blue-900"
+                      onClick={() => setSelectedIsibo(null)}
                     />
                   </Badge>
                 )}

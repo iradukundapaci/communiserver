@@ -30,21 +30,18 @@ import {
   getActivities,
 } from "@/lib/api/activities";
 import { getIsibos } from "@/lib/api/isibos";
-import { getVillages } from "@/lib/api/villages";
+import { getPublicVillages } from "@/lib/api/villages";
 import { useUser } from "@/lib/contexts/user-context";
 import { Permission } from "@/lib/permissions";
 import { format } from "date-fns";
 import { Pencil, PlusCircle, RefreshCw, Search, Trash2, Filter, Calendar, X } from "lucide-react";
-import { DatePickerWithRange } from "@/components/ui/date-range-picker";
 import { Badge } from "@/components/ui/badge";
-import { DateRange } from "react-day-picker";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { ActivitiesPDFButton } from "@/components/pdf-report-button";
 import TasksTabComponent from "./tasks-tab";
-import { Select } from "@radix-ui/react-select";
-import { SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ConfirmationDialog } from "@/components/confirmation-dialog";
 
 export default function ActivitiesPage() {
@@ -154,8 +151,8 @@ function CreateActivityDialog({
       try {
         // If we have a user with a cell, fetch villages
         if (user?.cell) {
-          const villagesResponse = await getVillages(user.cell.id, 1, 100);
-          setVillages(villagesResponse.items);
+          const villagesResponse = await getPublicVillages();
+          setVillages(villagesResponse);
 
           // If user has a village, fetch isibos for that village
           if (user.village) {
@@ -597,7 +594,8 @@ function ActivitiesTab() {
   const [advancedFilters, setAdvancedFilters] = useState({
     villageId: "all_villages",
     status: "all_statuses",
-    dateRange: undefined as DateRange | undefined,
+    dateFrom: "",
+    dateTo: "",
     organizerId: "all_organizers",
   });
 
@@ -622,11 +620,11 @@ function ActivitiesTab() {
       }
 
       // Apply date range filter
-      if (advancedFilters.dateRange?.from) {
-        filters.dateFrom = advancedFilters.dateRange.from.toISOString();
+      if (advancedFilters.dateFrom) {
+        filters.dateFrom = new Date(advancedFilters.dateFrom).toISOString();
       }
-      if (advancedFilters.dateRange?.to) {
-        filters.dateTo = advancedFilters.dateRange.to.toISOString();
+      if (advancedFilters.dateTo) {
+        filters.dateTo = new Date(advancedFilters.dateTo).toISOString();
       }
 
       // For isibo leaders, only fetch activities in their village (override other filters)
@@ -674,8 +672,8 @@ function ActivitiesTab() {
 
   const loadVillages = async () => {
     try {
-      const response = await getVillages({ page: 1, size: 1000 });
-      setVillages(response.items);
+      const response = await getPublicVillages();
+      setVillages(response);
     } catch (error) {
       console.error("Failed to load villages:", error);
     }
@@ -685,12 +683,21 @@ function ActivitiesTab() {
     setAdvancedFilters(prev => ({ ...prev, [field]: value }));
   };
 
+  const handleDateFromChange = (dateFrom: string) => {
+    setAdvancedFilters(prev => ({ ...prev, dateFrom: dateFrom || "" }));
+  };
+
+  const handleDateToChange = (dateTo: string) => {
+    setAdvancedFilters(prev => ({ ...prev, dateTo: dateTo || "" }));
+  };
+
   const handleResetFilters = () => {
     setSearchQuery("");
     setAdvancedFilters({
       villageId: "all_villages",
       status: "all_statuses",
-      dateRange: undefined,
+      dateFrom: "",
+      dateTo: "",
       organizerId: "all_organizers",
     });
   };
@@ -700,7 +707,7 @@ function ActivitiesTab() {
     if (searchQuery) count++;
     if (advancedFilters.villageId !== "all_villages") count++;
     if (advancedFilters.status !== "all_statuses") count++;
-    if (advancedFilters.dateRange?.from || advancedFilters.dateRange?.to) count++;
+    if (advancedFilters.dateFrom || advancedFilters.dateTo) count++;
     if (advancedFilters.organizerId !== "all_organizers") count++;
     return count;
   };
@@ -913,12 +920,39 @@ function ActivitiesTab() {
                 </h4>
                 <div className="space-y-2">
                   <Label className="text-sm font-medium">Activity Date Range</Label>
-                  <DatePickerWithRange
-                    date={advancedFilters.dateRange}
-                    onDateChange={(dateRange) => handleAdvancedFilterChange("dateRange", dateRange)}
-                    placeholder="Select date range..."
-                    className="w-full"
-                  />
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <div>
+                      <Label htmlFor="dateFrom" className="text-xs text-muted-foreground">From</Label>
+                      <Input
+                        id="dateFrom"
+                        type="date"
+                        value={advancedFilters.dateFrom || ""}
+                        onChange={(e) => handleDateFromChange(e.target.value)}
+                        className="w-full"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="dateTo" className="text-xs text-muted-foreground">To</Label>
+                      <Input
+                        id="dateTo"
+                        type="date"
+                        value={advancedFilters.dateTo || ""}
+                        onChange={(e) => handleDateToChange(e.target.value)}
+                        className="w-full"
+                      />
+                    </div>
+                  </div>
+                  {(advancedFilters.dateFrom || advancedFilters.dateTo) && (
+                    <div className="text-xs text-muted-foreground">
+                      {advancedFilters.dateFrom && advancedFilters.dateTo ? (
+                        `Showing activities from ${advancedFilters.dateFrom} to ${advancedFilters.dateTo}`
+                      ) : advancedFilters.dateFrom ? (
+                        `Showing activities from ${advancedFilters.dateFrom} onwards`
+                      ) : (
+                        `Showing activities up to ${advancedFilters.dateTo}`
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -960,13 +994,16 @@ function ActivitiesTab() {
                   />
                 </Badge>
               )}
-              {advancedFilters.dateRange?.from && (
+              {(advancedFilters.dateFrom || advancedFilters.dateTo) && (
                 <Badge variant="outline" className="bg-white border-blue-300 text-blue-700 hover:bg-blue-100">
                   <Calendar className="h-3 w-3 mr-1" />
                   Date Range
                   <X
                     className="h-3 w-3 ml-1 cursor-pointer hover:text-blue-900"
-                    onClick={() => handleAdvancedFilterChange("dateRange", undefined)}
+                    onClick={() => {
+                      handleDateFromChange("");
+                      handleDateToChange("");
+                    }}
                   />
                 </Badge>
               )}

@@ -109,6 +109,8 @@ export interface ActivityFilters {
   q?: string; // Search query
   villageId?: string;
   cellId?: string;
+  dateFrom?: string;
+  dateTo?: string;
   page?: number;
   size?: number;
 }
@@ -230,7 +232,7 @@ export async function getActivities(
       throw new Error('Not authenticated');
     }
 
-    const { page = 1, size = 10, q, villageId, cellId } = filters;
+    const { page = 1, size = 10, q, villageId, cellId, dateFrom, dateTo } = filters;
 
     let url = `/api/v1/activities?page=${page}&size=${size}`;
     if (q) {
@@ -241,6 +243,12 @@ export async function getActivities(
     }
     if (cellId) {
       url += `&cellId=${encodeURIComponent(cellId)}`;
+    }
+    if (dateFrom) {
+      url += `&dateFrom=${encodeURIComponent(dateFrom)}`;
+    }
+    if (dateTo) {
+      url += `&dateTo=${encodeURIComponent(dateTo)}`;
     }
 
     const response = await fetch(url, {
@@ -274,7 +282,7 @@ export async function getPublicActivities(
   filters: ActivityFilters = {},
 ): Promise<PaginatedResponse<Activity>> {
   try {
-    const { page = 1, size = 20, q, villageId, cellId } = filters;
+    const { page = 1, size = 20, q, villageId, cellId, dateFrom, dateTo } = filters;
 
     let url = `/api/v1/activities/public?page=${page}&size=${size}`;
     if (q) {
@@ -285,6 +293,12 @@ export async function getPublicActivities(
     }
     if (cellId) {
       url += `&cellId=${encodeURIComponent(cellId)}`;
+    }
+    if (dateFrom) {
+      url += `&dateFrom=${encodeURIComponent(dateFrom)}`;
+    }
+    if (dateTo) {
+      url += `&dateTo=${encodeURIComponent(dateTo)}`;
     }
 
     const response = await fetch(url, {

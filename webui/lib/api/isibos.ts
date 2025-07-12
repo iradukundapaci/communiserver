@@ -74,14 +74,14 @@ interface ApiResponse<T> {
 
 /**
  * Get all isibos with pagination
- * @param villageId Village ID
+ * @param villageId Village ID (optional - if not provided, searches all isibos)
  * @param page Page number
  * @param size Items per page
  * @param search Search query
  * @returns Promise with paginated isibos
  */
 export async function getIsibos(
-  villageId: string,
+  villageId?: string,
   page: number = 1,
   size: number = 10,
   search?: string,
@@ -93,7 +93,10 @@ export async function getIsibos(
       throw new Error('Not authenticated');
     }
 
-    let url = `/api/v1/isibos?villageId=${villageId}&page=${page}&size=${size}`;
+    let url = `/api/v1/isibos?page=${page}&size=${size}`;
+    if (villageId && villageId !== "all") {
+      url += `&villageId=${villageId}`;
+    }
     if (search) {
       url += `&q=${encodeURIComponent(search)}`;
     }
@@ -121,6 +124,48 @@ export async function getIsibos(
     return data.payload;
   } catch (error) {
     console.error('Get isibos error:', error);
+    throw error;
+  }
+}
+
+/**
+ * Search isibos across all villages
+ * @param query Search query
+ * @param size Maximum number of results
+ * @returns Promise with array of isibos
+ */
+export async function searchIsibos(
+  query: string,
+  size: number = 20,
+): Promise<Isibo[]> {
+  try {
+    const tokens = getAuthTokens();
+
+    if (!tokens) {
+      throw new Error('Not authenticated');
+    }
+
+    let url = `/api/v1/isibos/search?page=1&size=${size}`;
+    if (query) {
+      url += `&q=${encodeURIComponent(query)}`;
+    }
+
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${tokens.accessToken}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`Search failed: ${response.statusText}`);
+    }
+
+    const data: ApiResponse<PaginatedResponse<Isibo>> = await response.json();
+    return data.payload.items;
+  } catch (error) {
+    console.error('Search isibos error:', error);
     throw error;
   }
 }

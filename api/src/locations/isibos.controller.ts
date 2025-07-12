@@ -26,13 +26,12 @@ import { RolesGuard } from "../auth/guards/roles.guard";
 import { AssignIsiboLeaderDto } from "./dto/assign-isibo-leader.dto";
 import { CreateIsiboDto } from "./dto/create-isibo.dto";
 import { FetchIsiboDto } from "./dto/fetch-isibo.dto";
+import { SearchIsiboDto } from "./dto/search-isibo.dto";
 import { UpdateIsiboDto } from "./dto/update-isibo.dto";
 import { Isibo } from "./entities/isibo.entity";
 import { IsibosService } from "./isibos.service";
 
 @ApiTags("Isibos")
-@ApiBearerAuth()
-@UseGuards(JwtGuard, RolesGuard)
 @Controller("isibos")
 export class IsibosController {
   constructor(private readonly isibosService: IsibosService) {}
@@ -81,7 +80,16 @@ export class IsibosController {
     return new GenericResponse("Isibo deleted successfully");
   }
 
+  @GetOperation("search", "Search isibos across all villages")
+  @PaginatedOkResponse(SearchIsiboDto.Output)
+  @ErrorResponses(UnauthorizedResponse, ForbiddenResponse, NotFoundResponse)
+  async searchIsibos(@Query() searchIsiboDto: SearchIsiboDto.Input) {
+    const result = await this.isibosService.searchIsibos(searchIsiboDto);
+    return new GenericResponse("Isibos searched successfully", result);
+  }
+
   @GetOperation("", "Get all isibos in a village")
+  @IsAuthorized()
   @PaginatedOkResponse(FetchIsiboDto.Output)
   @ErrorResponses(UnauthorizedResponse, ForbiddenResponse, NotFoundResponse)
   async getAllIsibos(@Query() fetchIsiboDto: FetchIsiboDto.Input) {

@@ -13,6 +13,7 @@ import { CreateIsiboDto } from "./dto/create-isibo.dto";
 import { FetchIsiboDto } from "./dto/fetch-isibo.dto";
 import { UpdateIsiboDto } from "./dto/update-isibo.dto";
 import { Isibo } from "./entities/isibo.entity";
+import { SearchIsiboDto } from "./dto/search-isibo.dto";
 import { Village } from "./entities/village.entity";
 
 @Injectable()
@@ -179,6 +180,32 @@ export class IsibosService {
 
     if (dto.q) {
       queryBuilder.andWhere("isibo.name ILIKE :search", {
+        search: `%${dto.q.toUpperCase()}%`,
+      });
+    }
+
+    return paginate(queryBuilder, {
+      page: dto.page,
+      limit: dto.size,
+    });
+  }
+
+  async searchIsibos(dto: SearchIsiboDto.Input): Promise<SearchIsiboDto.Output> {
+    const queryBuilder = this.isiboRepository
+      .createQueryBuilder("isibo")
+      .leftJoinAndSelect("isibo.leader", "leader")
+      .leftJoinAndSelect("isibo.village", "village")
+      .leftJoinAndSelect("village.cell", "cell");
+
+    // Add village filter if provided
+    if (dto.villageId) {
+      queryBuilder.where("village.id = :villageId", { villageId: dto.villageId });
+    }
+
+    // Add search filter if provided
+    if (dto.q) {
+      const searchCondition = dto.villageId ? "andWhere" : "where";
+      queryBuilder[searchCondition]("isibo.name ILIKE :search", {
         search: `%${dto.q.toUpperCase()}%`,
       });
     }

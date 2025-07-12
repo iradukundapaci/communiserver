@@ -77,23 +77,7 @@ export enum Permission {
 // Define permission mapping for each role
 export const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
   [UserRole.ADMIN]: [
-    Permission.VIEW_NOTIFICATIONS,
-    Permission.VIEW_PROFILE,
-    Permission.VIEW_CELL,
-    Permission.VIEW_CELL_ANALYTICS,
-    Permission.CREATE_VILLAGE_LEADER,
-    Permission.VIEW_CELL_ACTIVITY,
-    Permission.VIEW_ALL_CELLS,
-    Permission.VIEW_ALL_VILLAGES,
-    Permission.VIEW_LEADERS,
-    Permission.VIEW_ALL_ISIBOS,
-    Permission.VIEW_LEADERS,
-    Permission.MANAGE_LEADERS,
-    Permission.ASSIGN_CELL_LEADERS,
-    Permission.DEASSIGN_CELL_LEADERS,
-    Permission.CREATE_CELL_LEADER,
-    Permission.MANAGE_HOUSES,
-    Permission.VIEW_ALL_HOUSES,
+    ...Object.values(Permission),
   ],
 
   [UserRole.CELL_LEADER]: [

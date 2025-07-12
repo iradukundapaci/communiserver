@@ -1,4 +1,3 @@
-import { getAuthTokens } from "@/lib/api/auth";
 import { NextRequest, NextResponse } from "next/server";
 
 // API endpoint URL
@@ -16,13 +15,13 @@ export async function GET(request: NextRequest) {
         payload: []
       });
     }
-
-    // Get auth tokens from request
-    const tokens = getAuthTokens();
     
-    if (!tokens) {
+    // Get the access token from the request headers
+    const authHeader = request.headers.get("Authorization");
+    
+    if (!authHeader) {
       return NextResponse.json(
-        { message: "Authentication required" },
+        { message: "Authorization token is required" },
         { status: 401 }
       );
     }
@@ -31,7 +30,7 @@ export async function GET(request: NextRequest) {
     let response;
     
     try {
-      let url = `${API_URL}/api/v1/isibos?page=1&size=50&q=${encodeURIComponent(q)}`;
+      let url = `${API_URL}/api/v1/isibos/search?page=1&size=50&q=${encodeURIComponent(q)}`;
       if (villageId) {
         url += `&villageId=${encodeURIComponent(villageId)}`;
       }
@@ -39,7 +38,7 @@ export async function GET(request: NextRequest) {
       response = await fetch(url, {
         method: "GET",
         headers: {
-          "Authorization": `Bearer ${tokens.accessToken}`,
+          "Authorization": authHeader,
           "Content-Type": "application/json",
         },
       });
