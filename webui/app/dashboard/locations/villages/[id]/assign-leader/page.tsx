@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import { PermissionRoute } from "@/components/permission-route";
-import { Button } from "@/components/ui/button";
+import { PermissionRoute } from '@/components/permission-route';
+import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
@@ -9,7 +9,7 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
+} from '@/components/ui/card';
 import {
   Dialog,
   DialogContent,
@@ -18,23 +18,23 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
   CreateVillageLeaderInput,
   User,
   createVillageLeader,
-} from "@/lib/api/leaders";
-import { getUsers } from "@/lib/api/users";
-import { assignVillageLeader, getVillageById } from "@/lib/api/villages";
-import { Permission } from "@/lib/permissions";
-import { UserRole } from "@/lib/user-roles";
-import { ArrowLeft, PlusCircle, Search } from "lucide-react";
-import { useRouter } from "next/navigation";
-import * as React from "react";
-import { useEffect, useState } from "react";
-import { toast } from "sonner";
+} from '@/lib/api/leaders';
+import { getUsers } from '@/lib/api/users';
+import { assignVillageLeader, getVillageById } from '@/lib/api/villages';
+import { Permission } from '@/lib/permissions';
+import { UserRole } from '@/lib/user-roles';
+import { ArrowLeft, PlusCircle, Search } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import * as React from 'react';
+import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
 
 // Create Leader Modal Component
 function CreateLeaderModal({
@@ -48,9 +48,10 @@ function CreateLeaderModal({
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const [formData, setFormData] = useState<CreateVillageLeaderInput>({
-    names: "",
-    email: "",
-    phone: "",
+    names: '',
+    email: '',
+    phone: '',
+    password: '',
     cellId: cellId,
     villageId: villageId,
   });
@@ -65,17 +66,27 @@ function CreateLeaderModal({
     e.preventDefault();
 
     if (!formData.names.trim()) {
-      toast.error("Leader name is required");
+      toast.error('Leader name is required');
       return;
     }
 
     if (!formData.email.trim()) {
-      toast.error("Email is required");
+      toast.error('Email is required');
       return;
     }
 
     if (!formData.phone.trim()) {
-      toast.error("Phone number is required");
+      toast.error('Phone number is required');
+      return;
+    }
+
+    if (!formData.password.trim()) {
+      toast.error('Password is required');
+      return;
+    }
+
+    if (formData.password.length < 8) {
+      toast.error('Password must be at least 8 characters long');
       return;
     }
 
@@ -90,7 +101,7 @@ function CreateLeaderModal({
 
       // Get the latest users after refresh
       const response = await getUsers({
-        q: "",
+        q: '',
         role: UserRole.VILLAGE_LEADER,
         page: 1,
         size: 100,
@@ -98,35 +109,36 @@ function CreateLeaderModal({
 
       // Find the newly created user by email (most reliable way to find them)
       const newUser = response.items.find(
-        (user) => user.email.toLowerCase() === formData.email.toLowerCase()
+        (user) => user.email.toLowerCase() === formData.email.toLowerCase(),
       );
 
       // If we found the user, assign them as the village leader
       if (newUser) {
         try {
           await assignVillageLeader(villageId, newUser.id);
-          toast.success("Village leader created and assigned successfully");
+          toast.success('Village leader created and assigned successfully');
 
           // Close the modal and redirect to the villages page
           setIsOpen(false);
-          window.location.href = "/dashboard/locations/villages";
+          window.location.href = '/dashboard/locations/villages';
         } catch (assignError) {
           toast.error(
-            "Leader created but could not be assigned to the village"
+            'Leader created but could not be assigned to the village',
           );
-          console.error("Assignment error:", assignError);
+          console.error('Assignment error:', assignError);
         }
       } else {
-        toast.success("Village leader created successfully");
-        toast.info("Please select the new leader from the list to assign them");
+        toast.success('Village leader created successfully');
+        toast.info('Please select the new leader from the list to assign them');
         setIsOpen(false);
       }
 
       // Reset form
       setFormData({
-        names: "",
-        email: "",
-        phone: "",
+        names: '',
+        email: '',
+        phone: '',
+        password: '',
         cellId: cellId,
         villageId: villageId,
       });
@@ -134,7 +146,7 @@ function CreateLeaderModal({
       if (error instanceof Error) {
         toast.error(error.message);
       } else {
-        toast.error("Failed to create village leader");
+        toast.error('Failed to create village leader');
       }
       console.error(error);
     } finally {
@@ -154,8 +166,8 @@ function CreateLeaderModal({
         <DialogHeader>
           <DialogTitle>Create New Village Leader</DialogTitle>
           <DialogDescription>
-            Enter the details for the new village leader. The system will
-            automatically generate a password and send it to the provided email.
+            Enter the details for the new village leader. A password is required
+            and will be sent to the provided email.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit}>
@@ -200,10 +212,24 @@ function CreateLeaderModal({
                 required
               />
             </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="password" className="text-right">
+                Password
+              </Label>
+              <Input
+                id="password"
+                name="password"
+                type="password"
+                value={formData.password}
+                onChange={handleChange}
+                className="col-span-3"
+                required
+              />
+            </div>
           </div>
           <DialogFooter>
             <Button type="submit" disabled={isCreating}>
-              {isCreating ? "Creating..." : "Create Leader"}
+              {isCreating ? 'Creating...' : 'Create Leader'}
             </Button>
           </DialogFooter>
         </form>
@@ -225,13 +251,13 @@ export default function AssignLeaderPage({
     name: string;
     cellId?: string;
   }>({
-    id: "",
-    name: "",
+    id: '',
+    name: '',
   });
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState('');
   const [users, setUsers] = useState<User[]>([]);
   const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
-  const [selectedUserId, setSelectedUserId] = useState("");
+  const [selectedUserId, setSelectedUserId] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
@@ -249,7 +275,7 @@ export default function AssignLeaderPage({
           cellId: villageData.cell?.id,
         });
       } catch (error) {
-        toast.error("Failed to fetch village");
+        toast.error('Failed to fetch village');
         console.error(error);
       }
     };
@@ -258,15 +284,15 @@ export default function AssignLeaderPage({
       try {
         // Get all users without role filter
         const response = await getUsers({
-          q: "",
-          role: "",
+          q: '',
+          role: '',
           page: 1,
           size: 10,
         });
 
         // Filter users with appropriate role on the client side
         const filteredByRole = response.items.filter(
-          (user) => user.role === UserRole.CITIZEN
+          (user) => user.role === UserRole.CITIZEN,
         );
 
         setUsers(filteredByRole);
@@ -277,7 +303,7 @@ export default function AssignLeaderPage({
         if (error instanceof Error) {
           toast.error(error.message);
         } else {
-          toast.error("Failed to fetch users");
+          toast.error('Failed to fetch users');
         }
         console.error(error);
       } finally {
@@ -299,15 +325,15 @@ export default function AssignLeaderPage({
     try {
       // Get all users without role filter
       const response = await getUsers({
-        q: "",
-        role: "",
+        q: '',
+        role: '',
         page: 1,
         size: 10,
       });
 
       // Filter users with appropriate role on the client side
       const filteredByRole = response.items.filter(
-        (user) => user.role === UserRole.CITIZEN
+        (user) => user.role === UserRole.CITIZEN,
       );
 
       setUsers(filteredByRole);
@@ -318,7 +344,7 @@ export default function AssignLeaderPage({
       if (error instanceof Error) {
         toast.error(error.message);
       } else {
-        toast.error("Failed to fetch users");
+        toast.error('Failed to fetch users');
       }
       console.error(error);
     } finally {
@@ -339,16 +365,16 @@ export default function AssignLeaderPage({
         const filtered = users.filter(
           (user) =>
             user.names.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            user.email.toLowerCase().includes(searchQuery.toLowerCase())
+            user.email.toLowerCase().includes(searchQuery.toLowerCase()),
         );
         setFilteredUsers(filtered);
 
         if (filtered.length === 0) {
-          toast.info("No users found matching your search");
+          toast.info('No users found matching your search');
         }
       }
     } catch (error) {
-      toast.error("Failed to search users");
+      toast.error('Failed to search users');
       console.error(error);
     } finally {
       setIsSearching(false);
@@ -364,15 +390,15 @@ export default function AssignLeaderPage({
     try {
       const nextPage = currentPage + 1;
       const response = await getUsers({
-        q: "",
-        role: "",
+        q: '',
+        role: '',
         page: nextPage,
         size: 10,
       });
 
       // Filter users with appropriate role
       const filteredByRole = response.items.filter(
-        (user) => user.role === UserRole.CITIZEN
+        (user) => user.role === UserRole.CITIZEN,
       );
 
       // Append new users to existing users
@@ -389,7 +415,7 @@ export default function AssignLeaderPage({
         const newFilteredUsers = filteredByRole.filter(
           (user) =>
             user.names.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            user.email.toLowerCase().includes(searchQuery.toLowerCase())
+            user.email.toLowerCase().includes(searchQuery.toLowerCase()),
         );
         setFilteredUsers((prevFiltered) => [
           ...prevFiltered,
@@ -402,7 +428,7 @@ export default function AssignLeaderPage({
       if (error instanceof Error) {
         toast.error(error.message);
       } else {
-        toast.error("Failed to load more users");
+        toast.error('Failed to load more users');
       }
       console.error(error);
     } finally {
@@ -412,7 +438,7 @@ export default function AssignLeaderPage({
 
   const handleAssignLeader = async () => {
     if (!selectedUserId) {
-      toast.error("Please select a user");
+      toast.error('Please select a user');
       return;
     }
 
@@ -420,10 +446,10 @@ export default function AssignLeaderPage({
 
     try {
       await assignVillageLeader(id, selectedUserId);
-      toast.success("Village leader assigned successfully");
-      router.push("/dashboard/locations/villages");
+      toast.success('Village leader assigned successfully');
+      router.push('/dashboard/locations/villages');
     } catch (error) {
-      toast.error("Failed to assign village leader");
+      toast.error('Failed to assign village leader');
       console.error(error);
     } finally {
       setIsSaving(false);
@@ -445,7 +471,7 @@ export default function AssignLeaderPage({
           <Button
             variant="outline"
             size="icon"
-            onClick={() => router.push("/dashboard/locations/villages")}
+            onClick={() => router.push('/dashboard/locations/villages')}
           >
             <ArrowLeft className="h-4 w-4" />
           </Button>
@@ -479,7 +505,7 @@ export default function AssignLeaderPage({
                     ) : (
                       <Search className="h-4 w-4 mr-2" />
                     )}
-                    {isSearching ? "..." : "Search"}
+                    {isSearching ? '...' : 'Search'}
                   </Button>
                 </form>
               </div>
@@ -487,7 +513,7 @@ export default function AssignLeaderPage({
               <div>
                 <CreateLeaderModal
                   villageId={village.id}
-                  cellId={village.cellId || ""}
+                  cellId={village.cellId || ''}
                   onLeaderCreated={refreshUsers}
                 />
               </div>
@@ -553,7 +579,7 @@ export default function AssignLeaderPage({
                       Loading...
                     </>
                   ) : (
-                    "Load More Users"
+                    'Load More Users'
                   )}
                 </Button>
               </div>
@@ -562,7 +588,7 @@ export default function AssignLeaderPage({
           <CardFooter className="flex justify-end space-x-2">
             <Button
               variant="outline"
-              onClick={() => router.push("/dashboard/locations/villages")}
+              onClick={() => router.push('/dashboard/locations/villages')}
               disabled={isSaving}
             >
               Cancel
@@ -571,7 +597,7 @@ export default function AssignLeaderPage({
               onClick={handleAssignLeader}
               disabled={!selectedUserId || isSaving}
             >
-              {isSaving ? "Assigning..." : "Assign Leader"}
+              {isSaving ? 'Assigning...' : 'Assign Leader'}
             </Button>
           </CardFooter>
         </Card>

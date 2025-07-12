@@ -1,14 +1,14 @@
-"use client";
+'use client';
 
-import { PermissionGate } from "@/components/permission-gate";
-import { Button } from "@/components/ui/button";
+import { PermissionGate } from '@/components/permission-gate';
+import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
+} from '@/components/ui/card';
 import {
   Dialog,
   DialogContent,
@@ -17,30 +17,35 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { getUsers, createCitizen, CreateCitizenInput, User } from "@/lib/api/users";
-import { useUser } from "@/lib/contexts/user-context";
-import { Permission } from "@/lib/permissions";
-import { UserRole } from "@/lib/user-roles";
-import { RefreshCw, Search, UserPlus } from "lucide-react";
-import * as React from "react";
-import { useEffect, useState } from "react";
-import { toast } from "sonner";
-import { UsersPDFButton } from "@/components/pdf-report-button";
+} from '@/components/ui/select';
+import {
+  getUsers,
+  createCitizen,
+  CreateCitizenInput,
+  User,
+} from '@/lib/api/users';
+import { useUser } from '@/lib/contexts/user-context';
+import { Permission } from '@/lib/permissions';
+import { UserRole } from '@/lib/user-roles';
+import { RefreshCw, Search, UserPlus } from 'lucide-react';
+import * as React from 'react';
+import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
+import { UsersPDFButton } from '@/components/pdf-report-button';
 
 export default function UsersPage() {
   const { user } = useUser();
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedRole, setSelectedRole] = useState<string>("");
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedRole, setSelectedRole] = useState<string>('');
   const [users, setUsers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSearching, setIsSearching] = useState(false);
@@ -50,23 +55,24 @@ export default function UsersPage() {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [newCitizenData, setNewCitizenData] = useState<CreateCitizenInput>({
-    names: "",
-    email: "",
-    phone: "",
-    cellId: "",
-    villageId: "",
+    names: '',
+    email: '',
+    phone: '',
+    password: '',
+    cellId: '',
+    villageId: '',
   });
 
   const fetchUsers = async (
     query: string = searchQuery,
     role: string = selectedRole,
     page: number = 1,
-    resetUsers: boolean = true
+    resetUsers: boolean = true,
   ) => {
     try {
       setIsLoading(true);
       // If role is "ALL_ROLES", pass an empty string to the API
-      const roleValue = role === "ALL_ROLES" ? "" : role;
+      const roleValue = role === 'ALL_ROLES' ? '' : role;
       const response = await getUsers({
         q: query,
         role: roleValue,
@@ -86,7 +92,7 @@ export default function UsersPage() {
       if (error instanceof Error) {
         toast.error(error.message);
       } else {
-        toast.error("Failed to fetch users");
+        toast.error('Failed to fetch users');
       }
       console.error(error);
     } finally {
@@ -97,15 +103,15 @@ export default function UsersPage() {
   };
 
   useEffect(() => {
-    fetchUsers("", "", 1, true);
+    fetchUsers('', '', 1, true);
   }, []);
 
   useEffect(() => {
     if (user) {
-      setNewCitizenData(prev => ({
+      setNewCitizenData((prev) => ({
         ...prev,
-        cellId: user.cell?.id || "",
-        villageId: user.village?.id || "",
+        cellId: user.cell?.id || '',
+        villageId: user.village?.id || '',
       }));
     }
   }, [user?.id, user?.cell?.id, user?.village?.id]); // Only depend on specific user properties
@@ -118,7 +124,7 @@ export default function UsersPage() {
 
   const handleRoleChange = (value: string) => {
     // If "ALL_ROLES" is selected, pass an empty string to the API
-    const roleValue = value === "ALL_ROLES" ? "" : value;
+    const roleValue = value === 'ALL_ROLES' ? '' : value;
     setSelectedRole(value);
     fetchUsers(searchQuery, roleValue, 1, true);
   };
@@ -136,29 +142,39 @@ export default function UsersPage() {
 
   const handleCitizenInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setNewCitizenData(prev => ({
+    setNewCitizenData((prev) => ({
       ...prev,
       [name]: value,
     }));
   };
 
   const handleCreateCitizen = async () => {
-    if (!newCitizenData.names.trim() || !newCitizenData.email.trim()) {
-      toast.error("Name and email are required");
+    if (
+      !newCitizenData.names.trim() ||
+      !newCitizenData.email.trim() ||
+      !newCitizenData.password.trim()
+    ) {
+      toast.error('Name, email, and password are required');
+      return;
+    }
+
+    if (newCitizenData.password.length < 8) {
+      toast.error('Password must be at least 8 characters long');
       return;
     }
 
     try {
       setIsCreating(true);
       await createCitizen(newCitizenData);
-      toast.success("Citizen created successfully");
+      toast.success('Citizen created successfully');
       setShowCreateDialog(false);
       setNewCitizenData({
-        names: "",
-        email: "",
-        phone: "",
-        cellId: user?.cell?.id || "",
-        villageId: user?.village?.id || "",
+        names: '',
+        email: '',
+        phone: '',
+        password: '',
+        cellId: user?.cell?.id || '',
+        villageId: user?.village?.id || '',
       });
       // Refresh the users list
       handleRefresh();
@@ -166,7 +182,7 @@ export default function UsersPage() {
       if (error instanceof Error) {
         toast.error(error.message);
       } else {
-        toast.error("Failed to create citizen");
+        toast.error('Failed to create citizen');
       }
     } finally {
       setIsCreating(false);
@@ -176,17 +192,17 @@ export default function UsersPage() {
   const getRoleDisplayName = (role: string) => {
     switch (role) {
       case UserRole.ADMIN:
-        return "Admin";
+        return 'Admin';
       case UserRole.CELL_LEADER:
-        return "Cell Leader";
+        return 'Cell Leader';
       case UserRole.VILLAGE_LEADER:
-        return "Village Leader";
+        return 'Village Leader';
       case UserRole.ISIBO_LEADER:
-        return "Isibo Leader";
+        return 'Isibo Leader';
       case UserRole.HOUSE_REPRESENTATIVE:
-        return "House Representative";
+        return 'House Representative';
       case UserRole.CITIZEN:
-        return "Citizen";
+        return 'Citizen';
       default:
         return role;
     }
@@ -199,7 +215,10 @@ export default function UsersPage() {
           <h1 className="text-3xl font-bold">Users</h1>
           <div className="flex items-center gap-2">
             <PermissionGate permission={Permission.CREATE_CITIZEN}>
-              <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
+              <Dialog
+                open={showCreateDialog}
+                onOpenChange={setShowCreateDialog}
+              >
                 <DialogTrigger asChild>
                   <Button>
                     <UserPlus className="h-4 w-4 mr-2" />
@@ -210,7 +229,8 @@ export default function UsersPage() {
                   <DialogHeader>
                     <DialogTitle>Create New Citizen</DialogTitle>
                     <DialogDescription>
-                      Create a new citizen account. They will receive login credentials via email.
+                      Create a new citizen account. They will receive login
+                      credentials via email.
                     </DialogDescription>
                   </DialogHeader>
                   <div className="space-y-4">
@@ -245,13 +265,27 @@ export default function UsersPage() {
                         placeholder="Enter phone number"
                       />
                     </div>
+                    <div>
+                      <Label htmlFor="password">Password*</Label>
+                      <Input
+                        id="password"
+                        name="password"
+                        type="password"
+                        value={newCitizenData.password}
+                        onChange={handleCitizenInputChange}
+                        placeholder="Enter password"
+                      />
+                    </div>
                   </div>
                   <DialogFooter>
-                    <Button variant="outline" onClick={() => setShowCreateDialog(false)}>
+                    <Button
+                      variant="outline"
+                      onClick={() => setShowCreateDialog(false)}
+                    >
                       Cancel
                     </Button>
                     <Button onClick={handleCreateCitizen} disabled={isCreating}>
-                      {isCreating ? "Creating..." : "Create Citizen"}
+                      {isCreating ? 'Creating...' : 'Create Citizen'}
                     </Button>
                   </DialogFooter>
                 </DialogContent>
@@ -301,7 +335,7 @@ export default function UsersPage() {
                     ) : (
                       <Search className="h-4 w-4 mr-2" />
                     )}
-                    {isSearching ? "..." : "Search"}
+                    {isSearching ? '...' : 'Search'}
                   </Button>
                 </form>
 
@@ -352,16 +386,13 @@ export default function UsersPage() {
                       <th className="h-10 px-4 text-left align-middle font-medium text-muted-foreground">
                         Isibo
                       </th>
-                      <th className="h-10 px-4 text-left align-middle font-medium text-muted-foreground">
-                        Status
-                      </th>
                     </tr>
                   </thead>
                   <tbody>
                     {isLoading && users.length === 0 ? (
                       <tr>
                         <td
-                          colSpan={6}
+                          colSpan={5}
                           className="p-4 text-center text-muted-foreground"
                         >
                           <div className="flex justify-center py-8">
@@ -372,7 +403,7 @@ export default function UsersPage() {
                     ) : users.length === 0 ? (
                       <tr>
                         <td
-                          colSpan={6}
+                          colSpan={5}
                           className="p-4 text-center text-muted-foreground"
                         >
                           No users found
@@ -394,18 +425,7 @@ export default function UsersPage() {
                             {getRoleDisplayName(user.role)}
                           </td>
                           <td className="p-4 whitespace-nowrap">
-                            {user.isibo ? user.isibo.name : "-"}
-                          </td>
-                          <td className="p-4 whitespace-nowrap">
-                            <span
-                              className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                                user.activated
-                                  ? "bg-green-100 text-green-800"
-                                  : "bg-yellow-100 text-yellow-800"
-                              }`}
-                            >
-                              {user.activated ? "Active" : "Inactive"}
-                            </span>
+                            {user.isibo ? user.isibo.name : '-'}
                           </td>
                         </tr>
                       ))
@@ -428,7 +448,7 @@ export default function UsersPage() {
                       Loading...
                     </>
                   ) : (
-                    "Load More"
+                    'Load More'
                   )}
                 </Button>
               </div>

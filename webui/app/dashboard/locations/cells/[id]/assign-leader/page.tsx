@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import { PermissionRoute } from "@/components/permission-route";
-import { Button } from "@/components/ui/button";
+import { PermissionRoute } from '@/components/permission-route';
+import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
@@ -9,7 +9,7 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
+} from '@/components/ui/card';
 import {
   Dialog,
   DialogContent,
@@ -18,31 +18,31 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { assignCellLeader, getCellById } from "@/lib/api/cells";
+} from '@/components/ui/select';
+import { assignCellLeader, getCellById } from '@/lib/api/cells';
 import {
   CreateCellLeaderInput,
   User,
   createCellLeader,
-} from "@/lib/api/leaders";
-import { getUsers } from "@/lib/api/users";
-import { getVillages } from "@/lib/api/villages";
-import { Permission } from "@/lib/permissions";
-import { UserRole } from "@/lib/user-roles";
-import { ArrowLeft, PlusCircle, Search } from "lucide-react";
-import { useRouter } from "next/navigation";
-import * as React from "react";
-import { useEffect, useState } from "react";
-import { toast } from "sonner";
+} from '@/lib/api/leaders';
+import { getUsers } from '@/lib/api/users';
+import { getVillages } from '@/lib/api/villages';
+import { Permission } from '@/lib/permissions';
+import { UserRole } from '@/lib/user-roles';
+import { ArrowLeft, PlusCircle, Search } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import * as React from 'react';
+import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
 
 // Create Leader Modal Component
 function CreateLeaderModal({
@@ -54,11 +54,12 @@ function CreateLeaderModal({
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const [formData, setFormData] = useState<CreateCellLeaderInput>({
-    names: "",
-    email: "",
-    phone: "",
+    names: '',
+    email: '',
+    phone: '',
+    password: '',
     cellId: cellId,
-    villageId: "", // This will be populated when a village is selected
+    villageId: '', // This will be populated when a village is selected
   });
   const [isCreating, setIsCreating] = useState(false);
   const [villages, setVillages] = useState<{ id: string; name: string }[]>([]);
@@ -90,7 +91,7 @@ function CreateLeaderModal({
         setVillages([]);
       }
     } catch (error) {
-      toast.error("Failed to fetch villages");
+      toast.error('Failed to fetch villages');
       console.error(error);
     } finally {
       setIsLoadingVillages(false);
@@ -110,22 +111,27 @@ function CreateLeaderModal({
     e.preventDefault();
 
     if (!formData.names.trim()) {
-      toast.error("Leader name is required");
+      toast.error('Leader name is required');
       return;
     }
 
     if (!formData.email.trim()) {
-      toast.error("Email is required");
+      toast.error('Email is required');
       return;
     }
 
     if (!formData.phone.trim()) {
-      toast.error("Phone number is required");
+      toast.error('Phone number is required');
+      return;
+    }
+
+    if (!formData.password.trim()) {
+      toast.error('Password is required');
       return;
     }
 
     if (!formData.villageId) {
-      toast.error("Please select a village");
+      toast.error('Please select a village');
       return;
     }
 
@@ -139,45 +145,50 @@ function CreateLeaderModal({
       onLeaderCreated();
 
       // Get the latest users after refresh
-      const response = await getUsers({ role: UserRole.CELL_LEADER, page: 1, size: 100 });
+      const response = await getUsers({
+        role: UserRole.CELL_LEADER,
+        page: 1,
+        size: 100,
+      });
 
       // Find the newly created user by email (most reliable way to find them)
       const newUser = response.items.find(
-        (user) => user.email.toLowerCase() === formData.email.toLowerCase()
+        (user) => user.email.toLowerCase() === formData.email.toLowerCase(),
       );
 
       // If we found the user, assign them as the cell leader
       if (newUser) {
         try {
           await assignCellLeader(cellId, newUser.id);
-          toast.success("Cell leader created and assigned successfully");
+          toast.success('Cell leader created and assigned successfully');
 
           // Close the modal and redirect to the cells page
           setIsOpen(false);
-          window.location.href = "/dashboard/locations/cells";
+          window.location.href = '/dashboard/locations/cells';
         } catch (assignError) {
-          toast.error("Leader created but could not be assigned to the cell");
-          console.error("Assignment error:", assignError);
+          toast.error('Leader created but could not be assigned to the cell');
+          console.error('Assignment error:', assignError);
         }
       } else {
-        toast.success("Cell leader created successfully");
-        toast.info("Please select the new leader from the list to assign them");
+        toast.success('Cell leader created successfully');
+        toast.info('Please select the new leader from the list to assign them');
         setIsOpen(false);
       }
 
       // Reset form
       setFormData({
-        names: "",
-        email: "",
-        phone: "",
+        names: '',
+        email: '',
+        phone: '',
+        password: '',
         cellId: cellId,
-        villageId: villages.length > 0 ? villages[0].id : "",
+        villageId: villages.length > 0 ? villages[0].id : '',
       });
     } catch (error: unknown) {
       if (error instanceof Error) {
         toast.error(error.message);
       } else {
-        toast.error("Failed to create cell leader");
+        toast.error('Failed to create cell leader');
       }
       console.error(error);
     } finally {
@@ -197,8 +208,8 @@ function CreateLeaderModal({
         <DialogHeader>
           <DialogTitle>Create New Cell Leader</DialogTitle>
           <DialogDescription>
-            Enter the details for the new cell leader. The system will
-            automatically generate a password and send it to the provided email.
+            Enter the details for the new cell leader. A password is required
+            and will be sent to the provided email.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit}>
@@ -244,6 +255,20 @@ function CreateLeaderModal({
               />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="password" className="text-right">
+                Password
+              </Label>
+              <Input
+                id="password"
+                name="password"
+                type="password"
+                value={formData.password}
+                onChange={handleChange}
+                className="col-span-3"
+                required
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="village" className="text-right">
                 Village
               </Label>
@@ -257,8 +282,8 @@ function CreateLeaderModal({
                     <SelectValue
                       placeholder={
                         isLoadingVillages
-                          ? "Loading villages..."
-                          : "Select a village"
+                          ? 'Loading villages...'
+                          : 'Select a village'
                       }
                     />
                   </SelectTrigger>
@@ -283,7 +308,7 @@ function CreateLeaderModal({
               type="submit"
               disabled={isCreating || villages.length === 0}
             >
-              {isCreating ? "Creating..." : "Create Leader"}
+              {isCreating ? 'Creating...' : 'Create Leader'}
             </Button>
           </DialogFooter>
         </form>
@@ -305,13 +330,13 @@ export default function AssignLeaderPage({
     name: string;
     villageId?: string;
   }>({
-    id: "",
-    name: "",
+    id: '',
+    name: '',
   });
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState('');
   const [users, setUsers] = useState<User[]>([]);
   const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
-  const [selectedUserId, setSelectedUserId] = useState("");
+  const [selectedUserId, setSelectedUserId] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
@@ -332,7 +357,7 @@ export default function AssignLeaderPage({
               : undefined,
         });
       } catch (error) {
-        toast.error("Failed to fetch cell");
+        toast.error('Failed to fetch cell');
         console.error(error);
       }
     };
@@ -340,11 +365,11 @@ export default function AssignLeaderPage({
     const fetchUsers = async () => {
       try {
         // Get all users without role filter
-        const response = await getUsers({ role: "", page: 1, size: 10 });
+        const response = await getUsers({ role: '', page: 1, size: 10 });
 
         // Filter users with appropriate role on the client side
         const filteredByRole = response.items.filter(
-          (user) => user.role === UserRole.CITIZEN
+          (user) => user.role === UserRole.CITIZEN,
         );
 
         setUsers(filteredByRole);
@@ -355,7 +380,7 @@ export default function AssignLeaderPage({
         if (error instanceof Error) {
           toast.error(error.message);
         } else {
-          toast.error("Failed to fetch users");
+          toast.error('Failed to fetch users');
         }
         console.error(error);
       } finally {
@@ -376,11 +401,11 @@ export default function AssignLeaderPage({
     setIsLoading(true);
     try {
       // Get all users without role filter
-      const response = await getUsers({ role: "", page: 1, size: 10 });
+      const response = await getUsers({ role: '', page: 1, size: 10 });
 
       // Filter users with appropriate role on the client side
       const filteredByRole = response.items.filter(
-        (user) => user.role === UserRole.CITIZEN
+        (user) => user.role === UserRole.CITIZEN,
       );
 
       setUsers(filteredByRole);
@@ -391,7 +416,7 @@ export default function AssignLeaderPage({
       if (error instanceof Error) {
         toast.error(error.message);
       } else {
-        toast.error("Failed to fetch users");
+        toast.error('Failed to fetch users');
       }
       console.error(error);
     } finally {
@@ -412,16 +437,16 @@ export default function AssignLeaderPage({
         const filtered = users.filter(
           (user) =>
             user.names.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            user.email.toLowerCase().includes(searchQuery.toLowerCase())
+            user.email.toLowerCase().includes(searchQuery.toLowerCase()),
         );
         setFilteredUsers(filtered);
 
         if (filtered.length === 0) {
-          toast.info("No users found matching your search");
+          toast.info('No users found matching your search');
         }
       }
     } catch (error) {
-      toast.error("Failed to search users");
+      toast.error('Failed to search users');
       console.error(error);
     } finally {
       setIsSearching(false);
@@ -436,11 +461,15 @@ export default function AssignLeaderPage({
 
     try {
       const nextPage = currentPage + 1;
-      const response = await getUsers({ role: UserRole.CITIZEN, page: nextPage, size: 10 });
+      const response = await getUsers({
+        role: UserRole.CITIZEN,
+        page: nextPage,
+        size: 10,
+      });
 
       // Filter users with appropriate role
       const filteredByRole = response.items.filter(
-        (user) => user.role === UserRole.CITIZEN
+        (user) => user.role === UserRole.CITIZEN,
       );
 
       // Append new users to existing users
@@ -457,7 +486,7 @@ export default function AssignLeaderPage({
         const newFilteredUsers = response.items.filter(
           (user) =>
             user.names.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            user.email.toLowerCase().includes(searchQuery.toLowerCase())
+            user.email.toLowerCase().includes(searchQuery.toLowerCase()),
         );
         setFilteredUsers((prevFiltered) => [
           ...prevFiltered,
@@ -470,7 +499,7 @@ export default function AssignLeaderPage({
       if (error instanceof Error) {
         toast.error(error.message);
       } else {
-        toast.error("Failed to load more users");
+        toast.error('Failed to load more users');
       }
       console.error(error);
     } finally {
@@ -480,7 +509,7 @@ export default function AssignLeaderPage({
 
   const handleAssignLeader = async () => {
     if (!selectedUserId) {
-      toast.error("Please select a user");
+      toast.error('Please select a user');
       return;
     }
 
@@ -488,10 +517,10 @@ export default function AssignLeaderPage({
 
     try {
       await assignCellLeader(id, selectedUserId);
-      toast.success("Cell leader assigned successfully");
-      router.push("/dashboard/locations/cells");
+      toast.success('Cell leader assigned successfully');
+      router.push('/dashboard/locations/cells');
     } catch (error) {
-      toast.error("Failed to assign cell leader");
+      toast.error('Failed to assign cell leader');
       console.error(error);
     } finally {
       setIsSaving(false);
@@ -513,7 +542,7 @@ export default function AssignLeaderPage({
           <Button
             variant="outline"
             size="icon"
-            onClick={() => router.push("/dashboard/locations/cells")}
+            onClick={() => router.push('/dashboard/locations/cells')}
           >
             <ArrowLeft className="h-4 w-4" />
           </Button>
@@ -547,7 +576,7 @@ export default function AssignLeaderPage({
                     ) : (
                       <Search className="h-4 w-4 mr-2" />
                     )}
-                    {isSearching ? "..." : "Search"}
+                    {isSearching ? '...' : 'Search'}
                   </Button>
                 </form>
               </div>
@@ -620,7 +649,7 @@ export default function AssignLeaderPage({
                       Loading...
                     </>
                   ) : (
-                    "Load More Users"
+                    'Load More Users'
                   )}
                 </Button>
               </div>
@@ -629,7 +658,7 @@ export default function AssignLeaderPage({
           <CardFooter className="flex justify-end space-x-2">
             <Button
               variant="outline"
-              onClick={() => router.push("/dashboard/locations/cells")}
+              onClick={() => router.push('/dashboard/locations/cells')}
               disabled={isSaving}
             >
               Cancel
@@ -638,7 +667,7 @@ export default function AssignLeaderPage({
               onClick={handleAssignLeader}
               disabled={!selectedUserId || isSaving}
             >
-              {isSaving ? "Assigning..." : "Assign Leader"}
+              {isSaving ? 'Assigning...' : 'Assign Leader'}
             </Button>
           </CardFooter>
         </Card>

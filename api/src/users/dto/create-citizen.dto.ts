@@ -1,4 +1,11 @@
-import { IsEmail, IsNotEmpty, IsOptional, IsString, IsUUID } from "class-validator";
+import {
+  IsEmail,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  IsUUID,
+  MinLength,
+} from "class-validator";
 
 export namespace CreateCitizenDTO {
   export class Input {
@@ -13,6 +20,11 @@ export namespace CreateCitizenDTO {
     @IsString()
     @IsNotEmpty()
     phone: string;
+
+    @IsString()
+    @IsNotEmpty()
+    @MinLength(8, { message: "Password must be at least 8 characters long" })
+    password: string;
 
     @IsUUID()
     @IsNotEmpty()

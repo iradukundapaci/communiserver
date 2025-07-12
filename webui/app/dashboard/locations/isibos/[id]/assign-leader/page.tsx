@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import { PermissionRoute } from "@/components/permission-route";
-import { Button } from "@/components/ui/button";
+import { PermissionRoute } from '@/components/permission-route';
+import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
@@ -9,7 +9,7 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
+} from '@/components/ui/card';
 import {
   Dialog,
   DialogContent,
@@ -18,29 +18,29 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { assignIsiboLeader, getIsiboById } from "@/lib/api/isibos";
+} from '@/components/ui/tooltip';
+import { assignIsiboLeader, getIsiboById } from '@/lib/api/isibos';
 import {
   CreateIsiboLeaderInput,
   User,
   createIsiboLeader,
-} from "@/lib/api/leaders";
-import { getUsers } from "@/lib/api/users";
-import { Permission } from "@/lib/permissions";
-import { UserRole } from "@/lib/user-roles";
-import { ArrowLeft, PlusCircle, Search } from "lucide-react";
-import { useRouter } from "next/navigation";
-import * as React from "react";
-import { useEffect, useState } from "react";
-import { toast } from "sonner";
+} from '@/lib/api/leaders';
+import { getUsers } from '@/lib/api/users';
+import { Permission } from '@/lib/permissions';
+import { UserRole } from '@/lib/user-roles';
+import { ArrowLeft, PlusCircle, Search } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import * as React from 'react';
+import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
 
 // Create Leader Modal Component
 function CreateLeaderModal({
@@ -56,9 +56,10 @@ function CreateLeaderModal({
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const [formData, setFormData] = useState<CreateIsiboLeaderInput>({
-    names: "",
-    email: "",
-    phone: "",
+    names: '',
+    email: '',
+    phone: '',
+    password: '',
     cellId: cellId,
     villageId: villageId,
     isiboId: isiboId,
@@ -74,17 +75,27 @@ function CreateLeaderModal({
     e.preventDefault();
 
     if (!formData.names.trim()) {
-      toast.error("Leader name is required");
+      toast.error('Leader name is required');
       return;
     }
 
     if (!formData.email.trim()) {
-      toast.error("Email is required");
+      toast.error('Email is required');
       return;
     }
 
     if (!formData.phone.trim()) {
-      toast.error("Phone number is required");
+      toast.error('Phone number is required');
+      return;
+    }
+
+    if (!formData.password.trim()) {
+      toast.error('Password is required');
+      return;
+    }
+
+    if (formData.password.length < 8) {
+      toast.error('Password must be at least 8 characters long');
       return;
     }
 
@@ -98,37 +109,42 @@ function CreateLeaderModal({
       onLeaderCreated();
 
       // Get the latest users after refresh
-      const response = await getUsers({ role: UserRole.ISIBO_LEADER, page: 1, size: 100 });
+      const response = await getUsers({
+        role: UserRole.ISIBO_LEADER,
+        page: 1,
+        size: 100,
+      });
 
       // Find the newly created user by email (most reliable way to find them)
       const newUser = response.items.find(
-        (user) => user.email.toLowerCase() === formData.email.toLowerCase()
+        (user) => user.email.toLowerCase() === formData.email.toLowerCase(),
       );
 
       // If we found the user, assign them as the isibo leader
       if (newUser) {
         try {
           await assignIsiboLeader(isiboId, newUser.id);
-          toast.success("Isibo leader created and assigned successfully");
+          toast.success('Isibo leader created and assigned successfully');
 
           // Close the modal and redirect to the isibos page
           setIsOpen(false);
-          window.location.href = "/dashboard/locations/isibos";
+          window.location.href = '/dashboard/locations/isibos';
         } catch (assignError) {
-          toast.error("Leader created but could not be assigned to the isibo");
-          console.error("Assignment error:", assignError);
+          toast.error('Leader created but could not be assigned to the isibo');
+          console.error('Assignment error:', assignError);
         }
       } else {
-        toast.success("Isibo leader created successfully");
-        toast.info("Please select the new leader from the list to assign them");
+        toast.success('Isibo leader created successfully');
+        toast.info('Please select the new leader from the list to assign them');
         setIsOpen(false);
       }
 
       // Reset form
       setFormData({
-        names: "",
-        email: "",
-        phone: "",
+        names: '',
+        email: '',
+        phone: '',
+        password: '',
         cellId: cellId,
         villageId: villageId,
         isiboId: isiboId,
@@ -137,7 +153,7 @@ function CreateLeaderModal({
       if (error instanceof Error) {
         toast.error(error.message);
       } else {
-        toast.error("Failed to create isibo leader");
+        toast.error('Failed to create isibo leader');
       }
       console.error(error);
     } finally {
@@ -157,8 +173,8 @@ function CreateLeaderModal({
         <DialogHeader>
           <DialogTitle>Create New Isibo Leader</DialogTitle>
           <DialogDescription>
-            Enter the details for the new isibo leader. The system will
-            automatically generate a password and send it to the provided email.
+            Enter the details for the new isibo leader. A password is required
+            and will be sent to the provided email.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit}>
@@ -203,10 +219,24 @@ function CreateLeaderModal({
                 required
               />
             </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="password" className="text-right">
+                Password
+              </Label>
+              <Input
+                id="password"
+                name="password"
+                type="password"
+                value={formData.password}
+                onChange={handleChange}
+                className="col-span-3"
+                required
+              />
+            </div>
           </div>
           <DialogFooter>
             <Button type="submit" disabled={isCreating}>
-              {isCreating ? "Creating..." : "Create Leader"}
+              {isCreating ? 'Creating...' : 'Create Leader'}
             </Button>
           </DialogFooter>
         </form>
@@ -229,13 +259,13 @@ export default function AssignLeaderPage({
     villageId?: string;
     cellId?: string;
   }>({
-    id: "",
-    name: "",
+    id: '',
+    name: '',
   });
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState('');
   const [users, setUsers] = useState<User[]>([]);
   const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
-  const [selectedUserId, setSelectedUserId] = useState("");
+  const [selectedUserId, setSelectedUserId] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
@@ -255,11 +285,11 @@ export default function AssignLeaderPage({
         // If we have a village ID, fetch the village to get the cell ID
         if (villageId) {
           try {
-            const { getVillageById } = await import("@/lib/api/villages");
+            const { getVillageById } = await import('@/lib/api/villages');
             const villageData = await getVillageById(villageId);
             cellId = villageData.cell?.id;
           } catch (villageError) {
-            console.error("Failed to fetch village:", villageError);
+            console.error('Failed to fetch village:', villageError);
           }
         }
 
@@ -270,7 +300,7 @@ export default function AssignLeaderPage({
           cellId: cellId,
         });
       } catch (error) {
-        toast.error("Failed to fetch isibo");
+        toast.error('Failed to fetch isibo');
         console.error(error);
       }
     };
@@ -278,11 +308,11 @@ export default function AssignLeaderPage({
     const fetchUsers = async () => {
       try {
         // Get all users without role filter
-        const response = await getUsers({ role: "", page: 1, size: 10 });
+        const response = await getUsers({ role: '', page: 1, size: 10 });
 
         // Filter users with appropriate role on the client side
         const filteredByRole = response.items.filter(
-          (user) => user.role === UserRole.CITIZEN
+          (user) => user.role === UserRole.CITIZEN,
         );
 
         setUsers(filteredByRole);
@@ -293,7 +323,7 @@ export default function AssignLeaderPage({
         if (error instanceof Error) {
           toast.error(error.message);
         } else {
-          toast.error("Failed to fetch users");
+          toast.error('Failed to fetch users');
         }
         console.error(error);
       } finally {
@@ -314,11 +344,11 @@ export default function AssignLeaderPage({
     setIsLoading(true);
     try {
       // Get all users without role filter
-      const response = await getUsers({ role: "", page: 1, size: 10 });
+      const response = await getUsers({ role: '', page: 1, size: 10 });
 
       // Filter users with appropriate role on the client side
       const filteredByRole = response.items.filter(
-        (user) => user.role === UserRole.CITIZEN
+        (user) => user.role === UserRole.CITIZEN,
       );
 
       setUsers(filteredByRole);
@@ -329,7 +359,7 @@ export default function AssignLeaderPage({
       if (error instanceof Error) {
         toast.error(error.message);
       } else {
-        toast.error("Failed to fetch users");
+        toast.error('Failed to fetch users');
       }
       console.error(error);
     } finally {
@@ -350,16 +380,16 @@ export default function AssignLeaderPage({
         const filtered = users.filter(
           (user) =>
             user.names.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            user.email.toLowerCase().includes(searchQuery.toLowerCase())
+            user.email.toLowerCase().includes(searchQuery.toLowerCase()),
         );
         setFilteredUsers(filtered);
 
         if (filtered.length === 0) {
-          toast.info("No users found matching your search");
+          toast.info('No users found matching your search');
         }
       }
     } catch (error) {
-      toast.error("Failed to search users");
+      toast.error('Failed to search users');
       console.error(error);
     } finally {
       setIsSearching(false);
@@ -374,11 +404,15 @@ export default function AssignLeaderPage({
 
     try {
       const nextPage = currentPage + 1;
-      const response = await getUsers({ role: UserRole.CITIZEN, page: nextPage, size: 10 });
+      const response = await getUsers({
+        role: UserRole.CITIZEN,
+        page: nextPage,
+        size: 10,
+      });
 
       // Filter users with appropriate role
       const filteredByRole = response.items.filter(
-        (user) => user.role === UserRole.CITIZEN
+        (user) => user.role === UserRole.CITIZEN,
       );
 
       // Append new users to existing users
@@ -395,7 +429,7 @@ export default function AssignLeaderPage({
         const newFilteredUsers = filteredByRole.filter(
           (user) =>
             user.names.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            user.email.toLowerCase().includes(searchQuery.toLowerCase())
+            user.email.toLowerCase().includes(searchQuery.toLowerCase()),
         );
         setFilteredUsers((prevFiltered) => [
           ...prevFiltered,
@@ -408,7 +442,7 @@ export default function AssignLeaderPage({
       if (error instanceof Error) {
         toast.error(error.message);
       } else {
-        toast.error("Failed to load more users");
+        toast.error('Failed to load more users');
       }
       console.error(error);
     } finally {
@@ -418,7 +452,7 @@ export default function AssignLeaderPage({
 
   const handleAssignLeader = async () => {
     if (!selectedUserId) {
-      toast.error("Please select a user");
+      toast.error('Please select a user');
       return;
     }
 
@@ -426,10 +460,10 @@ export default function AssignLeaderPage({
 
     try {
       await assignIsiboLeader(id, selectedUserId);
-      toast.success("Isibo leader assigned successfully");
-      router.push("/dashboard/locations/isibos");
+      toast.success('Isibo leader assigned successfully');
+      router.push('/dashboard/locations/isibos');
     } catch (error) {
-      toast.error("Failed to assign isibo leader");
+      toast.error('Failed to assign isibo leader');
       console.error(error);
     } finally {
       setIsSaving(false);
@@ -451,7 +485,7 @@ export default function AssignLeaderPage({
           <Button
             variant="outline"
             size="icon"
-            onClick={() => router.push("/dashboard/locations/isibos")}
+            onClick={() => router.push('/dashboard/locations/isibos')}
           >
             <ArrowLeft className="h-4 w-4" />
           </Button>
@@ -485,7 +519,7 @@ export default function AssignLeaderPage({
                     ) : (
                       <Search className="h-4 w-4 mr-2" />
                     )}
-                    {isSearching ? "..." : "Search"}
+                    {isSearching ? '...' : 'Search'}
                   </Button>
                 </form>
               </div>
@@ -576,7 +610,7 @@ export default function AssignLeaderPage({
                       Loading...
                     </>
                   ) : (
-                    "Load More Users"
+                    'Load More Users'
                   )}
                 </Button>
               </div>
@@ -585,7 +619,7 @@ export default function AssignLeaderPage({
           <CardFooter className="flex justify-end space-x-2">
             <Button
               variant="outline"
-              onClick={() => router.push("/dashboard/locations/isibos")}
+              onClick={() => router.push('/dashboard/locations/isibos')}
               disabled={isSaving}
             >
               Cancel
@@ -594,7 +628,7 @@ export default function AssignLeaderPage({
               onClick={handleAssignLeader}
               disabled={!selectedUserId || isSaving}
             >
-              {isSaving ? "Assigning..." : "Assign Leader"}
+              {isSaving ? 'Assigning...' : 'Assign Leader'}
             </Button>
           </CardFooter>
         </Card>

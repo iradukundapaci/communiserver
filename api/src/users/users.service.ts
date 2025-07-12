@@ -34,18 +34,6 @@ export class UsersService {
     private readonly entityManager: EntityManager,
   ) {}
 
-  private generateRandomPassword(): string {
-    const length = 12;
-    const charset =
-      "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*";
-    let password = "";
-    for (let i = 0; i < length; i++) {
-      const randomIndex = Math.floor(Math.random() * charset.length);
-      password += charset[randomIndex];
-    }
-    return password;
-  }
-
   private async validateAndGetLocations(
     manager: EntityManager,
     cellId: string,
@@ -153,7 +141,7 @@ export class UsersService {
 
   private async createLeaderUser(
     manager: EntityManager,
-    dto: { email: string; phone: string; names: string },
+    dto: { email: string; phone: string; names: string; password: string },
     cell: any,
     village: any,
     isibo: any,
@@ -162,8 +150,7 @@ export class UsersService {
     isCellLeader: boolean,
     isIsiboLeader: boolean,
   ): Promise<User> {
-    const password = this.generateRandomPassword();
-    const hashedPassword = await PasswordEncryption.hashPassword(password);
+    const hashedPassword = await PasswordEncryption.hashPassword(dto.password);
 
     let user = plainToInstance(User, {
       email: dto.email,
@@ -182,8 +169,8 @@ export class UsersService {
 
     user = await manager.save(user);
 
-    // Send account creation email
-    await this.sendAccountCreationEmail(user, password);
+    // Send account creation email with the provided password
+    await this.sendAccountCreationEmail(user, dto.password);
 
     return user;
   }
@@ -191,7 +178,8 @@ export class UsersService {
   async createCellLeader(
     createCellLeaderDTO: CreateCellLeaderDTO.Input,
   ): Promise<void> {
-    const { email, names, phone, cellId, villageId } = createCellLeaderDTO;
+    const { email, names, phone, cellId, villageId, password } =
+      createCellLeaderDTO;
 
     const userExists = await this.findUserByEmail(email);
     if (userExists) {
@@ -209,7 +197,7 @@ export class UsersService {
 
         await this.createLeaderUser(
           manager,
-          { email, phone, names },
+          { email, phone, names, password },
           cell,
           village,
           null,
@@ -235,7 +223,8 @@ export class UsersService {
   async createVillageLeader(
     createVillageLeaderDTO: CreateVillageLeaderDTO.Input,
   ): Promise<void> {
-    const { email, names, phone, cellId, villageId } = createVillageLeaderDTO;
+    const { email, names, phone, cellId, villageId, password } =
+      createVillageLeaderDTO;
 
     const userExists = await this.findUserByEmail(email);
     if (userExists) {
@@ -252,7 +241,7 @@ export class UsersService {
 
         await this.createLeaderUser(
           manager,
-          { email, phone, names },
+          { email, phone, names, password },
           cell,
           village,
           null,
@@ -278,7 +267,7 @@ export class UsersService {
   async createIsiboLeader(
     createIsiboLeaderDTO: CreateIsiboLeaderDTO.Input,
   ): Promise<void> {
-    const { email, names, phone, cellId, villageId, isiboId } =
+    const { email, names, phone, cellId, villageId, isiboId, password } =
       createIsiboLeaderDTO;
 
     const userExists = await this.findUserByEmail(email);
@@ -298,7 +287,7 @@ export class UsersService {
 
         const user = await this.createLeaderUser(
           manager,
-          { email, phone, names },
+          { email, phone, names, password },
           cell,
           village,
           isibo,
@@ -329,8 +318,16 @@ export class UsersService {
     createCitizenDTO: CreateCitizenDTO.Input,
     currentUser?: User,
   ): Promise<void> {
-    const { email, names, phone, cellId, villageId, isiboId, houseId } =
-      createCitizenDTO;
+    const {
+      email,
+      names,
+      phone,
+      cellId,
+      villageId,
+      isiboId,
+      houseId,
+      password,
+    } = createCitizenDTO;
 
     const userExists = await this.findUserByEmail(email);
     if (userExists) {
@@ -367,7 +364,7 @@ export class UsersService {
 
         await this.createLeaderUser(
           manager,
-          { email, phone, names },
+          { email, phone, names, password },
           cell,
           village,
           isibo,
@@ -418,7 +415,7 @@ export class UsersService {
         name: user.names,
         email: user.email,
         role,
-        temporaryPassword: password,
+        password: password,
         loginUrl,
         location,
       });

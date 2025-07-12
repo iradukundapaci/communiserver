@@ -23,7 +23,6 @@ export interface User {
   email: string;
   phone: string;
   role: string;
-  activated: boolean;
   userId?: string; // User ID for deletion purposes (when available from house members)
   cell?: {
     id: string;
@@ -51,6 +50,7 @@ export interface CreateCitizenInput {
   names: string;
   email: string;
   phone: string;
+  password: string;
   cellId: string;
   villageId: string;
   isiboId?: string;
@@ -152,6 +152,8 @@ export async function updateProfile(profileData: {
   names?: string;
   email?: string;
   phone?: string;
+  isiboId?: string;
+  houseId?: string;
 }): Promise<User> {
   try {
     const tokens = getAuthTokens();

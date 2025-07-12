@@ -1,12 +1,12 @@
-import { Injectable } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { IAppConfig } from 'src/__shared__/interfaces/app-config.interface';
+import { Injectable } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
+import { IAppConfig } from "src/__shared__/interfaces/app-config.interface";
 
 export interface AccountCreationEmailData {
   name: string;
   email: string;
   role: string;
-  temporaryPassword: string;
+  password: string;
   loginUrl: string;
   location?: string;
 }
@@ -32,9 +32,13 @@ export interface LeaderAssignmentEmailData {
 export class EmailTemplatesService {
   constructor(private config: ConfigService<IAppConfig>) {}
 
-  generateAccountCreationEmail(data: AccountCreationEmailData): { subject: string; html: string; text: string } {
+  generateAccountCreationEmail(data: AccountCreationEmailData): {
+    subject: string;
+    html: string;
+    text: string;
+  } {
     const subject = `Welcome to Community Management System - Account Created`;
-    
+
     const html = `
       <!DOCTYPE html>
       <html>
@@ -61,20 +65,20 @@ export class EmailTemplatesService {
         <div class="content">
           <h2>Hello ${data.name}!</h2>
           
-          <p>Congratulations! Your account has been created for the Community Management System. You have been assigned the role of <strong>${data.role.replace('_', ' ')}</strong>${data.location ? ` for ${data.location}` : ''}.</p>
+          <p>Congratulations! Your account has been created for the Community Management System. You have been assigned the role of <strong>${data.role.replace("_", " ")}</strong>${data.location ? ` for ${data.location}` : ""}.</p>
           
           <div class="credentials-box">
             <h3>🔐 Your Login Credentials</h3>
             <p><strong>Email:</strong> ${data.email}</p>
-            <p><strong>Temporary Password:</strong> <code style="background: #f3f4f6; padding: 4px 8px; border-radius: 4px; font-family: monospace;">${data.temporaryPassword}</code></p>
+            <p><strong>Password:</strong> <code style="background: #f3f4f6; padding: 4px 8px; border-radius: 4px; font-family: monospace;">${data.password}</code></p>
           </div>
           
           <div class="warning">
-            <strong>⚠️ Important Security Notice:</strong>
+            <strong>⚠️ Security Notice:</strong>
             <ul>
-              <li>This is a temporary password that expires in 24 hours</li>
-              <li>You must change your password on first login</li>
               <li>Keep your credentials secure and do not share them</li>
+              <li>You can change your password anytime from your profile settings</li>
+              <li>If you forget your password, use the password reset feature</li>
             </ul>
           </div>
           
@@ -83,7 +87,7 @@ export class EmailTemplatesService {
           </div>
           
           <h3>📋 Your Role & Responsibilities</h3>
-          <p>As a <strong>${data.role.replace('_', ' ')}</strong>, you will have access to:</p>
+          <p>As a <strong>${data.role.replace("_", " ")}</strong>, you will have access to:</p>
           <ul>
             ${this.getRoleResponsibilities(data.role)}
           </ul>
@@ -110,13 +114,13 @@ Welcome to Community Management System!
 
 Hello ${data.name},
 
-Your account has been created with the role of ${data.role.replace('_', ' ')}${data.location ? ` for ${data.location}` : ''}.
+Your account has been created with the role of ${data.role.replace("_", " ")}${data.location ? ` for ${data.location}` : ""}.
 
 Login Credentials:
 - Email: ${data.email}
-- Temporary Password: ${data.temporaryPassword}
+- Password: ${data.password}
 
-IMPORTANT: This is a temporary password that expires in 24 hours. You must change your password on first login.
+IMPORTANT: Keep your credentials secure and do not share them. You can change your password anytime from your profile settings.
 
 Login URL: ${data.loginUrl}
 
@@ -128,9 +132,13 @@ This email was sent automatically by the Community Management System.
     return { subject, html, text };
   }
 
-  generatePasswordResetEmail(data: PasswordResetEmailData): { subject: string; html: string; text: string } {
+  generatePasswordResetEmail(data: PasswordResetEmailData): {
+    subject: string;
+    html: string;
+    text: string;
+  } {
     const subject = `Password Reset Request - Community Management System`;
-    
+
     const html = `
       <!DOCTYPE html>
       <html>
@@ -211,9 +219,13 @@ This email was sent automatically by the Community Management System.
     return { subject, html, text };
   }
 
-  generateLeaderAssignmentEmail(data: LeaderAssignmentEmailData): { subject: string; html: string; text: string } {
+  generateLeaderAssignmentEmail(data: LeaderAssignmentEmailData): {
+    subject: string;
+    html: string;
+    text: string;
+  } {
     const subject = `Leadership Assignment - ${data.location}`;
-    
+
     const html = `
       <!DOCTYPE html>
       <html>
@@ -239,11 +251,11 @@ This email was sent automatically by the Community Management System.
         <div class="content">
           <h2>Congratulations ${data.name}!</h2>
           
-          <p>You have been assigned as <strong>${data.role.replace('_', ' ')}</strong> for <strong>${data.location}</strong> by ${data.assignedBy}.</p>
+          <p>You have been assigned as <strong>${data.role.replace("_", " ")}</strong> for <strong>${data.location}</strong> by ${data.assignedBy}.</p>
           
           <div class="highlight">
             <h3>📍 Your Assignment Details</h3>
-            <p><strong>Role:</strong> ${data.role.replace('_', ' ')}</p>
+            <p><strong>Role:</strong> ${data.role.replace("_", " ")}</p>
             <p><strong>Location:</strong> ${data.location}</p>
             <p><strong>Assigned By:</strong> ${data.assignedBy}</p>
             <p><strong>Assignment Date:</strong> ${new Date().toLocaleDateString()}</p>
@@ -254,7 +266,7 @@ This email was sent automatically by the Community Management System.
           </div>
           
           <h3>📋 Your New Responsibilities</h3>
-          <p>As a <strong>${data.role.replace('_', ' ')}</strong>, you will be responsible for:</p>
+          <p>As a <strong>${data.role.replace("_", " ")}</strong>, you will be responsible for:</p>
           <ul>
             ${this.getRoleResponsibilities(data.role)}
           </ul>
@@ -291,10 +303,10 @@ Leadership Assignment - Community Management System
 
 Congratulations ${data.name}!
 
-You have been assigned as ${data.role.replace('_', ' ')} for ${data.location} by ${data.assignedBy}.
+You have been assigned as ${data.role.replace("_", " ")} for ${data.location} by ${data.assignedBy}.
 
 Assignment Details:
-- Role: ${data.role.replace('_', ' ')}
+- Role: ${data.role.replace("_", " ")}
 - Location: ${data.location}
 - Assigned By: ${data.assignedBy}
 - Assignment Date: ${new Date().toLocaleDateString()}
@@ -311,38 +323,38 @@ This email was sent automatically by the Community Management System.
 
   private getRoleResponsibilities(role: string): string {
     const responsibilities = {
-      'ADMIN': `
+      ADMIN: `
         <li>System administration and user management</li>
         <li>Overall system monitoring and maintenance</li>
         <li>Policy implementation and enforcement</li>
         <li>Data analytics and reporting</li>
       `,
-      'CELL_LEADER': `
+      CELL_LEADER: `
         <li>Managing multiple villages within your cell</li>
         <li>Coordinating with village leaders</li>
         <li>Overseeing cell-wide activities and initiatives</li>
         <li>Reporting to regional administrators</li>
       `,
-      'VILLAGE_LEADER': `
+      VILLAGE_LEADER: `
         <li>Managing your assigned village</li>
         <li>Coordinating with isibo leaders</li>
         <li>Organizing village-wide activities</li>
         <li>Reporting to your cell leader</li>
       `,
-      'ISIBO_LEADER': `
+      ISIBO_LEADER: `
         <li>Managing your assigned isibo group</li>
         <li>Organizing isibo meetings and activities</li>
         <li>Maintaining member records and attendance</li>
         <li>Reporting to your village leader</li>
       `,
-      'CITIZEN': `
+      CITIZEN: `
         <li>Participating in community activities</li>
         <li>Attending meetings and events</li>
         <li>Contributing to community development</li>
         <li>Following community guidelines</li>
-      `
+      `,
     };
 
-    return responsibilities[role] || '<li>General community participation</li>';
+    return responsibilities[role] || "<li>General community participation</li>";
   }
 }

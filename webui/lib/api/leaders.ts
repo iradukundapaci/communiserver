@@ -1,4 +1,4 @@
-import { getAuthTokens } from "./auth";
+import { getAuthTokens } from './auth';
 
 // Types
 interface ApiResponse<T> {
@@ -23,7 +23,6 @@ export interface User {
   email: string;
   phone: string;
   role: string;
-  activated: boolean;
 }
 
 // Input types
@@ -31,6 +30,7 @@ export interface CreateCellLeaderInput {
   names: string;
   email: string;
   phone: string;
+  password: string;
   cellId: string;
   villageId: string;
 }
@@ -39,6 +39,7 @@ export interface CreateVillageLeaderInput {
   names: string;
   email: string;
   phone: string;
+  password: string;
   cellId: string;
   villageId: string;
 }
@@ -47,6 +48,7 @@ export interface CreateIsiboLeaderInput {
   names: string;
   email: string;
   phone: string;
+  password: string;
   cellId: string;
   villageId: string;
   isiboId: string;
@@ -58,20 +60,20 @@ export interface CreateIsiboLeaderInput {
  * @returns Promise with success message
  */
 export async function createCellLeader(
-  leaderData: CreateCellLeaderInput
+  leaderData: CreateCellLeaderInput,
 ): Promise<string> {
   try {
     const tokens = getAuthTokens();
 
     if (!tokens) {
-      throw new Error("Not authenticated");
+      throw new Error('Not authenticated');
     }
 
-    const response = await fetch("/api/v1/users/cell-leaders", {
-      method: "POST",
+    const response = await fetch('/api/v1/users/cell-leaders', {
+      method: 'POST',
       headers: {
         Authorization: `Bearer ${tokens.accessToken}`,
-        "Content-Type": "application/json",
+        'Content-Type': 'application/json',
       },
       body: JSON.stringify(leaderData),
     });
@@ -79,18 +81,18 @@ export async function createCellLeader(
     if (!response.ok) {
       const errorData = await response.json();
       if (response.status === 403) {
-        throw new Error("You do not have permission to create cell leaders");
+        throw new Error('You do not have permission to create cell leaders');
       } else if (response.status === 409) {
-        throw new Error("A user with this email already exists");
+        throw new Error('A user with this email already exists');
       } else {
-        throw new Error(errorData.message || "Failed to create cell leader");
+        throw new Error(errorData.message || 'Failed to create cell leader');
       }
     }
 
     const data: ApiResponse<null> = await response.json();
     return data.message;
   } catch (error) {
-    console.error("Create cell leader error:", error);
+    console.error('Create cell leader error:', error);
     throw error;
   }
 }
@@ -101,20 +103,20 @@ export async function createCellLeader(
  * @returns Promise with success message
  */
 export async function createVillageLeader(
-  leaderData: CreateVillageLeaderInput
+  leaderData: CreateVillageLeaderInput,
 ): Promise<string> {
   try {
     const tokens = getAuthTokens();
 
     if (!tokens) {
-      throw new Error("Not authenticated");
+      throw new Error('Not authenticated');
     }
 
-    const response = await fetch("/api/v1/users/village-leaders", {
-      method: "POST",
+    const response = await fetch('/api/v1/users/village-leaders', {
+      method: 'POST',
       headers: {
         Authorization: `Bearer ${tokens.accessToken}`,
-        "Content-Type": "application/json",
+        'Content-Type': 'application/json',
       },
       body: JSON.stringify(leaderData),
     });
@@ -122,18 +124,18 @@ export async function createVillageLeader(
     if (!response.ok) {
       const errorData = await response.json();
       if (response.status === 403) {
-        throw new Error("You do not have permission to create village leaders");
+        throw new Error('You do not have permission to create village leaders');
       } else if (response.status === 409) {
-        throw new Error("A user with this email already exists");
+        throw new Error('A user with this email already exists');
       } else {
-        throw new Error(errorData.message || "Failed to create village leader");
+        throw new Error(errorData.message || 'Failed to create village leader');
       }
     }
 
     const data: ApiResponse<null> = await response.json();
     return data.message;
   } catch (error) {
-    console.error("Create village leader error:", error);
+    console.error('Create village leader error:', error);
     throw error;
   }
 }
@@ -144,20 +146,20 @@ export async function createVillageLeader(
  * @returns Promise with success message
  */
 export async function createIsiboLeader(
-  leaderData: CreateIsiboLeaderInput
+  leaderData: CreateIsiboLeaderInput,
 ): Promise<string> {
   try {
     const tokens = getAuthTokens();
 
     if (!tokens) {
-      throw new Error("Not authenticated");
+      throw new Error('Not authenticated');
     }
 
-    const response = await fetch("/api/v1/users/isibo-leaders", {
-      method: "POST",
+    const response = await fetch('/api/v1/users/isibo-leaders', {
+      method: 'POST',
       headers: {
         Authorization: `Bearer ${tokens.accessToken}`,
-        "Content-Type": "application/json",
+        'Content-Type': 'application/json',
       },
       body: JSON.stringify(leaderData),
     });
@@ -165,18 +167,18 @@ export async function createIsiboLeader(
     if (!response.ok) {
       const errorData = await response.json();
       if (response.status === 403) {
-        throw new Error("You do not have permission to create isibo leaders");
+        throw new Error('You do not have permission to create isibo leaders');
       } else if (response.status === 409) {
-        throw new Error("A user with this email already exists");
+        throw new Error('A user with this email already exists');
       } else {
-        throw new Error(errorData.message || "Failed to create isibo leader");
+        throw new Error(errorData.message || 'Failed to create isibo leader');
       }
     }
 
     const data: ApiResponse<null> = await response.json();
     return data.message;
   } catch (error) {
-    console.error("Create isibo leader error:", error);
+    console.error('Create isibo leader error:', error);
     throw error;
   }
 }
@@ -190,12 +192,12 @@ export async function createIsiboLeader(
  * @returns Promise with paginated users
  */
 export async function searchUsers(
-  query: string = "",
+  query: string = '',
   role?: string,
   page: number = 1,
-  size: number = 10
+  size: number = 10,
 ): Promise<PaginatedResponse<User>> {
   // Use the getUsers function from the users API service
-  const { getUsers } = await import("./users");
+  const { getUsers } = await import('./users');
   return getUsers({ q: query, role, page, size });
 }

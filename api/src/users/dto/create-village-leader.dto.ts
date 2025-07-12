@@ -1,4 +1,4 @@
-import { IsEmail, IsNotEmpty, IsString } from "class-validator";
+import { IsEmail, IsNotEmpty, IsString, MinLength } from "class-validator";
 
 export namespace CreateVillageLeaderDTO {
   export class Input {
@@ -13,6 +13,11 @@ export namespace CreateVillageLeaderDTO {
     @IsString()
     @IsNotEmpty()
     phone: string;
+
+    @IsString()
+    @IsNotEmpty()
+    @MinLength(8, { message: "Password must be at least 8 characters long" })
+    password: string;
 
     @IsString()
     @IsNotEmpty()
