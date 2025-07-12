@@ -1,15 +1,7 @@
 'use client';
 
-import { PermissionRoute } from '@/components/permission-route';
 import { Button } from '@/components/ui/button';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -19,33 +11,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Checkbox } from '@/components/ui/checkbox';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
-import { Cell, getCells } from '@/lib/api/cells';
+import { PermissionRoute } from '@/components/permission-route';
+import { ProtectedRoute } from '@/components/protected-route';
 import { createHouse } from '@/lib/api/houses';
 import { getIsibos, Isibo } from '@/lib/api/isibos';
-import { getVillages, Village } from '@/lib/api/villages';
 import { useUser } from '@/lib/contexts/user-context';
 import { Permission } from '@/lib/permissions';
 import { ArrowLeft } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
-import {
-  User,
-  getUsers,
-  createCitizen,
-  CreateCitizenInput,
-} from '@/lib/api/users';
-import { UserPlus } from 'lucide-react';
 
 export default function CreateHousePage() {
   const router = useRouter();
@@ -54,231 +29,32 @@ export default function CreateHousePage() {
     code: '',
     address: '',
     isiboId: '',
-    memberIds: [] as string[],
   });
   const [isibos, setIsibos] = useState<Isibo[]>([]);
-  const [, setVillages] = useState<Village[]>([]);
-  const [, setCells] = useState<Cell[]>([]);
-  const [selectedCellId, setSelectedCellId] = useState<string>('');
-  const [selectedVillageId, setSelectedVillageId] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
-  const [isIsibosLoading, setIsIsibosLoading] = useState(true);
-  const [, setIsVillagesLoading] = useState(true);
-  const [, setIsCellsLoading] = useState(true);
-  const [citizensToCreate, setCitizensToCreate] = useState<
-    CreateCitizenInput[]
-  >([]);
-  const [showCreateCitizenDialog, setShowCreateCitizenDialog] = useState(false);
-  const [newCitizenData, setNewCitizenData] = useState<CreateCitizenInput>({
-    names: '',
-    email: '',
-    phone: '',
-    cellId: user?.cell?.id || '',
-    villageId: user?.village?.id || '',
-    isiboId: user?.isibo?.id || '',
-  });
+  const [isLoadingIsibos, setIsLoadingIsibos] = useState(true);
 
   useEffect(() => {
-    fetchCells();
+    fetchIsibos();
   }, []);
 
-  useEffect(() => {
-    if (selectedCellId) {
-      fetchVillages();
-    }
-  }, [selectedCellId]);
-
-  useEffect(() => {
-    if (selectedVillageId) {
-      fetchIsibos();
-    }
-  }, [selectedVillageId]);
-
-  const fetchCells = async () => {
-    try {
-      setIsCellsLoading(true);
-
-      // If user has a cell assigned, use it directly without fetching all cells
-      if (user?.cell?.id) {
-        // For all roles with a cell, pre-select their cell
-        setSelectedCellId(user.cell.id);
-
-        // If the user is a location leader, we don't need to fetch all cells
-        if (
-          user.role === 'CELL_LEADER' ||
-          user.role === 'VILLAGE_LEADER' ||
-          user.role === 'ISIBO_LEADER'
-        ) {
-          // Just add the user's cell to the cells array
-          setCells([
-            {
-              id: user.cell.id,
-              name: user.cell.name,
-              hasLeader: false, // These values don't matter for the dropdown
-              leaderId: null,
-            } as Cell,
-          ]);
-          setIsCellsLoading(false);
-          return;
-        }
-      }
-
-      // Otherwise fetch cells from the database
-      const response = await getCells(1, 100); // Get all cells
-      setCells(response.items || []);
-
-      // If user doesn't have a cell, select the first one by default
-      if (!user?.cell?.id && response.items && response.items.length > 0) {
-        setSelectedCellId(response.items[0].id);
-      }
-    } catch (error: any) {
-      if (error.message) {
-        toast.error(error.message);
-      } else {
-        toast.error('Failed to fetch cells');
-      }
-      console.error(error);
-    } finally {
-      setIsCellsLoading(false);
-    }
-  };
-
-  const fetchVillages = async () => {
-    if (!selectedCellId) return;
-
-    try {
-      setIsVillagesLoading(true);
-
-      // If user has a village assigned and we're in the correct cell, use it directly
-      if (user?.village?.id && user?.cell?.id === selectedCellId) {
-        // For village leaders and isibo leaders, pre-select their village
-        setSelectedVillageId(user.village.id);
-
-        // If the user is a location leader, we don't need to fetch all villages
-        if (user.role === 'VILLAGE_LEADER' || user.role === 'ISIBO_LEADER') {
-          // Just add the user's village to the villages array
-          setVillages([
-            {
-              id: user.village.id,
-              name: user.village.name,
-              hasLeader: false, // These values don't matter for the dropdown
-              leaderId: null,
-            } as Village,
-          ]);
-          setIsVillagesLoading(false);
-          return;
-        }
-      }
-
-      // Otherwise fetch villages from the database
-      const response = await getVillages(selectedCellId, 1, 100); // Get all villages for the selected cell
-      setVillages(response.items || []);
-
-      // If user has a village in this cell, pre-select it
-      if (
-        user?.village?.id &&
-        response.items.some((village) => village.id === user.village?.id)
-      ) {
-        setSelectedVillageId(user.village.id);
-      } else if (response.items && response.items.length > 0) {
-        // Otherwise, select the first village by default
-        setSelectedVillageId(response.items[0].id);
-      } else {
-        setSelectedVillageId('');
-        setFormData((prev) => ({
-          ...prev,
-          isiboId: '',
-        }));
-        setIsibos([]);
-      }
-    } catch (error: any) {
-      if (error.message) {
-        toast.error(error.message);
-      } else {
-        toast.error('Failed to fetch villages');
-      }
-      console.error(error);
-      setVillages([]);
-      setSelectedVillageId('');
-      setFormData((prev) => ({
-        ...prev,
-        isiboId: '',
-      }));
-      setIsibos([]);
-    } finally {
-      setIsVillagesLoading(false);
-    }
-  };
-
   const fetchIsibos = async () => {
-    if (!selectedVillageId) return;
-
     try {
-      setIsIsibosLoading(true);
-
-      // If user has an isibo assigned and we're in the correct village, use it directly
-      if (user?.isibo?.id && user?.village?.id === selectedVillageId) {
-        // For isibo leaders, pre-select their isibo
-        setFormData((prev) => ({
+      setIsLoadingIsibos(true);
+      const response = await getIsibos({ page: 1, size: 100 });
+      setIsibos(response.items);
+      
+      // Auto-select user's isibo if they are an isibo leader
+      if (user?.role === 'ISIBO_LEADER' && user.isibo) {
+        setFormData(prev => ({
           ...prev,
-          isiboId: user.isibo?.id || '',
-        }));
-
-        // If the user is an isibo leader, we don't need to fetch all isibos
-        if (user.role === 'ISIBO_LEADER') {
-          // Just add the user's isibo to the isibos array
-          setIsibos([
-            {
-              id: user.isibo.id,
-              name: user.isibo.name,
-              hasLeader: false, // These values don't matter for the dropdown
-              leaderId: null,
-            } as Isibo,
-          ]);
-          setIsIsibosLoading(false);
-          return;
-        }
-      }
-
-      // Otherwise fetch isibos from the database
-      const response = await getIsibos(selectedVillageId, 1, 100); // Get all isibos for the selected village
-      setIsibos(response.items || []);
-
-      // If user has an isibo in this village, pre-select it
-      if (
-        user?.isibo?.id &&
-        response.items.some((isibo) => isibo.id === user.isibo?.id)
-      ) {
-        setFormData((prev) => ({
-          ...prev,
-          isiboId: user.isibo?.id || '',
-        }));
-      } else if (response.items && response.items.length > 0) {
-        // Otherwise, select the first isibo by default
-        setFormData((prev) => ({
-          ...prev,
-          isiboId: response.items[0].id,
-        }));
-      } else {
-        setFormData((prev) => ({
-          ...prev,
-          isiboId: '',
+          isiboId: user.isibo.id,
         }));
       }
-    } catch (error: any) {
-      if (error.message) {
-        toast.error(error.message);
-      } else {
-        toast.error('Failed to fetch isibos');
-      }
-      console.error(error);
-      setIsibos([]);
-      setFormData((prev) => ({
-        ...prev,
-        isiboId: '',
-      }));
+    } catch (error) {
+      toast.error('Failed to load isibos');
     } finally {
-      setIsIsibosLoading(false);
+      setIsLoadingIsibos(false);
     }
   };
 
@@ -290,296 +66,149 @@ export default function CreateHousePage() {
     }));
   };
 
-  const handleCellChange = (cellId: string) => {
-    setSelectedCellId(cellId);
-    setSelectedVillageId(''); // Reset selected village when cell changes
+  const handleIsiboChange = (value: string) => {
     setFormData((prev) => ({
       ...prev,
-      isiboId: '',
+      isiboId: value,
     }));
-    setIsibos([]);
-  };
-
-  const handleVillageChange = (villageId: string) => {
-    setSelectedVillageId(villageId);
-    setFormData((prev) => ({
-      ...prev,
-      isiboId: '',
-    }));
-    setIsibos([]);
-  };
-
-  const handleIsiboChange = (isiboId: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      isiboId,
-    }));
-  };
-
-  const handleCitizenInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setNewCitizenData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
-
-  const handleCitizenSelection = (citizenId: string, checked: boolean) => {
-    setFormData((prev) => ({
-      ...prev,
-      memberIds: checked
-        ? [...prev.memberIds, citizenId]
-        : prev.memberIds.filter((id) => id !== citizenId),
-    }));
-  };
-
-  const handleCreateCitizen = async () => {
-    if (!newCitizenData.names.trim() || !newCitizenData.email.trim()) {
-      toast.error('Name and email are required');
-      return;
-    }
-
-    // Add the citizen to the list of citizens to create
-    setCitizensToCreate((prev) => [...prev, { ...newCitizenData }]);
-
-    // Add a temporary ID to memberIds (we'll replace this with real IDs when creating the house)
-    const tempId = `temp_${Date.now()}`;
-    setFormData((prev) => ({
-      ...prev,
-      memberIds: [...prev.memberIds, tempId],
-    }));
-
-    toast.success('Citizen added to house');
-    setShowCreateCitizenDialog(false);
-    setNewCitizenData({
-      names: '',
-      email: '',
-      phone: '',
-      cellId: user?.cell?.id || '',
-      villageId: user?.village?.id || '',
-      isiboId: user?.isibo?.id || '',
-    });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
     if (!formData.code.trim()) {
       toast.error('House code is required');
       return;
     }
+    
     if (!formData.isiboId) {
       toast.error('Please select an isibo');
       return;
     }
+
     setIsLoading(true);
     try {
-      // Create the house with members
       await createHouse({
         code: formData.code,
         address: formData.address,
         isiboId: formData.isiboId,
-        members: citizensToCreate.map((citizen) => ({
-          names: citizen.names,
-          email: citizen.email,
-          phone: citizen.phone,
-        })),
       });
 
       toast.success('House created successfully');
       router.push('/dashboard/locations/houses');
     } catch (error: any) {
-      if (error.message) {
-        toast.error(error.message);
-      } else {
-        toast.error('Failed to create house');
-      }
-      console.error(error);
+      toast.error(error.message || 'Failed to create house');
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <PermissionRoute permission={Permission.CREATE_HOUSE}>
-      <div className="flex flex-col gap-4">
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={() => router.push('/dashboard/locations/houses')}
-          >
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-          <h1 className="text-3xl font-bold">Create House</h1>
-        </div>
+    <ProtectedRoute>
+      <PermissionRoute
+        anyPermissions={[
+          Permission.MANAGE_HOUSES,
+          Permission.MANAGE_ISIBO_HOUSES,
+        ]}
+      >
+        <div className="container mx-auto py-6">
+          <div className="flex items-center gap-4 mb-6">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => router.back()}
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back
+            </Button>
+            <div>
+              <h1 className="text-2xl font-bold">Create House</h1>
+              <p className="text-muted-foreground">
+                Create a new house in an isibo. You can add members after creation.
+              </p>
+            </div>
+          </div>
 
-        <Card>
-          <form onSubmit={handleSubmit}>
+          <Card className="max-w-2xl">
             <CardHeader>
               <CardTitle>House Information</CardTitle>
-              <CardDescription>
-                Enter the details for the new house
-              </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2 max-w-md">
-                <Label htmlFor="code">House Code</Label>
-                <Input
-                  id="code"
-                  name="code"
-                  value={formData.code}
-                  onChange={handleInputChange}
-                  placeholder="Enter house code"
-                  required
-                  className="w-full"
-                />
-              </div>
-
-              <div className="space-y-2 max-w-md">
-                <Label htmlFor="address">House Address</Label>
-                <Input
-                  id="address"
-                  name="address"
-                  value={formData.address}
-                  onChange={handleInputChange}
-                  placeholder="Enter house address"
-                  className="w-full"
-                />
-              </div>
-
-              {/* Hide isibo field from UI */}
-              {/* Member management UI */}
-              <div className="space-y-4 mt-6">
-                <div className="flex items-center justify-between">
+            <CardContent>
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <h3 className="text-lg font-medium mb-2">House Members</h3>
-                    <p className="text-sm text-muted-foreground mb-4">
-                      Create new citizens to add to this house.
-                    </p>
+                    <Label htmlFor="code">House Code *</Label>
+                    <Input
+                      id="code"
+                      name="code"
+                      value={formData.code}
+                      onChange={handleInputChange}
+                      placeholder="Enter house code"
+                      required
+                    />
                   </div>
-                  <Dialog
-                    open={showCreateCitizenDialog}
-                    onOpenChange={setShowCreateCitizenDialog}
-                  >
-                    <DialogTrigger asChild>
-                      <Button variant="outline" size="sm">
-                        <UserPlus className="h-4 w-4 mr-2" />
-                        Create Citizen
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                      <DialogHeader>
-                        <DialogTitle>Create New Citizen</DialogTitle>
-                        <DialogDescription>
-                          Create a new citizen account that can be added to this
-                          house.
-                        </DialogDescription>
-                      </DialogHeader>
-                      <div className="space-y-4">
-                        <div>
-                          <Label htmlFor="citizenName">Name*</Label>
-                          <Input
-                            id="citizenName"
-                            name="names"
-                            value={newCitizenData.names}
-                            onChange={handleCitizenInputChange}
-                            placeholder="Enter citizen name"
-                          />
-                        </div>
-                        <div>
-                          <Label htmlFor="citizenEmail">Email*</Label>
-                          <Input
-                            id="citizenEmail"
-                            name="email"
-                            type="email"
-                            value={newCitizenData.email}
-                            onChange={handleCitizenInputChange}
-                            placeholder="Enter citizen email"
-                          />
-                        </div>
-                        <div>
-                          <Label htmlFor="citizenPhone">Phone</Label>
-                          <Input
-                            id="citizenPhone"
-                            name="phone"
-                            value={newCitizenData.phone}
-                            onChange={handleCitizenInputChange}
-                            placeholder="Enter citizen phone"
-                          />
-                        </div>
-                      </div>
-                      <DialogFooter>
-                        <Button
-                          variant="outline"
-                          onClick={() => setShowCreateCitizenDialog(false)}
-                        >
-                          Cancel
-                        </Button>
-                        <Button onClick={handleCreateCitizen}>
-                          Create Citizen
-                        </Button>
-                      </DialogFooter>
-                    </DialogContent>
-                  </Dialog>
+                  <div>
+                    <Label htmlFor="address">Address</Label>
+                    <Input
+                      id="address"
+                      name="address"
+                      value={formData.address}
+                      onChange={handleInputChange}
+                      placeholder="Enter house address"
+                    />
+                  </div>
                 </div>
-                {/* Show created citizens that will be added to the house */}
-                {citizensToCreate.length > 0 && (
-                  <div className="border rounded-md p-4">
-                    <h4 className="font-medium mb-2">
-                      Citizens to be created ({citizensToCreate.length})
-                    </h4>
-                    <div className="space-y-2 max-h-60 overflow-y-auto">
-                      {citizensToCreate.map((citizen, index) => (
-                        <div
-                          key={index}
-                          className="flex items-center justify-between border-b pb-2"
-                        >
-                          <div>
-                            <p className="font-medium">{citizen.names}</p>
-                            <div className="text-sm text-muted-foreground">
-                              <p>Email: {citizen.email}</p>
-                              <p>Phone: {citizen.phone}</p>
-                            </div>
-                          </div>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                              setCitizensToCreate((prev) =>
-                                prev.filter((_, i) => i !== index),
-                              );
-                              setFormData((prev) => ({
-                                ...prev,
-                                memberIds: prev.memberIds.filter(
-                                  (_, i) => i !== index,
-                                ),
-                              }));
-                            }}
-                          >
-                            Remove
-                          </Button>
-                        </div>
+
+                <div>
+                  <Label htmlFor="isibo">Isibo *</Label>
+                  <Select
+                    value={formData.isiboId}
+                    onValueChange={handleIsiboChange}
+                    disabled={isLoadingIsibos || (user?.role === 'ISIBO_LEADER')}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select an isibo" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {isibos.map((isibo) => (
+                        <SelectItem key={isibo.id} value={isibo.id}>
+                          {isibo.name}
+                        </SelectItem>
                       ))}
-                    </div>
-                  </div>
-                )}
-              </div>
+                    </SelectContent>
+                  </Select>
+                  {user?.role === 'ISIBO_LEADER' && (
+                    <p className="text-sm text-muted-foreground mt-1">
+                      As an Isibo Leader, you can only create houses in your isibo.
+                    </p>
+                  )}
+                </div>
+
+                <div className="bg-blue-50 p-4 rounded-lg">
+                  <h4 className="font-medium text-blue-900 mb-2">Next Steps</h4>
+                  <p className="text-sm text-blue-700">
+                    After creating the house, you'll be able to add members by editing the house.
+                    You can either add existing citizens or create new citizen accounts.
+                  </p>
+                </div>
+                
+                <div className="flex gap-2">
+                  <Button type="submit" disabled={isLoading}>
+                    {isLoading ? 'Creating...' : 'Create House'}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => router.back()}
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              </form>
             </CardContent>
-            <CardFooter className="flex justify-end space-x-2">
-              <Button
-                variant="outline"
-                onClick={() => router.push('/dashboard/locations/houses')}
-                disabled={isLoading}
-              >
-                Cancel
-              </Button>
-              <Button type="submit" disabled={isLoading}>
-                {isLoading ? 'Creating...' : 'Create House'}
-              </Button>
-            </CardFooter>
-          </form>
-        </Card>
-      </div>
-    </PermissionRoute>
+          </Card>
+        </div>
+      </PermissionRoute>
+    </ProtectedRoute>
   );
 }

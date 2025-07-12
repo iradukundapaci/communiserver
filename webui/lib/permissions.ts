@@ -59,6 +59,8 @@ export enum Permission {
   UPDATE_HOUSE = 'UPDATE_HOUSE',
   DELETE_HOUSE = 'DELETE_HOUSE',
   VIEW_ALL_HOUSES = 'VIEW_ALL_HOUSES',
+  MANAGE_HOUSES = 'MANAGE_HOUSES',
+  MANAGE_ISIBO_HOUSES = 'MANAGE_ISIBO_HOUSES',
   ADD_CITIZENS = 'ADD_CITIZENS',
   ASSIGN_CITIZENS_TO_HOUSE = 'ASSIGN_CITIZENS_TO_HOUSE',
   VIEW_VILLAGE_ACTIVITY = 'VIEW_VILLAGE_ACTIVITY',
@@ -90,6 +92,8 @@ export const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     Permission.ASSIGN_CELL_LEADERS,
     Permission.DEASSIGN_CELL_LEADERS,
     Permission.CREATE_CELL_LEADER,
+    Permission.MANAGE_HOUSES,
+    Permission.VIEW_ALL_HOUSES,
   ],
 
   [UserRole.CELL_LEADER]: [
@@ -151,6 +155,7 @@ export const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     Permission.UPDATE_HOUSE,
     Permission.DELETE_HOUSE,
     Permission.VIEW_ALL_HOUSES,
+    Permission.MANAGE_ISIBO_HOUSES,
     Permission.ADD_CITIZENS,
     Permission.ASSIGN_CITIZENS_TO_HOUSE,
     Permission.VIEW_VILLAGE_ACTIVITY,

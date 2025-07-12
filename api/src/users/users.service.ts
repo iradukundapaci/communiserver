@@ -686,7 +686,54 @@ export class UsersService {
     }
   }
 
-  async deleteUser(userId: string): Promise<void> {}
+  async deleteUser(userId: string): Promise<void> {
+    const user = await this.findUserById(userId);
+
+    // Only allow deletion of CITIZEN role users
+    if (user.role !== UserRole.CITIZEN) {
+      throw new BadRequestException("Only citizens can be deleted");
+    }
+
+    // Soft delete the user
+    await this.usersRepository.softDelete(userId);
+  }
+
+  async removeUserFromHouse(userId: string): Promise<void> {
+    const user = await this.findUserById(userId);
+
+    if (!user.house) {
+      throw new BadRequestException("User is not assigned to any house");
+    }
+
+    // Remove user from house without deleting the user
+    await this.usersRepository.update(
+      { id: userId },
+      { house: null }
+    );
+  }
+
+  async addUserToHouse(userId: string, houseId: string): Promise<void> {
+    const user = await this.findUserById(userId);
+
+    if (user.role !== UserRole.CITIZEN) {
+      throw new BadRequestException("Only citizens can be assigned to houses");
+    }
+
+    // Check if house exists
+    const house = await this.usersRepository.manager.findOne("House", {
+      where: { id: houseId }
+    });
+
+    if (!house) {
+      throw new NotFoundException("House not found");
+    }
+
+    // Assign user to house
+    await this.usersRepository.update(
+      { id: userId },
+      { house: { id: houseId } }
+    );
+  }
 
   private async validateAndGetLocationsForCitizen(
     manager: EntityManager,

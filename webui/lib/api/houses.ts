@@ -272,3 +272,83 @@ export async function deleteHouse(id: string): Promise<string> {
     throw error;
   }
 }
+
+/**
+ * Add a member to a house
+ * @param houseId House ID
+ * @param userId User ID to add
+ * @returns Promise with success message
+ */
+export async function addMemberToHouse(houseId: string, userId: string): Promise<void> {
+  try {
+    const tokens = getAuthTokens();
+
+    if (!tokens) {
+      throw new Error('Not authenticated');
+    }
+
+    const response = await fetch(`/api/v1/houses/${houseId}/members/${userId}`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${tokens.accessToken}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      if (response.status === 403) {
+        throw new Error('You do not have permission to add members to this house');
+      } else if (response.status === 404) {
+        throw new Error('House or user not found');
+      } else if (response.status === 409) {
+        throw new Error('User is already a member of this house');
+      } else {
+        throw new Error(errorData.message || 'Failed to add member to house');
+      }
+    }
+  } catch (error) {
+    console.error('Add member to house error:', error);
+    throw error;
+  }
+}
+
+/**
+ * Remove a member from a house
+ * @param houseId House ID
+ * @param userId User ID to remove
+ * @returns Promise with success message
+ */
+export async function removeMemberFromHouse(houseId: string, userId: string): Promise<void> {
+  try {
+    const tokens = getAuthTokens();
+
+    if (!tokens) {
+      throw new Error('Not authenticated');
+    }
+
+    const response = await fetch(`/api/v1/houses/${houseId}/members/${userId}`, {
+      method: 'DELETE',
+      headers: {
+        Authorization: `Bearer ${tokens.accessToken}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      if (response.status === 403) {
+        throw new Error('You do not have permission to remove members from this house');
+      } else if (response.status === 404) {
+        throw new Error('House or user not found');
+      } else if (response.status === 400) {
+        throw new Error('User is not a member of this house');
+      } else {
+        throw new Error(errorData.message || 'Failed to remove member from house');
+      }
+    }
+  } catch (error) {
+    console.error('Remove member from house error:', error);
+    throw error;
+  }
+}

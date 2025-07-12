@@ -96,4 +96,38 @@ export class HousesController {
     const house = await this.housesService.findHouseById(id);
     return new GenericResponse("House retrieved successfully", house);
   }
+
+  @PostOperation(":id/members/:userId", "Add a member to a house")
+  @IsAdminOrIsiboLeader()
+  @OkResponse()
+  @ErrorResponses(
+    UnauthorizedResponse,
+    ForbiddenResponse,
+    NotFoundResponse,
+    BadRequestResponse,
+  )
+  async addMemberToHouse(
+    @Param("id") houseId: string,
+    @Param("userId") userId: string,
+  ): Promise<GenericResponse> {
+    await this.housesService.addMemberToHouse(houseId, userId);
+    return new GenericResponse("Member added to house successfully");
+  }
+
+  @DeleteOperation(":id/members/:userId", "Remove a member from a house")
+  @IsAdminOrIsiboLeader()
+  @OkResponse()
+  @ErrorResponses(
+    UnauthorizedResponse,
+    ForbiddenResponse,
+    NotFoundResponse,
+    BadRequestResponse,
+  )
+  async removeMemberFromHouse(
+    @Param("id") houseId: string,
+    @Param("userId") userId: string,
+  ): Promise<GenericResponse> {
+    await this.housesService.removeMemberFromHouse(houseId, userId);
+    return new GenericResponse("Member removed from house successfully");
+  }
 }

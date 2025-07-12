@@ -309,6 +309,7 @@ export class HousesService {
     houseId: string,
     memberIds: string[],
   ): Promise<void> {
+    // Remove all current members from this house first
     await this.usersService.removeHouseFromUsers(houseId);
 
     if (memberIds.length > 0) {
@@ -327,5 +328,43 @@ export class HousesService {
 
       await this.usersService.assignUsersToHouse(memberIds, houseId);
     }
+  }
+
+  async addMemberToHouse(houseId: string, userId: string): Promise<void> {
+    const house = await this.houseRepository.findOne({
+      where: { id: houseId },
+      relations: ["members"],
+    });
+
+    if (!house) {
+      throw new NotFoundException("House not found");
+    }
+
+    // Check if user is already a member
+    const isAlreadyMember = house.members?.some(member => member.id === userId);
+    if (isAlreadyMember) {
+      throw new ConflictException("User is already a member of this house");
+    }
+
+    await this.usersService.addUserToHouse(userId, houseId);
+  }
+
+  async removeMemberFromHouse(houseId: string, userId: string): Promise<void> {
+    const house = await this.houseRepository.findOne({
+      where: { id: houseId },
+      relations: ["members"],
+    });
+
+    if (!house) {
+      throw new NotFoundException("House not found");
+    }
+
+    // Check if user is actually a member
+    const isMember = house.members?.some(member => member.id === userId);
+    if (!isMember) {
+      throw new BadRequestException("User is not a member of this house");
+    }
+
+    await this.usersService.removeUserFromHouse(userId);
   }
 }
