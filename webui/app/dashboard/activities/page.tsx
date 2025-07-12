@@ -34,7 +34,10 @@ import { getVillages } from "@/lib/api/villages";
 import { useUser } from "@/lib/contexts/user-context";
 import { Permission } from "@/lib/permissions";
 import { format } from "date-fns";
-import { Pencil, PlusCircle, RefreshCw, Search, Trash2 } from "lucide-react";
+import { Pencil, PlusCircle, RefreshCw, Search, Trash2, Filter, Calendar, X } from "lucide-react";
+import { DatePickerWithRange } from "@/components/ui/date-range-picker";
+import { Badge } from "@/components/ui/badge";
+import { DateRange } from "react-day-picker";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -43,8 +46,6 @@ import TasksTabComponent from "./tasks-tab";
 import { Select } from "@radix-ui/react-select";
 import { SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ConfirmationDialog } from "@/components/confirmation-dialog";
-// import { AdvancedSearchForm, SearchFilter, SearchFormData } from "@/components/search/advanced-search-form";
-// import { searchAPI, ActivitySearchParams } from "@/lib/api/search";
 
 export default function ActivitiesPage() {
   const searchParams = useSearchParams();
@@ -591,8 +592,14 @@ function ActivitiesTab() {
     activityId: null,
     activityTitle: "",
   });
-  // const [villages, setVillages] = useState<any[]>([]);
-  // const [searchFilters, setSearchFilters] = useState<ActivitySearchParams>({});
+  const [villages, setVillages] = useState<any[]>([]);
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+  const [advancedFilters, setAdvancedFilters] = useState({
+    villageId: "all_villages",
+    status: "all_statuses",
+    dateRange: undefined as DateRange | undefined,
+    organizerId: "all_organizers",
+  });
 
   const fetchActivities = async (
     query: string = searchQuery,
@@ -609,7 +616,20 @@ function ActivitiesTab() {
         q: query || undefined,
       };
 
-      // For isibo leaders, only fetch activities in their village
+      // Apply advanced filters
+      if (advancedFilters.villageId !== "all_villages") {
+        filters.villageId = advancedFilters.villageId;
+      }
+
+      // Apply date range filter
+      if (advancedFilters.dateRange?.from) {
+        filters.dateFrom = advancedFilters.dateRange.from.toISOString();
+      }
+      if (advancedFilters.dateRange?.to) {
+        filters.dateTo = advancedFilters.dateRange.to.toISOString();
+      }
+
+      // For isibo leaders, only fetch activities in their village (override other filters)
       if (user?.role === "ISIBO_LEADER" && user?.village?.id) {
         filters.villageId = user.village.id;
       }
@@ -643,8 +663,47 @@ function ActivitiesTab() {
 
   useEffect(() => {
     fetchActivities("", 1, true);
+    loadVillages();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    fetchActivities(searchQuery, 1, true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [advancedFilters]);
+
+  const loadVillages = async () => {
+    try {
+      const response = await getVillages({ page: 1, size: 1000 });
+      setVillages(response.items);
+    } catch (error) {
+      console.error("Failed to load villages:", error);
+    }
+  };
+
+  const handleAdvancedFilterChange = (field: string, value: any) => {
+    setAdvancedFilters(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleResetFilters = () => {
+    setSearchQuery("");
+    setAdvancedFilters({
+      villageId: "all_villages",
+      status: "all_statuses",
+      dateRange: undefined,
+      organizerId: "all_organizers",
+    });
+  };
+
+  const getActiveFiltersCount = () => {
+    let count = 0;
+    if (searchQuery) count++;
+    if (advancedFilters.villageId !== "all_villages") count++;
+    if (advancedFilters.status !== "all_statuses") count++;
+    if (advancedFilters.dateRange?.from || advancedFilters.dateRange?.to) count++;
+    if (advancedFilters.organizerId !== "all_organizers") count++;
+    return count;
+  };
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -697,7 +756,8 @@ function ActivitiesTab() {
   };
 
   return (
-    <Card>
+    <div className="flex flex-col gap-4">
+      <Card>
       <CardHeader>
         <div className="flex items-center justify-between">
           <div>
@@ -722,27 +782,193 @@ function ActivitiesTab() {
           </div>
         </div>
       </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="flex justify-between items-center gap-4">
-          <form onSubmit={handleSearch} className="flex items-center gap-2">
-            <div className="w-56">
-              <Input
-                placeholder="Search"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full"
-              />
-            </div>
-            <Button type="submit" disabled={isSearching}>
+      <CardContent className="space-y-6">
+        {/* Search and Quick Filters */}
+        <div className="space-y-4">
+          {/* Main search bar with integrated search icon */}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+            <Input
+              placeholder="Search activities by title or description..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleSearch(e)}
+              className="pl-10 pr-4 h-11 text-base"
+            />
+          </div>
+
+          {/* Quick filters row */}
+          <div className="flex flex-wrap items-center gap-3">
+            {/* Village quick filter */}
+            {user?.role !== "ISIBO_LEADER" && (
+              <Select
+                value={advancedFilters.villageId}
+                onValueChange={(value) => handleAdvancedFilterChange("villageId", value)}
+              >
+                <SelectTrigger className="w-[180px] h-9">
+                  <SelectValue placeholder="All Villages" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all_villages">All Villages</SelectItem>
+                  {villages.map((village) => (
+                    <SelectItem key={village.id} value={village.id}>
+                      {village.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+
+            {/* Status quick filter */}
+            <Select
+              value={advancedFilters.status}
+              onValueChange={(value) => handleAdvancedFilterChange("status", value)}
+            >
+              <SelectTrigger className="w-[140px] h-9">
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all_statuses">All Statuses</SelectItem>
+                <SelectItem value="DRAFT">Draft</SelectItem>
+                <SelectItem value="PUBLISHED">Published</SelectItem>
+                <SelectItem value="IN_PROGRESS">In Progress</SelectItem>
+                <SelectItem value="COMPLETED">Completed</SelectItem>
+                <SelectItem value="CANCELLED">Cancelled</SelectItem>
+              </SelectContent>
+            </Select>
+
+            {/* More filters toggle */}
+            <Button
+              variant={showAdvancedFilters ? "default" : "outline"}
+              size="sm"
+              onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+              className="h-9"
+            >
+              <Filter className="h-4 w-4 mr-2" />
+              More Filters
+              {getActiveFiltersCount() > 2 && (
+                <Badge variant="secondary" className="ml-2 bg-white text-gray-700">
+                  +{getActiveFiltersCount() - 2}
+                </Badge>
+              )}
+            </Button>
+
+            {/* Search button */}
+            <Button
+              onClick={handleSearch}
+              disabled={isSearching}
+              className="h-9"
+            >
               {isSearching ? (
                 <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white mr-2"></div>
               ) : (
                 <Search className="h-4 w-4 mr-2" />
               )}
-              {isSearching ? "..." : "Search"}
+              {isSearching ? "Searching..." : "Search"}
             </Button>
-          </form>
+
+            {/* Reset button - only show if filters are active */}
+            {getActiveFiltersCount() > 0 && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleResetFilters}
+                className="h-9 text-gray-600 hover:text-gray-900"
+              >
+                <X className="h-4 w-4 mr-1" />
+                Clear All
+              </Button>
+            )}
+          </div>
         </div>
+
+        {/* Advanced filters - improved design */}
+        {showAdvancedFilters && (
+          <div className="bg-gray-50 rounded-lg p-6 border border-gray-200">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
+                <Filter className="h-4 w-4" />
+                Advanced Filters
+              </h3>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowAdvancedFilters(false)}
+                className="h-8 w-8 p-0"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+
+            <div className="space-y-6">
+              {/* Date Section */}
+              <div className="space-y-3">
+                <h4 className="text-xs font-medium text-gray-700 uppercase tracking-wide flex items-center gap-2">
+                  <Calendar className="h-3 w-3" />
+                  Date & Time
+                </h4>
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">Activity Date Range</Label>
+                  <DatePickerWithRange
+                    date={advancedFilters.dateRange}
+                    onDateChange={(dateRange) => handleAdvancedFilterChange("dateRange", dateRange)}
+                    placeholder="Select date range..."
+                    className="w-full"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Active filters summary - improved design */}
+        {getActiveFiltersCount() > 0 && (
+          <div className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
+            <div className="flex items-center gap-2 text-sm text-blue-700">
+              <Filter className="h-4 w-4" />
+              <span className="font-medium">{getActiveFiltersCount()} filter{getActiveFiltersCount() !== 1 ? 's' : ''} applied</span>
+            </div>
+            <div className="flex items-center gap-2 flex-wrap">
+              {searchQuery && (
+                <Badge variant="outline" className="bg-white border-blue-300 text-blue-700 hover:bg-blue-100">
+                  Search: &quot;{searchQuery.length > 20 ? searchQuery.substring(0, 20) + '...' : searchQuery}&quot;
+                  <X
+                    className="h-3 w-3 ml-1 cursor-pointer hover:text-blue-900"
+                    onClick={() => setSearchQuery("")}
+                  />
+                </Badge>
+              )}
+              {advancedFilters.villageId !== "all_villages" && (
+                <Badge variant="outline" className="bg-white border-blue-300 text-blue-700 hover:bg-blue-100">
+                  Village: {villages.find(v => v.id === advancedFilters.villageId)?.name?.substring(0, 15) || 'Selected'}
+                  <X
+                    className="h-3 w-3 ml-1 cursor-pointer hover:text-blue-900"
+                    onClick={() => handleAdvancedFilterChange("villageId", "all_villages")}
+                  />
+                </Badge>
+              )}
+              {advancedFilters.status !== "all_statuses" && (
+                <Badge variant="outline" className="bg-white border-blue-300 text-blue-700 hover:bg-blue-100">
+                  Status: {advancedFilters.status}
+                  <X
+                    className="h-3 w-3 ml-1 cursor-pointer hover:text-blue-900"
+                    onClick={() => handleAdvancedFilterChange("status", "all_statuses")}
+                  />
+                </Badge>
+              )}
+              {advancedFilters.dateRange?.from && (
+                <Badge variant="outline" className="bg-white border-blue-300 text-blue-700 hover:bg-blue-100">
+                  <Calendar className="h-3 w-3 mr-1" />
+                  Date Range
+                  <X
+                    className="h-3 w-3 ml-1 cursor-pointer hover:text-blue-900"
+                    onClick={() => handleAdvancedFilterChange("dateRange", undefined)}
+                  />
+                </Badge>
+              )}
+            </div>
+          </div>
+        )}
 
         <div className="rounded-md border overflow-hidden">
           <div className="overflow-x-auto">
@@ -876,5 +1102,6 @@ function ActivitiesTab() {
         confirmVariant="destructive"
       />
     </Card>
+    </div>
   );
 }

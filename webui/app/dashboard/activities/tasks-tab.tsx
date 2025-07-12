@@ -427,8 +427,6 @@ export default function TasksTab() {
       // If "ALL_ACTIVITIES" is selected, pass an empty string to fetch all tasks
       const activityIdParam =
         selectedActivityId === "ALL_ACTIVITIES" ? "" : selectedActivityId;
-      const activityIdParam =
-        selectedActivityId === "ALL_ACTIVITIES" ? "" : selectedActivityId;
       fetchTasks(activityIdParam, 1, true);
     } catch (error: unknown) {
       if (error instanceof Error) {
