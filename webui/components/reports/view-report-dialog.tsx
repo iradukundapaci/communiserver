@@ -31,21 +31,21 @@ export function ViewReportDialog({ report, trigger, onDownload }: ViewReportDial
   const [open, setOpen] = useState(false);
 
   const getCostVariance = () => {
-    const variance = report.actualCost - report.estimatedCost;
-    const percentage = report.estimatedCost > 0 ? (variance / report.estimatedCost) * 100 : 0;
+    const variance = report.task.actualCost - report.task.estimatedCost;
+    const percentage = report.task.estimatedCost > 0 ? (variance / report.task.estimatedCost) * 100 : 0;
     return { variance, percentage };
   };
 
   const getParticipationRate = () => {
-    return report.expectedParticipants > 0 
-      ? (report.actualParticipants / report.expectedParticipants) * 100 
+    return report.task.expectedParticipants > 0
+      ? (report.task.actualParticipants / report.task.expectedParticipants) * 100
       : 0;
   };
 
   const getImpactVariance = () => {
-    const variance = report.actualFinancialImpact - report.expectedFinancialImpact;
-    const percentage = report.expectedFinancialImpact > 0 
-      ? (variance / report.expectedFinancialImpact) * 100 
+    const variance = report.task.actualFinancialImpact - report.task.expectedFinancialImpact;
+    const percentage = report.task.expectedFinancialImpact > 0
+      ? (variance / report.task.expectedFinancialImpact) * 100
       : 0;
     return { variance, percentage };
   };
@@ -123,13 +123,13 @@ export function ViewReportDialog({ report, trigger, onDownload }: ViewReportDial
                   <div className="grid grid-cols-2 gap-4">
                     <div className="text-center p-3 bg-blue-50 rounded-lg">
                       <div className="text-lg font-bold text-blue-600">
-                        {formatCurrency(report.estimatedCost)}
+                        {formatCurrency(report.task.estimatedCost)}
                       </div>
                       <div className="text-sm text-gray-600">Estimated Cost</div>
                     </div>
                     <div className="text-center p-3 bg-green-50 rounded-lg">
                       <div className="text-lg font-bold text-green-600">
-                        {formatCurrency(report.actualCost)}
+                        {formatCurrency(report.task.actualCost)}
                       </div>
                       <div className="text-sm text-gray-600">Actual Cost</div>
                     </div>
@@ -149,13 +149,13 @@ export function ViewReportDialog({ report, trigger, onDownload }: ViewReportDial
                   <div className="grid grid-cols-2 gap-4">
                     <div className="text-center p-3 bg-purple-50 rounded-lg">
                       <div className="text-lg font-bold text-purple-600">
-                        {formatCurrency(report.expectedFinancialImpact)}
+                        {formatCurrency(report.task.expectedFinancialImpact)}
                       </div>
                       <div className="text-sm text-gray-600">Expected Impact</div>
                     </div>
                     <div className="text-center p-3 bg-orange-50 rounded-lg">
                       <div className="text-lg font-bold text-orange-600">
-                        {formatCurrency(report.actualFinancialImpact)}
+                        {formatCurrency(report.task.actualFinancialImpact)}
                       </div>
                       <div className="text-sm text-gray-600">Actual Impact</div>
                     </div>
@@ -185,13 +185,13 @@ export function ViewReportDialog({ report, trigger, onDownload }: ViewReportDial
                   <div className="grid grid-cols-3 gap-4">
                     <div className="text-center p-3 bg-blue-50 rounded-lg">
                       <div className="text-lg font-bold text-blue-600">
-                        {report.expectedParticipants}
+                        {report.task.expectedParticipants}
                       </div>
                       <div className="text-sm text-gray-600">Expected</div>
                     </div>
                     <div className="text-center p-3 bg-green-50 rounded-lg">
                       <div className="text-lg font-bold text-green-600">
-                        {report.actualParticipants}
+                        {report.task.actualParticipants}
                       </div>
                       <div className="text-sm text-gray-600">Actual</div>
                     </div>
@@ -307,7 +307,7 @@ export function ViewReportDialog({ report, trigger, onDownload }: ViewReportDial
                           </div>
                           <div>
                             <p className="font-medium text-sm">{attendee.names}</p>
-                            <p className="text-xs text-gray-500">{attendee.user.email}</p>
+                            <p className="text-xs text-gray-500">{attendee.email}</p>
                           </div>
                         </div>
                       ))}

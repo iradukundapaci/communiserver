@@ -7,9 +7,9 @@ import {
   uploadFile,
   UploadResponse,
   formatFileSize,
+  getFileExtension,
   isFileTypeAllowed,
   isFileSizeValid,
-  getFileExtension,
 } from "@/lib/api/upload";
 import {
   Upload,
@@ -128,6 +128,8 @@ export function FileUpload({
     setUploadingFiles(prev => [...prev, uploadingFile]);
 
     try {
+      console.log(`Starting upload for file: ${file.name}, size: ${file.size}, type: ${file.type}`);
+
       // Simulate progress for better UX
       const progressInterval = setInterval(() => {
         setUploadingFiles(prev =>
@@ -140,6 +142,7 @@ export function FileUpload({
       }, 200);
 
       const response: UploadResponse = await uploadFile(file);
+      console.log(`Upload successful for ${file.name}:`, response.url);
 
       clearInterval(progressInterval);
 
@@ -154,6 +157,7 @@ export function FileUpload({
       toast.success(`${file.name} uploaded successfully`);
       return response.url;
     } catch (error: unknown) {
+      console.error(`Upload failed for ${file.name}:`, error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       setUploadingFiles(prev =>
         prev.map(f =>

@@ -15,6 +15,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { FileUpload } from "@/components/ui/file-upload";
 import { Report, updateReport } from "@/lib/api/reports";
+import { prepareEvidenceUrls } from "@/lib/utils/validation";
 import { Pencil } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -33,12 +34,12 @@ export function EditReportDialog({
   const [formData, setFormData] = useState({
     comment: report.comment || "",
     evidenceUrls: report.evidenceUrls || [],
-    estimatedCost: report.estimatedCost || 0,
-    actualCost: report.actualCost || 0,
-    expectedParticipants: report.expectedParticipants || 0,
-    actualParticipants: report.actualParticipants || 0,
-    expectedFinancialImpact: report.expectedFinancialImpact || 0,
-    actualFinancialImpact: report.actualFinancialImpact || 0,
+    estimatedCost: report.task?.estimatedCost || 0,
+    actualCost: report.task?.actualCost || 0,
+    expectedParticipants: report.task?.expectedParticipants || 0,
+    actualParticipants: report.task?.actualParticipants || 0,
+    expectedFinancialImpact: report.task?.expectedFinancialImpact || 0,
+    actualFinancialImpact: report.task?.actualFinancialImpact || 0,
     materialsUsed: report.materialsUsed || [],
     challengesFaced: report.challengesFaced || "",
     suggestions: report.suggestions || "",
@@ -49,12 +50,12 @@ export function EditReportDialog({
     setFormData({
       comment: report.comment || "",
       evidenceUrls: report.evidenceUrls || [],
-      estimatedCost: report.estimatedCost || 0,
-      actualCost: report.actualCost || 0,
-      expectedParticipants: report.expectedParticipants || 0,
-      actualParticipants: report.actualParticipants || 0,
-      expectedFinancialImpact: report.expectedFinancialImpact || 0,
-      actualFinancialImpact: report.actualFinancialImpact || 0,
+      estimatedCost: report.task.estimatedCost || 0,
+      actualCost: report.task.actualCost || 0,
+      expectedParticipants: report.task.expectedParticipants || 0,
+      actualParticipants: report.task.actualParticipants || 0,
+      expectedFinancialImpact: report.task.expectedFinancialImpact || 0,
+      actualFinancialImpact: report.task.actualFinancialImpact || 0,
       materialsUsed: report.materialsUsed || [],
       challengesFaced: report.challengesFaced || "",
       suggestions: report.suggestions || "",
@@ -87,6 +88,7 @@ export function EditReportDialog({
         actualParticipants: Number(formData.actualParticipants) || 0,
         expectedFinancialImpact: Number(formData.expectedFinancialImpact) || 0,
         actualFinancialImpact: Number(formData.actualFinancialImpact) || 0,
+        evidenceUrls: prepareEvidenceUrls(formData.evidenceUrls || []),
       };
 
       await updateReport(report.id, sanitizedData);

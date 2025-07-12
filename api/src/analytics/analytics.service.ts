@@ -180,11 +180,12 @@ export class AnalyticsService {
       taskQuery = this.applyTaskLocationFilter(taskQuery, user);
     }
 
-    let activitiesWithReportsQuery = this.activityRepository
-      .createQueryBuilder("activity")
-      .leftJoin("activity.tasks", "task")
-      .leftJoin(Report, "report", "report.taskId = task.id")
-      .where("report.id IS NOT NULL");
+    // Count activities that have reports by checking reports table
+    let activitiesWithReportsQuery = this.reportRepository
+      .createQueryBuilder("report")
+      .leftJoin("report.task", "task")
+      .leftJoin("task.activity", "activity")
+      .select("COUNT(DISTINCT activity.id)", "count");
 
     if (dateRange.startDate && dateRange.endDate) {
       activitiesWithReportsQuery = activitiesWithReportsQuery.andWhere(
@@ -200,7 +201,7 @@ export class AnalyticsService {
       );
     }
 
-    const [totalActivities, totalTasks, completedTasks, activitiesWithReports] =
+    const [totalActivities, totalTasks, completedTasks, activitiesWithReportsResult] =
       await Promise.all([
         activityQuery.getCount(),
         taskQuery.getCount(),
@@ -208,8 +209,10 @@ export class AnalyticsService {
           .clone()
           .where("task.status = :status", { status: ETaskStatus.COMPLETED })
           .getCount(),
-        activitiesWithReportsQuery.getCount(),
+        activitiesWithReportsQuery.getRawOne(),
       ]);
+
+    const activitiesWithReports = parseInt(activitiesWithReportsResult?.count || "0");
 
     return {
       totalActivities,
@@ -270,7 +273,8 @@ export class AnalyticsService {
   ): Promise<FinancialAnalyticsDto> {
     const dateRange = this.getDateRange(query);
 
-    let reportQuery = this.reportRepository.createQueryBuilder("report");
+    let reportQuery = this.reportRepository.createQueryBuilder("report")
+      .leftJoinAndSelect("report.task", "task");
 
     if (dateRange.startDate && dateRange.endDate) {
       reportQuery = reportQuery.where(
@@ -283,27 +287,40 @@ export class AnalyticsService {
       reportQuery = this.applyReportLocationFilter(reportQuery, user);
     }
 
-    const totalExpenses = await reportQuery
-      .select("SUM(report.expenseAmount)", "total")
-      .getRawOne();
+    const reports = await reportQuery.getMany();
+
+    // Calculate financial metrics from task data
+    const totalEstimatedCost = reports.reduce((sum, report) =>
+      sum + (Number(report.task?.estimatedCost) || 0), 0);
+    const totalActualCost = reports.reduce((sum, report) =>
+      sum + (Number(report.task?.actualCost) || 0), 0);
+    const totalEstimatedImpact = reports.reduce((sum, report) =>
+      sum + (Number(report.task?.expectedFinancialImpact) || 0), 0);
+    const totalActualImpact = reports.reduce((sum, report) =>
+      sum + (Number(report.task?.actualFinancialImpact) || 0), 0);
+
+    const costVariance = totalActualCost - totalEstimatedCost;
+    const costVariancePercentage = totalEstimatedCost > 0
+      ? (costVariance / totalEstimatedCost) * 100 : 0;
+    const impactVariance = totalActualImpact - totalEstimatedImpact;
+    const impactVariancePercentage = totalEstimatedImpact > 0
+      ? (impactVariance / totalEstimatedImpact) * 100 : 0;
 
     const activityCount = await this.getActivityCount(query, user);
+    const taskCount = reports.length;
 
     return {
-      totalEstimatedCost: 0,
-      totalActualCost: parseFloat(totalExpenses?.total || "0"),
-      costVariance: 0,
-      costVariancePercentage: 0,
-      totalEstimatedImpact: 0,
-      totalActualImpact: 0,
-      impactVariance: 0,
-      impactVariancePercentage: 0,
-      averageCostPerActivity:
-        activityCount > 0
-          ? parseFloat(totalExpenses?.total || "0") / activityCount
-          : 0,
-      averageCostPerTask: 0,
-      budgetEfficiency: 100,
+      totalEstimatedCost,
+      totalActualCost,
+      costVariance,
+      costVariancePercentage,
+      totalEstimatedImpact,
+      totalActualImpact,
+      impactVariance,
+      impactVariancePercentage,
+      averageCostPerActivity: activityCount > 0 ? totalActualCost / activityCount : 0,
+      averageCostPerTask: taskCount > 0 ? totalActualCost / taskCount : 0,
+      budgetEfficiency: totalEstimatedCost > 0 ? (totalEstimatedCost / totalActualCost) * 100 : 100,
     };
   }
 
@@ -313,7 +330,9 @@ export class AnalyticsService {
   ): Promise<ParticipationAnalyticsDto> {
     const dateRange = this.getDateRange(query);
 
-    let reportQuery = this.reportRepository.createQueryBuilder("report");
+    let reportQuery = this.reportRepository.createQueryBuilder("report")
+      .leftJoinAndSelect("report.task", "task")
+      .leftJoinAndSelect("report.attendance", "attendance");
 
     if (dateRange.startDate && dateRange.endDate) {
       reportQuery = reportQuery.where(
@@ -326,29 +345,28 @@ export class AnalyticsService {
       reportQuery = this.applyReportLocationFilter(reportQuery, user);
     }
 
-    const uniqueParticipants = await reportQuery
-      .select("COUNT(DISTINCT report.reporterId)", "count")
-      .getRawOne();
+    const reports = await reportQuery.getMany();
+
+    // Calculate participation metrics from task data
+    const totalExpectedParticipants = reports.reduce((sum, report) =>
+      sum + (Number(report.task?.expectedParticipants) || 0), 0);
+    const totalActualParticipants = reports.reduce((sum, report) =>
+      sum + (Number(report.task?.actualParticipants) || 0), 0);
+
+    const participationRate = totalExpectedParticipants > 0
+      ? Math.round((totalActualParticipants / totalExpectedParticipants) * 100) : 0;
 
     const activityCount = await this.getActivityCount(query, user);
+    const taskCount = reports.length;
 
     return {
-      totalExpectedParticipants: 0,
-      totalActualParticipants: parseInt(uniqueParticipants?.count || "0"),
-      participationRate:
-        activityCount > 0
-          ? Math.round(
-              (parseInt(uniqueParticipants?.count || "0") / activityCount) *
-                100,
-            )
-          : 0,
-      averageParticipantsPerActivity:
-        activityCount > 0
-          ? Math.round(
-              parseInt(uniqueParticipants?.count || "0") / activityCount,
-            )
-          : 0,
-      averageParticipantsPerTask: 0,
+      totalExpectedParticipants,
+      totalActualParticipants,
+      participationRate,
+      averageParticipantsPerActivity: activityCount > 0
+        ? Math.round(totalActualParticipants / activityCount) : 0,
+      averageParticipantsPerTask: taskCount > 0
+        ? Math.round(totalActualParticipants / taskCount) : 0,
     };
   }
 
@@ -449,7 +467,8 @@ export class AnalyticsService {
       // Get tasks for this isibo
       let taskQuery = this.taskRepository
         .createQueryBuilder("task")
-        .where("task.isibo.id = :isiboId", { isiboId: isibo.id });
+        .leftJoin("task.isibo", "isibo")
+        .where("isibo.id = :isiboId", { isiboId: isibo.id });
 
       if (dateRange.startDate && dateRange.endDate) {
         taskQuery = taskQuery.andWhere(
@@ -467,7 +486,8 @@ export class AnalyticsService {
       let reportQuery = this.reportRepository
         .createQueryBuilder("report")
         .leftJoin("report.task", "task")
-        .where("task.isibo.id = :isiboId", { isiboId: isibo.id });
+        .leftJoin("task.isibo", "isibo")
+        .where("isibo.id = :isiboId", { isiboId: isibo.id });
 
       if (dateRange.startDate && dateRange.endDate) {
         reportQuery = reportQuery.andWhere(
@@ -507,16 +527,30 @@ export class AnalyticsService {
     }
 
     const totalIsibos = await isiboQuery.getCount();
-    const activeIsibos = await isiboQuery
-      .clone()
-      .leftJoin("isibo.tasks", "task")
-      .where("task.id IS NOT NULL")
-      .getCount();
+
+    // Count active isibos by checking if they have any tasks
+    const activeIsibosQuery = this.taskRepository
+      .createQueryBuilder("task")
+      .select("COUNT(DISTINCT task.isibo_id)", "count")
+      .where("task.isibo_id IS NOT NULL");
+
+    if (user) {
+      // Apply location filter to tasks based on user's location
+      activeIsibosQuery.leftJoin("task.isibo", "isibo");
+      this.applyLocationFilter(activeIsibosQuery, user, "isibo");
+    }
+
+    const activeIsibosResult = await activeIsibosQuery.getRawOne();
+    const activeIsibos = parseInt(activeIsibosResult?.count || "0");
 
     const totalUsers = await this.userRepository.count();
+
+    // Count unique users who have attended any report (active users)
     const activeUsers = await this.reportRepository
       .createQueryBuilder("report")
-      .select("COUNT(DISTINCT report.reporterId)", "count")
+      .leftJoin("report.attendance", "user")
+      .select("COUNT(DISTINCT user.id)", "count")
+      .where("user.id IS NOT NULL")
       .getRawOne();
 
     const locationPerformance = await this.getLocationPerformance(query, user);

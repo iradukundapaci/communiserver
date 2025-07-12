@@ -355,12 +355,12 @@ export function usePDFReport() {
           type: 'text' as const,
           content: `
 Isibo: ${report.task?.isibo?.names || 'N/A'}
-Estimated Cost: ${(Number(report.estimatedCost) || 0).toLocaleString()} RWF
-Actual Cost: ${(Number(report.actualCost) || 0).toLocaleString()} RWF
-Expected Participants: ${Number(report.expectedParticipants) || 0}
-Actual Participants: ${Number(report.actualParticipants) || 0}
-Expected Financial Impact: ${(Number(report.expectedFinancialImpact) || 0).toLocaleString()} RWF
-Actual Financial Impact: ${(Number(report.actualFinancialImpact) || 0).toLocaleString()} RWF
+Estimated Cost: ${(Number(report.task?.estimatedCost) || 0).toLocaleString()} RWF
+Actual Cost: ${(Number(report.task?.actualCost) || 0).toLocaleString()} RWF
+Expected Participants: ${Number(report.task?.expectedParticipants) || 0}
+Actual Participants: ${Number(report.task?.actualParticipants) || 0}
+Expected Financial Impact: ${(Number(report.task?.expectedFinancialImpact) || 0).toLocaleString()} RWF
+Actual Financial Impact: ${(Number(report.task?.actualFinancialImpact) || 0).toLocaleString()} RWF
 
 ${report.comment ? `Comments: ${report.comment}` : ''}
 ${report.challengesFaced ? `Challenges: ${report.challengesFaced}` : ''}

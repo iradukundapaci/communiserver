@@ -5,17 +5,17 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 
 import { Label } from "@/components/ui/label";
-import { IsiboMember } from "@/lib/api/isibos";
-import { Trash2, Users } from "lucide-react";
+import { TaskAttendee } from "@/lib/api/tasks";
+import { Trash2, Users, Home } from "lucide-react";
 
 interface AttendanceSelectorProps {
-  isiboMembers: IsiboMember[];
+  houseMembers: TaskAttendee[];
   selectedAttendeeIds: string[];
   onAttendanceChange: (attendeeIds: string[]) => void;
 }
 
 export function AttendanceSelector({
-  isiboMembers,
+  houseMembers,
   selectedAttendeeIds,
   onAttendanceChange,
 }: AttendanceSelectorProps) {
@@ -36,23 +36,23 @@ export function AttendanceSelector({
   };
 
   const getSelectedMembers = () => {
-    return isiboMembers.filter(member => selectedAttendeeIds.includes(member.id));
+    return houseMembers.filter(member => selectedAttendeeIds.includes(member.id));
   };
 
   return (
     <div className="space-y-6">
-      {/* Isibo Members Selection */}
+      {/* House Members Selection */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Users className="h-5 w-5" />
-            Isibo Members ({selectedAttendeeIds.length} selected)
+            House Members ({selectedAttendeeIds.length} selected)
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {isiboMembers.length > 0 ? (
+          {houseMembers.length > 0 ? (
             <div className="max-h-60 overflow-y-auto space-y-3 pr-2">
-              {isiboMembers.map((member) => (
+              {houseMembers.map((member) => (
                 <div key={member.id} className="flex items-center space-x-3">
                   <Checkbox
                     id={`member-${member.id}`}
@@ -68,15 +68,22 @@ export function AttendanceSelector({
                     <div className="flex flex-col">
                       <span className="font-medium">{member.names}</span>
                       <span className="text-sm text-muted-foreground">
-                        {member.user.email} • {member.user.phone}
+                        {member.email} • {member.phone}
                       </span>
+                      {member.house && (
+                        <span className="text-xs text-muted-foreground flex items-center gap-1">
+                          <Home className="h-3 w-3" />
+                          House {member.house.code}
+                          {member.house.address && ` - ${member.house.address}`}
+                        </span>
+                      )}
                     </div>
                   </Label>
                 </div>
               ))}
             </div>
           ) : (
-            <p className="text-muted-foreground">No members found in this isibo.</p>
+            <p className="text-muted-foreground">No house members found for this task's isibo.</p>
           )}
         </CardContent>
       </Card>

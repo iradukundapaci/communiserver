@@ -344,14 +344,28 @@ function TaskForm({ task, villageId, onUpdate, onRemove, onIsiboSearch }: TaskFo
 
         <div>
           <Label>Expected Participants</Label>
-          <Input
-            type="number"
-            min="0"
-            value={task.expectedParticipants || ""}
-            onChange={(e) => onUpdate({ expectedParticipants: parseInt(e.target.value) || 0 })}
-            placeholder="0"
-            className="max-w-lg"
-          />
+          <div className="space-y-2">
+            <div className="p-2 bg-muted rounded-md text-sm">
+              {task.isiboId ? (
+                <span className="text-green-600 font-medium">
+                  Auto-calculated from house members in selected Isibo
+                </span>
+              ) : (
+                <span className="text-muted-foreground">
+                  Select an Isibo to auto-calculate expected participants
+                </span>
+              )}
+            </div>
+            <Input
+              type="number"
+              min="0"
+              value={task.expectedParticipants || ""}
+              onChange={(e) => onUpdate({ expectedParticipants: parseInt(e.target.value) || 0 })}
+              placeholder="Will be calculated automatically"
+              className="max-w-lg"
+              disabled={!!task.isiboId}
+            />
+          </div>
         </div>
 
         <div>

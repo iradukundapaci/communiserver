@@ -22,10 +22,10 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { FileUpload } from "@/components/ui/file-upload";
 import { Activity, getActivities } from "@/lib/api/activities";
-import { getIsiboById, IsiboMember } from "@/lib/api/isibos";
 import { createReport } from "@/lib/api/reports";
-import { Task, getTasks } from "@/lib/api/tasks";
+import { Task, getTasks, getTaskEligibleAttendees, TaskAttendee } from "@/lib/api/tasks";
 import { useUser } from "@/lib/contexts/user-context";
+import { prepareEvidenceUrls } from "@/lib/utils/validation";
 import { Plus } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -43,7 +43,7 @@ export function CreateStandaloneReportDialog({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [activities, setActivities] = useState<Activity[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
-  const [isiboMembers, setIsiboMembers] = useState<IsiboMember[]>([]);
+  const [houseMembers, setHouseMembers] = useState<TaskAttendee[]>([]);
   const [isLoadingActivities, setIsLoadingActivities] = useState(false);
   const [isLoadingTasks, setIsLoadingTasks] = useState(false);
   const [, setIsLoadingIsibo] = useState(false);
@@ -67,15 +67,12 @@ export function CreateStandaloneReportDialog({
   });
 
 
-  // Fetch activities and isibo members when dialog opens
+  // Fetch activities when dialog opens
   useEffect(() => {
     if (isOpen) {
       fetchActivities();
-      if (user?.isibo?.id) {
-        fetchIsiboMembers(user.isibo.id);
-      }
     }
-  }, [isOpen, user]);
+  }, [isOpen]);
 
   // Fetch tasks when activity is selected
   useEffect(() => {
@@ -83,6 +80,13 @@ export function CreateStandaloneReportDialog({
       fetchTasks(formData.activityId);
     }
   }, [formData.activityId]);
+
+  // Fetch house members when task is selected
+  useEffect(() => {
+    if (formData.taskId) {
+      fetchHouseMembers(formData.taskId);
+    }
+  }, [formData.taskId]);
 
   const fetchActivities = async () => {
     try {
@@ -116,16 +120,13 @@ export function CreateStandaloneReportDialog({
     }
   };
 
-  const fetchIsiboMembers = async (isiboId: string) => {
+  const fetchHouseMembers = async (taskId: string) => {
     try {
-      setIsLoadingIsibo(true);
-      const isibo = await getIsiboById(isiboId);
-      setIsiboMembers(isibo.members || []);
+      const members = await getTaskEligibleAttendees(taskId);
+      setHouseMembers(members);
     } catch (error) {
-      console.error("Failed to fetch isibo members:", error);
-      toast.error("Failed to fetch isibo members");
-    } finally {
-      setIsLoadingIsibo(false);
+      console.error("Failed to fetch house members:", error);
+      toast.error("Failed to fetch house members for attendance");
     }
   };
 
@@ -211,7 +212,7 @@ export function CreateStandaloneReportDialog({
         taskId: formData.taskId,
         attendanceIds: formData.attendanceIds,
         comment: formData.comment,
-        evidenceUrls: formData.evidenceUrls,
+        evidenceUrls: prepareEvidenceUrls(formData.evidenceUrls),
         estimatedCost: Number(formData.estimatedCost) || 0,
         actualCost: Number(formData.actualCost) || 0,
         expectedParticipants: Number(formData.expectedParticipants) || 0,
@@ -331,7 +332,7 @@ export function CreateStandaloneReportDialog({
               </Label>
               <div className="col-span-3">
                 <AttendanceSelector
-                  isiboMembers={isiboMembers}
+                  houseMembers={houseMembers}
                   selectedAttendeeIds={formData.attendanceIds}
                   onAttendanceChange={handleAttendanceChange}
                 />
@@ -367,13 +368,17 @@ export function CreateStandaloneReportDialog({
                   <Label>Expected Participants</Label>
                   <div className="p-2 bg-muted rounded-md text-sm">
                     {formData.expectedParticipants} people
-                    {!formData.taskId && <span className="text-muted-foreground ml-2">(Select task first)</span>}
+                    {formData.taskId ? (
+                      <span className="text-green-600 ml-2">(from house members in task's isibo)</span>
+                    ) : (
+                      <span className="text-muted-foreground ml-2">(Select task first)</span>
+                    )}
                   </div>
                 </div>
                 <div className="space-y-2">
                   <Label>Actual Participants</Label>
                   <div className="p-2 bg-muted rounded-md text-sm">
-                    {formData.attendanceIds.length} people (from attendance list)
+                    {formData.attendanceIds.length} people (from house members attendance)
                   </div>
                 </div>
 

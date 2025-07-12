@@ -15,6 +15,19 @@ interface ApiResponse<T> {
   payload: T;
 }
 
+// Task attendee interface for house members
+export interface TaskAttendee {
+  id: string;
+  names: string;
+  email: string;
+  phone: string;
+  house: {
+    id: string;
+    code: string;
+    address?: string;
+  } | null;
+}
+
 /**
  * Get all tasks with pagination
  * @param activityId Optional activity ID to filter tasks
@@ -203,6 +216,46 @@ export async function deleteTask(id: string): Promise<string> {
     return data.message;
   } catch (error) {
     console.error("Delete task error:", error);
+    throw error;
+  }
+}
+
+/**
+ * Get eligible attendees for a task (house members from the task's isibo)
+ * @param taskId Task ID
+ * @returns Promise with eligible attendees
+ */
+export async function getTaskEligibleAttendees(taskId: string): Promise<TaskAttendee[]> {
+  try {
+    const tokens = getAuthTokens();
+
+    if (!tokens) {
+      throw new Error('Not authenticated');
+    }
+
+    const response = await fetch(`/api/v1/tasks/${taskId}/eligible-attendees`, {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${tokens.accessToken}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      if (response.status === 403) {
+        throw new Error('You do not have permission to view task attendees');
+      } else if (response.status === 404) {
+        throw new Error('Task not found');
+      } else {
+        throw new Error(errorData.message || 'Failed to fetch eligible attendees');
+      }
+    }
+
+    const data: ApiResponse<TaskAttendee[]> = await response.json();
+    return data.payload;
+  } catch (error) {
+    console.error('Get task eligible attendees error:', error);
     throw error;
   }
 }

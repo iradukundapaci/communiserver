@@ -9,6 +9,7 @@ import {
   ForbiddenResponse,
   GetOperation,
   NotFoundResponse,
+  OkResponse,
   PatchOperation,
   PostOperation,
   UnauthorizedResponse,
@@ -61,6 +62,16 @@ export class TasksController {
   ): Promise<GenericResponse<FetchTaskDTO.Output>> {
     const task = await this.tasksService.findOne(id);
     return new GenericResponse("Task retrieved successfully", task);
+  }
+
+  @GetOperation(":id/eligible-attendees", "Get eligible attendees for a task")
+  @IsAuthorized()
+  @ErrorResponses(UnauthorizedResponse, ForbiddenResponse, NotFoundResponse)
+  async getEligibleAttendees(
+    @Param("id") id: string,
+  ): Promise<GenericResponse<any[]>> {
+    const attendees = await this.tasksService.getTaskEligibleAttendees(id);
+    return new GenericResponse("Eligible attendees retrieved successfully", attendees);
   }
 
   @PatchOperation(":id", "Update a task")

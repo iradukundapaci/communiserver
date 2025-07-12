@@ -194,6 +194,36 @@ export function formatFileSize(bytes: number): string {
 }
 
 /**
+ * Get file extension from filename
+ * @param filename The filename
+ * @returns File extension
+ */
+export function getFileExtension(filename: string): string {
+  return filename.split('.').pop()?.toLowerCase() || '';
+}
+
+/**
+ * Check if file type is allowed
+ * @param file File to check
+ * @param allowedTypes Array of allowed MIME types
+ * @returns Boolean indicating if file type is allowed
+ */
+export function isFileTypeAllowed(file: File, allowedTypes: string[]): boolean {
+  return allowedTypes.length === 0 || allowedTypes.includes(file.type);
+}
+
+/**
+ * Validate file size
+ * @param file File to validate
+ * @param maxSizeInMB Maximum file size in MB
+ * @returns Boolean indicating if file size is valid
+ */
+export function isFileSizeValid(file: File, maxSizeInMB: number): boolean {
+  const maxSizeInBytes = maxSizeInMB * 1024 * 1024;
+  return file.size <= maxSizeInBytes;
+}
+
+/**
  * Validate file before upload
  * @param file File to validate
  * @param maxSize Maximum file size in bytes (default: 10MB)

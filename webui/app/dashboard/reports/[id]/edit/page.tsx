@@ -6,13 +6,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { FileUpload } from "@/components/ui/file-upload";
-import { getIsiboById, IsiboMember } from "@/lib/api/isibos";
 import {
   Report,
   getReportById,
   updateReport,
 } from "@/lib/api/reports";
+import { getTaskEligibleAttendees, TaskAttendee } from "@/lib/api/tasks";
 import { useUser } from "@/lib/contexts/user-context";
+import { prepareEvidenceUrls } from "@/lib/utils/validation";
 import { ArrowLeft, Save } from "lucide-react";
 import { useRouter } from "next/navigation";
 import React, { useEffect, useState } from "react";
@@ -30,7 +31,7 @@ export default function EditReportPage({
   const router = useRouter();
   const { user } = useUser();
   const [report, setReport] = useState<Report | null>(null);
-  const [isiboMembers, setIsiboMembers] = useState<IsiboMember[]>([]);
+  const [houseMembers, setHouseMembers] = useState<TaskAttendee[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [, setIsLoadingIsibo] = useState(false);
@@ -57,9 +58,9 @@ export default function EditReportPage({
           evidenceUrls: data.evidenceUrls || [],
         });
 
-        // Fetch isibo members if user is isibo leader
-        if (user?.isibo?.id) {
-          fetchIsiboMembers(user.isibo.id);
+        // Fetch house members for the task
+        if (data.task?.id) {
+          fetchHouseMembers(data.task.id);
         }
 
         // Check if user is authorized to edit this report
@@ -91,16 +92,13 @@ export default function EditReportPage({
     fetchReport();
   }, [reportId, router, user]);
 
-  const fetchIsiboMembers = async (isiboId: string) => {
+  const fetchHouseMembers = async (taskId: string) => {
     try {
-      setIsLoadingIsibo(true);
-      const isibo = await getIsiboById(isiboId);
-      setIsiboMembers(isibo.members || []);
+      const members = await getTaskEligibleAttendees(taskId);
+      setHouseMembers(members);
     } catch (error) {
-      console.error("Failed to fetch isibo members:", error);
-      toast.error("Failed to fetch isibo members");
-    } finally {
-      setIsLoadingIsibo(false);
+      console.error("Failed to fetch house members:", error);
+      toast.error("Failed to fetch house members for attendance");
     }
   };
 
@@ -141,7 +139,7 @@ export default function EditReportPage({
       await updateReport(reportId, {
         attendanceIds: formData.attendanceIds,
         comment: formData.comment,
-        evidenceUrls: formData.evidenceUrls,
+        evidenceUrls: prepareEvidenceUrls(formData.evidenceUrls),
       });
       toast.success("Report updated successfully");
       router.push("/dashboard/reports");
@@ -213,7 +211,7 @@ export default function EditReportPage({
               <Label className="text-right mt-2">Attendance</Label>
               <div className="col-span-3">
                 <AttendanceSelector
-                  isiboMembers={isiboMembers}
+                  houseMembers={houseMembers}
                   selectedAttendeeIds={formData.attendanceIds}
                   onAttendanceChange={handleAttendanceChange}
                 />

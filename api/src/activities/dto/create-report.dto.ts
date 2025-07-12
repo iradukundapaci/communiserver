@@ -1,12 +1,10 @@
 import { ApiProperty } from "@nestjs/swagger";
 import {
   IsArray,
+  IsNumber,
   IsOptional,
   IsString,
-  IsUrl,
-  ValidateNested,
 } from "class-validator";
-import { Type } from "class-transformer";
 import { User } from "src/users/entities/user.entity";
 
 export namespace CreateReportDTO {
@@ -63,7 +61,6 @@ export namespace CreateReportDTO {
       required: false,
     })
     @IsArray()
-    @IsUrl({}, { each: true })
     @IsOptional()
     evidenceUrls?: string[];
 
@@ -76,6 +73,46 @@ export namespace CreateReportDTO {
     @IsString({ each: true })
     @IsOptional()
     attendanceIds?: string[];
+
+    @ApiProperty({
+      description: "Estimated cost for the task (from task)",
+      required: false,
+    })
+    @IsNumber()
+    @IsOptional()
+    estimatedCost?: number;
+
+    @ApiProperty({
+      description: "Actual cost incurred during task execution",
+      required: false,
+    })
+    @IsNumber()
+    @IsOptional()
+    actualCost?: number;
+
+    @ApiProperty({
+      description: "Expected number of participants (from task)",
+      required: false,
+    })
+    @IsNumber()
+    @IsOptional()
+    expectedParticipants?: number;
+
+    @ApiProperty({
+      description: "Expected financial impact (from task)",
+      required: false,
+    })
+    @IsNumber()
+    @IsOptional()
+    expectedFinancialImpact?: number;
+
+    @ApiProperty({
+      description: "Actual financial impact achieved",
+      required: false,
+    })
+    @IsNumber()
+    @IsOptional()
+    actualFinancialImpact?: number;
   }
 
   export class Output {
@@ -85,6 +122,12 @@ export namespace CreateReportDTO {
       title: string;
       description: string;
       status: string;
+      estimatedCost: number;
+      actualCost: number;
+      expectedParticipants: number;
+      actualParticipants: number;
+      expectedFinancialImpact: number;
+      actualFinancialImpact: number;
       isibo: {
         id: string;
         name: string;

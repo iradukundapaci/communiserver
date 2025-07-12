@@ -245,29 +245,29 @@ export function GroupedReportsView({
                                 <div>
                                   <span className="text-gray-600">Cost:</span>
                                   <div className="font-medium">
-                                    {formatCurrency(report.actualCost)}
+                                    {formatCurrency(report.task.actualCost)}
                                     <span className="text-gray-500 text-xs ml-1">
-                                      (Est: {formatCurrency(report.estimatedCost)})
+                                      (Est: {formatCurrency(report.task.estimatedCost)})
                                     </span>
                                   </div>
                                 </div>
-                                
+
                                 <div>
                                   <span className="text-gray-600">Participants:</span>
                                   <div className="font-medium">
-                                    {report.actualParticipants}
+                                    {report.task.actualParticipants}
                                     <span className="text-gray-500 text-xs ml-1">
-                                      (Expected: {report.expectedParticipants})
+                                      (Expected: {report.task.expectedParticipants})
                                     </span>
                                   </div>
                                 </div>
-                                
 
-                                
+
+
                                 <div>
                                   <span className="text-gray-600">Impact:</span>
                                   <div className="font-medium">
-                                    {formatCurrency(report.actualFinancialImpact)}
+                                    {formatCurrency(report.task.actualFinancialImpact)}
                                   </div>
                                 </div>
                               </div>

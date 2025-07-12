@@ -505,24 +505,24 @@ export default function ActivityReportPage({
                             <div className="space-y-2 text-sm">
                               <div>
                                 Estimated Cost: $
-                                {taskItem.report.estimatedCost.toLocaleString()}
+                                {(taskItem.report.estimatedCost || 0).toLocaleString()}
                               </div>
                               <div>
                                 Actual Cost: $
-                                {taskItem.report.actualCost.toLocaleString()}
+                                {(taskItem.report.actualCost || 0).toLocaleString()}
                               </div>
                               <div
                                 className={`font-medium ${
-                                  taskItem.report.actualCost >
-                                  taskItem.report.estimatedCost
+                                  (taskItem.report.actualCost || 0) >
+                                  (taskItem.report.estimatedCost || 0)
                                     ? 'text-red-600'
                                     : 'text-green-600'
                                 }`}
                               >
                                 Variance: $
                                 {(
-                                  taskItem.report.actualCost -
-                                  taskItem.report.estimatedCost
+                                  (taskItem.report.actualCost || 0) -
+                                  (taskItem.report.estimatedCost || 0)
                                 ).toLocaleString()}
                               </div>
                             </div>
@@ -533,22 +533,22 @@ export default function ActivityReportPage({
                             </h4>
                             <div className="space-y-2 text-sm">
                               <div>
-                                Expected: {taskItem.report.expectedParticipants}
+                                Expected: {taskItem.report.expectedParticipants || 0}
                               </div>
                               <div>
-                                Actual: {taskItem.report.actualParticipants}
+                                Actual: {taskItem.report.actualParticipants || 0}
                               </div>
                               <div
                                 className={`font-medium ${
-                                  taskItem.report.actualParticipants >=
-                                  taskItem.report.expectedParticipants
+                                  (taskItem.report.actualParticipants || 0) >=
+                                  (taskItem.report.expectedParticipants || 0)
                                     ? 'text-green-600'
                                     : 'text-red-600'
                                 }`}
                               >
                                 Variance:{' '}
-                                {taskItem.report.actualParticipants -
-                                  taskItem.report.expectedParticipants}
+                                {(taskItem.report.actualParticipants || 0) -
+                                  (taskItem.report.expectedParticipants || 0)}
                               </div>
                             </div>
                           </div>

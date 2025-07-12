@@ -85,13 +85,18 @@ export class ActivitiesService {
         task.actualFinancialImpact = 0; // Always 0 during creation
         task.activity = activity; // Set the activity reference
 
-        // Find isibo
-        const isibo = await this.isibosService.findIsiboById(taskDto.isiboId);
+        // Find isibo with house members
+        const isibo = await this.isibosService.findIsiboWithHouseMembers(taskDto.isiboId);
         if (!isibo) {
           throw new NotFoundException(
             `Isibo with ID ${taskDto.isiboId} not found`,
           );
         }
+
+        // Calculate expected participants from house members
+        const isiboHouseMemberCount = await this.isibosService.getIsiboHouseMemberCount(taskDto.isiboId);
+        task.expectedParticipants = isiboHouseMemberCount;
+
         task.isibo = isibo;
         assignedIsibos.add(taskDto.isiboId);
 

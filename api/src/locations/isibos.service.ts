@@ -8,6 +8,7 @@ import { paginate } from "nestjs-typeorm-paginate";
 import { UserRole } from "src/__shared__/enums/user-role.enum";
 import { Repository } from "typeorm";
 import { UsersService } from "../users/users.service";
+import { User } from "../users/entities/user.entity";
 import { CreateIsiboDto } from "./dto/create-isibo.dto";
 import { FetchIsiboDto } from "./dto/fetch-isibo.dto";
 import { UpdateIsiboDto } from "./dto/update-isibo.dto";
@@ -191,7 +192,7 @@ export class IsibosService {
   async findIsiboById(id: string): Promise<Isibo> {
     const isibo = await this.isiboRepository.findOne({
       where: { id },
-      relations: ["leader", "village", "houses"],
+      relations: ["leader", "village", "houses", "houses.members"],
     });
 
     if (!isibo) {
@@ -199,6 +200,40 @@ export class IsibosService {
     }
 
     return isibo;
+  }
+
+  async findIsiboWithHouseMembers(id: string): Promise<Isibo> {
+    const isibo = await this.isiboRepository.findOne({
+      where: { id },
+      relations: [
+        "leader",
+        "village",
+        "houses",
+        "houses.members"
+      ],
+    });
+
+    if (!isibo) {
+      throw new NotFoundException("Isibo not found");
+    }
+
+    return isibo;
+  }
+
+  async getIsiboHouseMembers(id: string): Promise<User[]> {
+    const isibo = await this.findIsiboWithHouseMembers(id);
+
+    // Flatten all house members into a single array
+    const houseMembers = isibo.houses
+      ?.map(house => house.members || [])
+      .flat() || [];
+
+    return houseMembers;
+  }
+
+  async getIsiboHouseMemberCount(id: string): Promise<number> {
+    const houseMembers = await this.getIsiboHouseMembers(id);
+    return houseMembers.length;
   }
 
   async assignIsiboLeader(id: string, userId: string): Promise<Isibo> {

@@ -7,10 +7,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { FileUpload } from "@/components/ui/file-upload";
 import { WideDialog, WideDialogContent, WideDialogTrigger, WideDialogForm } from "@/components/ui/wide-dialog";
 import { createReport, type CreateReportInput } from "@/lib/api/reports";
-import { getIsiboById, IsiboMember } from "@/lib/api/isibos";
+import { getTaskEligibleAttendees, TaskAttendee } from "@/lib/api/tasks";
 import { type Task } from "@/lib/api/activities";
 import { AttendanceSelector } from "./attendance-selector";
 import { useUser } from "@/lib/contexts/user-context";
+import { prepareEvidenceUrls } from "@/lib/utils/validation";
 import { IconFileText } from "@tabler/icons-react";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
@@ -31,7 +32,7 @@ export function CreateReportDialog({
   const { user } = useUser();
   const [open, setOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [isiboMembers, setIsiboMembers] = useState<IsiboMember[]>([]);
+  const [houseMembers, setHouseMembers] = useState<TaskAttendee[]>([]);
 
   // Form state with new fields
   const [attendanceIds, setAttendanceIds] = useState<string[]>([]);
@@ -45,20 +46,20 @@ export function CreateReportDialog({
   const [challengesFaced, setChallengesFaced] = useState("");
   const [suggestions, setSuggestions] = useState("");
   const [evidenceUrls, setEvidenceUrls] = useState<string[]>([]);
-  // Fetch isibo members when dialog opens
+  // Fetch house members when dialog opens
   useEffect(() => {
-    if (open && user?.isibo?.id) {
-      fetchIsiboMembers(user.isibo.id);
+    if (open && task.id) {
+      fetchHouseMembers();
     }
-  }, [open, user]);
+  }, [open, task.id]);
 
-  const fetchIsiboMembers = async (isiboId: string) => {
+  const fetchHouseMembers = async () => {
     try {
-      const isibo = await getIsiboById(isiboId);
-      setIsiboMembers(isibo.members || []);
+      const members = await getTaskEligibleAttendees(task.id);
+      setHouseMembers(members);
     } catch (error) {
-      console.error("Failed to fetch isibo members:", error);
-      toast.error("Failed to fetch isibo members");
+      console.error("Failed to fetch house members:", error);
+      toast.error("Failed to fetch house members for attendance");
     }
   };
 
@@ -98,7 +99,7 @@ export function CreateReportDialog({
         materialsUsed: materialsUsed.length > 0 ? materialsUsed : undefined,
         challengesFaced: challengesFaced || undefined,
         suggestions: suggestions || undefined,
-        evidenceUrls: evidenceUrls.length > 0 ? evidenceUrls : undefined,
+        evidenceUrls: prepareEvidenceUrls(evidenceUrls),
       };
 
       await createReport(reportData);
@@ -183,7 +184,7 @@ export function CreateReportDialog({
                 <div>
                   <h3 className="text-lg font-medium mb-4">Attendance</h3>
                   <AttendanceSelector
-                    isiboMembers={isiboMembers}
+                    houseMembers={houseMembers}
                     selectedAttendeeIds={attendanceIds}
                     onAttendanceChange={setAttendanceIds}
                   />

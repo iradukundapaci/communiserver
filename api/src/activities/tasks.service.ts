@@ -36,17 +36,18 @@ export class TasksService {
       throw new NotFoundException("Activity not found");
     }
 
-    const isibo = await this.isibosService.findIsiboById(createTaskDTO.isiboId);
+    const isibo = await this.isibosService.findIsiboWithHouseMembers(createTaskDTO.isiboId);
 
     if (!isibo) {
       throw new NotFoundException("Isibo not found");
     }
 
-    var isiboMembers = isibo.houses.map((house) => house.members).flat();
+    // Get all house members in this isibo for expected participants calculation
+    const isiboHouseMembers = await this.isibosService.getIsiboHouseMembers(createTaskDTO.isiboId);
 
-    // Auto-calculate expected participants based on isibo member count
+    // Auto-calculate expected participants based on house members count in the isibo
     const expectedParticipants =
-      createTaskDTO.expectedParticipants || isiboMembers?.length || 0;
+      createTaskDTO.expectedParticipants || isiboHouseMembers.length;
 
     const existingTask = await this.taskRepository.findOne({
       where: {
@@ -334,6 +335,32 @@ export class TasksService {
     };
 
     return plainToInstance(UpdateTaskDTO.Output, taskData);
+  }
+
+  async getTaskEligibleAttendees(taskId: string) {
+    const task = await this.taskRepository.findOne({
+      where: { id: taskId },
+      relations: ["isibo"],
+    });
+
+    if (!task) {
+      throw new NotFoundException("Task not found");
+    }
+
+    // Get all house members from the isibo assigned to this task
+    const houseMembers = await this.isibosService.getIsiboHouseMembers(task.isibo.id);
+
+    return houseMembers.map(member => ({
+      id: member.id,
+      names: member.names,
+      email: member.email,
+      phone: member.phone,
+      house: member.house ? {
+        id: member.house.id,
+        code: member.house.code,
+        address: member.house.address
+      } : null
+    }));
   }
 
   async remove(id: string): Promise<void> {

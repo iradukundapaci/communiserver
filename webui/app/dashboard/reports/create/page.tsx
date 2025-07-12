@@ -14,10 +14,10 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { FileUpload } from "@/components/ui/file-upload";
 import { Activity, getActivities } from "@/lib/api/activities";
-import { getIsiboById, IsiboMember } from "@/lib/api/isibos";
 import { createReport } from "@/lib/api/reports";
-import { Task, getTasks } from "@/lib/api/tasks";
+import { Task, getTasks, getTaskEligibleAttendees, TaskAttendee } from "@/lib/api/tasks";
 import { useUser } from "@/lib/contexts/user-context";
+import { prepareEvidenceUrls } from "@/lib/utils/validation";
 import { ArrowLeft, Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -29,7 +29,7 @@ export default function CreateReportPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [activities, setActivities] = useState<Activity[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
-  const [isiboMembers, setIsiboMembers] = useState<IsiboMember[]>([]);
+  const [houseMembers, setHouseMembers] = useState<TaskAttendee[]>([]);
   const [isLoadingActivities, setIsLoadingActivities] = useState(false);
   const [isLoadingTasks, setIsLoadingTasks] = useState(false);
   const [, setIsLoadingIsibo] = useState(false);
@@ -44,13 +44,10 @@ export default function CreateReportPage() {
   });
 
 
-  // Fetch activities and isibo members on page load
+  // Fetch activities on page load
   useEffect(() => {
     fetchActivities();
-    if (user?.isibo?.id) {
-      fetchIsiboMembers(user.isibo.id);
-    }
-  }, [user?.id, user?.isibo?.id, user?.village?.id]); // Only depend on specific user properties
+  }, [user?.id, user?.village?.id]); // Only depend on specific user properties
 
   // Fetch tasks when activity is selected
   useEffect(() => {
@@ -58,6 +55,13 @@ export default function CreateReportPage() {
       fetchTasks(formData.activityId);
     }
   }, [formData.activityId]);
+
+  // Fetch house members when task is selected
+  useEffect(() => {
+    if (formData.taskId) {
+      fetchHouseMembers(formData.taskId);
+    }
+  }, [formData.taskId]);
 
   const fetchActivities = async () => {
     try {
@@ -91,16 +95,13 @@ export default function CreateReportPage() {
     }
   };
 
-  const fetchIsiboMembers = async (isiboId: string) => {
+  const fetchHouseMembers = async (taskId: string) => {
     try {
-      setIsLoadingIsibo(true);
-      const isibo = await getIsiboById(isiboId);
-      setIsiboMembers(isibo.members || []);
+      const members = await getTaskEligibleAttendees(taskId);
+      setHouseMembers(members);
     } catch (error) {
-      console.error("Failed to fetch isibo members:", error);
-      toast.error("Failed to fetch isibo members");
-    } finally {
-      setIsLoadingIsibo(false);
+      console.error("Failed to fetch house members:", error);
+      toast.error("Failed to fetch house members for attendance");
     }
   };
 
@@ -161,7 +162,7 @@ export default function CreateReportPage() {
         taskId: formData.taskId,
         attendanceIds: formData.attendanceIds,
         comment: formData.comment,
-        evidenceUrls: formData.evidenceUrls,
+        evidenceUrls: prepareEvidenceUrls(formData.evidenceUrls),
       });
       toast.success("Report submitted successfully");
       router.push("/dashboard/reports");
@@ -255,7 +256,7 @@ export default function CreateReportPage() {
               <Label className="text-right mt-2">Attendance</Label>
               <div className="col-span-3">
                 <AttendanceSelector
-                  isiboMembers={isiboMembers}
+                  houseMembers={houseMembers}
                   selectedAttendeeIds={formData.attendanceIds}
                   onAttendanceChange={handleAttendanceChange}
                 />

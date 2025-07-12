@@ -7,23 +7,30 @@ export interface Report {
   activity: {
     id: string;
     title: string;
+    description: string;
+    date: string;
+    village: {
+      id: string;
+      name: string;
+    };
   };
   task: {
     id: string;
     title: string;
+    description: string;
+    status: string;
+    estimatedCost: number;
+    actualCost: number;
+    expectedParticipants: number;
+    actualParticipants: number;
+    expectedFinancialImpact: number;
+    actualFinancialImpact: number;
     isibo: {
       id: string;
-      names: string;
+      name: string;
     };
   };
   attendance?: ReportAttendee[];
-  // Task financial data (copied for easy access)
-  estimatedCost: number;
-  actualCost: number;
-  expectedParticipants: number;
-  actualParticipants: number;
-  expectedFinancialImpact: number;
-  actualFinancialImpact: number;
   comment?: string;
   materialsUsed?: string[];
   challengesFaced?: string;
@@ -36,12 +43,9 @@ export interface Report {
 export interface ReportAttendee {
   id: string;
   names: string;
-  user: {
-    id: string;
-    email: string;
-    phone: string;
-    role: string;
-  };
+  email: string;
+  phone: string;
+  role: string;
 }
 
 export interface CreateReportInput {

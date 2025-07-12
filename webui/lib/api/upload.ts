@@ -1,4 +1,4 @@
-import { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand, HeadObjectCommand } from '@aws-sdk/client-s3';
+import { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand, HeadObjectCommand, CreateBucketCommand, HeadBucketCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { MINIO_CONFIG, MINIO_URL } from '../config/minio';
 
@@ -36,21 +36,53 @@ function generateUniqueFilename(originalName: string): string {
 }
 
 /**
+ * Ensure the bucket exists, create it if it doesn't
+ * @param bucketName Name of the bucket
+ * @returns Promise indicating success
+ */
+async function ensureBucketExists(bucketName: string): Promise<void> {
+  try {
+    // Check if bucket exists
+    await s3Client.send(new HeadBucketCommand({ Bucket: bucketName }));
+    console.log(`Bucket ${bucketName} exists`);
+  } catch (error: any) {
+    if (error.name === 'NotFound' || error.$metadata?.httpStatusCode === 404) {
+      try {
+        // Create bucket if it doesn't exist
+        await s3Client.send(new CreateBucketCommand({ Bucket: bucketName }));
+        console.log(`Bucket ${bucketName} created successfully`);
+      } catch (createError) {
+        console.error(`Failed to create bucket ${bucketName}:`, createError);
+        throw new Error(`Failed to create bucket: ${createError instanceof Error ? createError.message : 'Unknown error'}`);
+      }
+    } else {
+      console.error(`Error checking bucket ${bucketName}:`, error);
+      throw new Error(`Failed to check bucket: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+}
+
+/**
  * Upload a file to MinIO bucket
  * @param file File to upload
  * @returns Promise with upload response containing the file URL
  */
 export async function uploadFile(file: File): Promise<UploadResponse> {
   try {
-    console.log("accessKey: ", 10)
-    console.log("secretKey: ", MINIO_CONFIG.secretKey)
-    console.log("secretKey: ", MINIO_CONFIG.endPoint)
-    console.log("port", MINIO_CONFIG.port)
-    console.log("region", MINIO_CONFIG.region)
-    console.log("bucketName", MINIO_CONFIG.bucketName)
-    console.log("Url", MINIO_URL)
+    console.log(`Starting upload for file: ${file.name}, size: ${file.size}, type: ${file.type}`);
+    console.log("MinIO Config:", {
+      endPoint: MINIO_CONFIG.endPoint,
+      port: MINIO_CONFIG.port,
+      bucketName: MINIO_CONFIG.bucketName,
+      url: MINIO_URL
+    });
+
+    // Ensure bucket exists
+    await ensureBucketExists(MINIO_CONFIG.bucketName);
+
     // Generate unique filename
     const filename = generateUniqueFilename(file.name);
+    console.log(`Generated filename: ${filename}`);
 
     // Convert File to ArrayBuffer for upload
     const arrayBuffer = await file.arrayBuffer();
@@ -69,10 +101,13 @@ export async function uploadFile(file: File): Promise<UploadResponse> {
     });
 
     // Upload file to MinIO
+    console.log(`Uploading to MinIO...`);
     await s3Client.send(command);
+    console.log(`Upload completed successfully`);
 
     // Generate the public URL
     const url = `${MINIO_URL}/${MINIO_CONFIG.bucketName}/${filename}`;
+    console.log(`Generated URL: ${url}`);
 
     return {
       url,

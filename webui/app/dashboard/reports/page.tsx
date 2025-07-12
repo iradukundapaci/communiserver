@@ -99,12 +99,12 @@ export default function ReportsPage() {
       group.reports.push(report);
 
       // Calculate totals - ensure numbers are properly converted and handle potential string values
-      const estimatedCost = parseFloat(String(report.estimatedCost)) || 0;
-      const actualCost = parseFloat(String(report.actualCost)) || 0;
-      const expectedParticipants = parseInt(String(report.expectedParticipants)) || 0;
-      const actualParticipants = parseInt(String(report.actualParticipants)) || 0;
-      const expectedFinancialImpact = parseFloat(String(report.expectedFinancialImpact)) || 0;
-      const actualFinancialImpact = parseFloat(String(report.actualFinancialImpact)) || 0;
+      const estimatedCost = parseFloat(String(report.task?.estimatedCost)) || 0;
+      const actualCost = parseFloat(String(report.task?.actualCost)) || 0;
+      const expectedParticipants = parseInt(String(report.task?.expectedParticipants)) || 0;
+      const actualParticipants = parseInt(String(report.task?.actualParticipants)) || 0;
+      const expectedFinancialImpact = parseFloat(String(report.task?.expectedFinancialImpact)) || 0;
+      const actualFinancialImpact = parseFloat(String(report.task?.actualFinancialImpact)) || 0;
 
       group.totalEstimatedCost += estimatedCost;
       group.totalActualCost += actualCost;

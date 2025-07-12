@@ -130,7 +130,7 @@ export default function ReportDetailPage({
                     <ul className="space-y-1">
                       {report.attendance.map((citizen, index) => (
                         <li key={index}>
-                          {citizen.names} ({citizen.user.email} • {citizen.user.phone})
+                          {citizen.names} ({citizen.email} • {citizen.phone})
                         </li>
                       ))}
                     </ul>

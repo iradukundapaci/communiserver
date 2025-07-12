@@ -39,6 +39,15 @@ export class ReportsService {
       );
     }
 
+    // Get the task to copy financial data and update actuals
+    const task = await this.taskRepository.findOne({
+      where: { id: dto.taskId },
+    });
+
+    if (!task) {
+      throw new NotFoundException("Task not found");
+    }
+
     // Auto-calculate actual participants from attendance list
     const actualParticipants = dto.attendanceIds ? dto.attendanceIds.length : 0;
 
@@ -59,10 +68,15 @@ export class ReportsService {
       await this.assignAttendanceToReport(saved.id, dto.attendanceIds);
     }
 
-    // Mark the task as complete when report is submitted
+    // Update task with actual financial data from the report
     await this.taskRepository.update(
       { id: dto.taskId },
-      { status: ETaskStatus.COMPLETED },
+      {
+        status: ETaskStatus.COMPLETED,
+        actualParticipants: actualParticipants,
+        actualCost: dto.actualCost || 0,
+        actualFinancialImpact: dto.actualFinancialImpact || 0,
+      },
     );
 
     return this.findReportById(saved.id);
@@ -107,7 +121,6 @@ export class ReportsService {
         "activity",
         "activity.village",
         "attendance",
-        "attendance.user",
       ],
     });
 
